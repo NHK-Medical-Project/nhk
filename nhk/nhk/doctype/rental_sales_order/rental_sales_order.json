@@ -172,8 +172,8 @@
   "connections_tab",
   "device_details_tab",
   "device_details_section",
-  "rental_device_name",
-  "rental_device_id",
+  "item_group",
+  "item_code",
   "dispatched_section",
   "dispatch_date",
   "rental_delivery_date",
@@ -1720,20 +1720,6 @@
    "label": "Device Details"
   },
   {
-   "allow_on_submit": 1,
-   "fieldname": "rental_device_name",
-   "fieldtype": "Data",
-   "label": "Rental Device Name",
-   "read_only": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "rental_device_id",
-   "fieldtype": "Data",
-   "label": "Rental Device ID",
-   "read_only": 1
-  },
-  {
    "fieldname": "dispatched_section",
    "fieldtype": "Section Break",
    "label": "DISPATCHED"
@@ -1807,13 +1793,27 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "item_group",
+   "fieldtype": "Data",
+   "label": "Item Group",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "item_code",
+   "fieldtype": "Data",
+   "label": "Item Code",
+   "read_only": 1
   }
  ],
  "icon": "fa fa-file-text",
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-03-05 12:47:14.449710",
+ "modified": "2024-03-05 18:04:09.271374",
  "modified_by": "Administrator",
  "module": "NHK",
  "name": "Rental Sales Order",

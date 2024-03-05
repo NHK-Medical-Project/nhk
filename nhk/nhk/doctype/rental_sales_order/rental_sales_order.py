@@ -1836,13 +1836,16 @@ def make_approved(docname):
 def make_rental_device_assign(docname, item_group, item_code):
     try:
         # Your logic here
-        doc = frappe.get_doc('Sales Order', docname)
+        doc = frappe.get_doc('Rental Sales Order', docname)
 
         for item in doc.items:
             item_code = item.item_code
             item_status = frappe.get_value("Item", item_code, "status")
 
             if item_status == "Available":
+                # Check if the user has permission to update the Item doctype
+                frappe.only_for('Item', 'write')
+                
                 item_doc = frappe.get_doc("Item", item_code)
                 item_doc.status = "Reserved"
                 item_doc.save()
@@ -1862,6 +1865,10 @@ def make_rental_device_assign(docname, item_group, item_code):
         frappe.throw("An error occurred while processing the request. Please try again.")
 
 
+# @frappe.whitelist()
+# def get_item_groups():
+#     item_groups = frappe.get_all('Rental Sales Order Item', filters={'docstatus': 1}, distinct=True, pluck='item_group')
+#     return item_groups
 
 
 

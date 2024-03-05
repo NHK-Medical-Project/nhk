@@ -1089,15 +1089,13 @@ erpnext.selling.SalesOrderController = class SalesOrderController extends erpnex
 				options: 'Item Group', // Replace with the doctype of your item group
 				reqd: 1,
 				get_query: function () {
-					return {
-						filters: {
-							'device_type': 'Rental'
-							// Add any additional filters if needed
-						},
-						get_data: 'frappe.desk.search.search_link'
-					};
+				  return {
+					filters: {
+					  // Add any additional filters if needed
+					}
+				  };
 				}
-			},
+			  },
 			  {
 				label: 'Item Code',
 				fieldname: 'item_code',
