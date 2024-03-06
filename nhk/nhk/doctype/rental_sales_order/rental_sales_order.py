@@ -281,16 +281,18 @@ class RentalSalesOrder(SellingController):
 				frappe.throw(f"Item {item_code} is not available.")
 
 	def item_status_change_cancel(self):
-		for item in self.items:
-			item_code = item.item_code
-			item_status = frappe.get_value("Item", item_code, "status")
+		# for item in self.items:
+		item_code = self.item_code
+		item_status = frappe.get_value("Item", item_code, "status")
 
-			# if item_status == "Reserved":
-		item_doc = frappe.get_doc("Item", item_code)
-		item_doc.status = "Available"
-		item_doc.save()
-		
-		frappe.db.commit()
+		# Check if the current item_code matches and the status is "Reserved"
+		if item_code == self.item_code and item_status == "Reserved":
+			item_doc = frappe.get_doc("Item", item_code)
+			item_doc.status = "Available"
+			item_doc.save()
+
+			frappe.db.commit()
+
 
 
 	def on_trash(self):
@@ -506,7 +508,7 @@ class RentalSalesOrder(SellingController):
 		# 	self.create_stock_reservation_entries()
 
 	def on_cancel(self):
-		# self.item_status_change_cancel()
+		self.item_status_change_cancel()
 		self.ignore_linked_doctypes = ("GL Entry", "Stock Ledger Entry", "Payment Ledger Entry")
 		super(RentalSalesOrder, self).on_cancel()
 
@@ -1966,6 +1968,32 @@ def make_rental_device_assign(docname, item_group, item_code):
         frappe.throw("An error occurred while processing the request. Please try again.")
 
 
+@frappe.whitelist()
+def make_delivered(item_code, docname, delivered_date):
+    try:
+        # Your logic here
+        doc = frappe.get_doc('Rental Sales Order', docname)
+        # item_code = item_code
+        item_status = frappe.get_value("Item", item_code, "status")
+
+        if item_status == "Reserved":
+            item_doc = frappe.get_doc("Item", item_code)
+            item_doc.status = "Rented Out"
+            item_doc.save()
+            # Optionally, you may want to commit the changes to the database
+            frappe.db.commit()
+
+        # Set values for rental device and update status
+        doc.rental_delivery_date = delivered_date
+        # doc.rental_device_id = device_id
+        doc.status = 'Active'
+        doc.save()
+
+        return "Rental Device DELIVERED Success"
+
+    except Exception as e:
+        frappe.log_error(f"Error in make_delivered: {e}")
+        frappe.throw("An error occurred while processing the request. Please try again.")
 
 
 @frappe.whitelist()
@@ -2005,32 +2033,23 @@ def make_pickedup(docname, technician_name=None, technician_mobile=None):
         frappe.throw("An error occurred while processing the request. Please try again.")
 
 @frappe.whitelist()
-def make_submitted_to_office(docname, device_name, device_id):
+def make_submitted_to_office(docname, item_code, submitted_date):
     try:
         # Your logic here
         doc = frappe.get_doc('Rental Sales Order', docname)
 
-        # Check both device_id and rental_device_name before submission
-        if not (device_name and device_id):
-            frappe.throw("Both Device Name and Device ID are required for submission to the office.")
+        item_status = frappe.get_value("Item", item_code, "status")
 
-        # Additional logic to check if the device is assigned or any other conditions
-
-        # Update the status of items
-        for item in doc.items:
-            item_code = item.item_code
-            item_status = frappe.get_value("Item", item_code, "status")
-
-            if item_status == "Rented Out":
-                item_doc = frappe.get_doc("Item", item_code)
-                item_doc.status = "Available"
-                item_doc.save()
-                # Optionally, you may want to commit the changes to the database
-                frappe.db.commit()
+        if item_status == "Rented Out":
+            item_doc = frappe.get_doc("Item", item_code)
+            item_doc.status = "Available"
+            item_doc.save()
+            # Optionally, you may want to commit the changes to the database
+            frappe.db.commit()
 
         # Set values for submission to office and update status
-        doc.rental_device_name = device_name
-        doc.rental_device_id = device_id
+        doc.submitted_date = submitted_date
+        # doc.rental_device_id = device_id
         doc.status = 'Submitted to Office'
         doc.save()
 

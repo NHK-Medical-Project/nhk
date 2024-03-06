@@ -1062,7 +1062,7 @@ erpnext.selling.SalesOrderController = class SalesOrderController extends erpnex
                     // Display a success message
                     frappe.msgprint({
                         title: __('Success'),
-                        message: __('RentalSales Order Approved successfully.'),
+                        message: __('Rental Sales Order Approved successfully.'),
                         indicator: 'green'
                     });
     
@@ -1283,6 +1283,7 @@ callServerMethodForDelivered(values) {
     frappe.call({
         method: 'nhk.nhk.doctype.rental_sales_order.rental_sales_order.make_delivered',
         args: {
+			item_code: this.frm.doc.item_code,
             docname: this.frm.doc.name,
             delivered_date: values.delivered_date  // Pass dispatch_date to the server
         },
@@ -1412,15 +1413,9 @@ callServerMethodForPickedup(values) {
 make_submitted_to_office() {
     frappe.prompt([
         {
-            label: 'Rental Device Name',
-            fieldname: 'device_name',
-            fieldtype: 'Data',
-            reqd: 1
-        },
-        {
-            label: 'Rental Device ID',
-            fieldname: 'device_id',
-            fieldtype: 'Data',
+            label: 'Submitted Date',
+            fieldname: 'submitted_date',
+            fieldtype: 'Datetime',
             reqd: 1
         }
         // Add more fields as needed
@@ -1428,8 +1423,8 @@ make_submitted_to_office() {
         // values will contain the entered data
 
         // Update RentalSales Order with the entered values
-        this.frm.doc.rental_device_name = values.device_name;
-        this.frm.doc.rental_device_id = values.device_id;
+        this.frm.doc.submitted_date = values.submitted_date;
+        // this.frm.doc.rental_device_id = values.device_id;
 
         // Optionally, refresh the form to reflect the changes
         this.frm.refresh();
@@ -1444,8 +1439,9 @@ callServerMethodForSubmittedToOffice(values) {
         method: 'nhk.nhk.doctype.rental_sales_order.rental_sales_order.make_submitted_to_office',
         args: {
             docname: this.frm.doc.name,
-            device_name: values.device_name,
-            device_id: values.device_id
+			item_code: this.frm.doc.item_code,
+            submitted_date: values.submitted_date
+            // device_id: values.device_id
         },
         callback: (response) => {
             // Handle the response from the server
