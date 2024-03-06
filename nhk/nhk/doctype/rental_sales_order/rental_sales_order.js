@@ -1080,9 +1080,9 @@ erpnext.selling.SalesOrderController = class SalesOrderController extends erpnex
     
     
 
-    make_rental_device_assign() {
-        const itemGroups = cur_frm.doc.items.map(item => item.item_group).filter(Boolean).filter((value, index, self) => self.indexOf(value) === index);
-
+	make_rental_device_assign() {
+		const itemGroups = cur_frm.doc.items.map(item => item.item_group).filter(Boolean).filter((value, index, self) => self.indexOf(value) === index);
+	
 		frappe.prompt([
 			{
 				label: 'Item Group',
@@ -1100,29 +1100,42 @@ erpnext.selling.SalesOrderController = class SalesOrderController extends erpnex
 					};
 				}
 			},
-			  {
+			{
 				label: 'Item Code',
 				fieldname: 'item_code',
 				fieldtype: 'Link',
-				options: 'Item', // Replace with the doctype of your item
+				options: 'Item',
 				reqd: 1,
-			  },
-            // Add more fields as needed
-        ], (values) => {
-            // values will contain the entered data
-            // console.log(values);
-    
-            // Update Sales Order with the entered values
-            this.frm.doc.rental_item_group = values.item_group;
-            this.frm.doc.rental_item_code = values.item_code;
-    
-            // Optionally, refresh the form to reflect the changes
-            this.frm.refresh();
-    
-            // Now call the server-side method only after the user submits the device details
-            this.callServerMethod(values);
-        }, __('Rental Device Details'));
-    }
+				get_query: function (doc, cdt, cdn) {
+					const selectedGroup = cur_dialog.fields_dict.item_group.get_value();
+					return {
+						filters: {
+							'item_group': selectedGroup,
+							'status': 'Available'  // Replace 'availability_status' with the actual field name for item availability
+						}
+					};
+				}
+			},
+			// Add more fields as needed
+		], (values) => {
+			// values will contain the entered data
+			// console.log(values);
+	
+			// Update Sales Order with the entered values
+			this.frm.doc.item_group = values.item_group;
+			this.frm.doc.item_code = values.item_code;
+	
+			// Optionally, refresh the form to reflect the changes
+			this.frm.refresh();
+	
+			// Now call the server-side method only after the user submits the device details
+			this.callServerMethod(values);
+		}, __('Rental Device Details'));
+	}
+	
+	
+
+	
     
     callServerMethod(values) {
         frappe.call({
