@@ -1081,21 +1081,25 @@ erpnext.selling.SalesOrderController = class SalesOrderController extends erpnex
     
 
     make_rental_device_assign() {
-        frappe.prompt([
-            {
+        const itemGroups = cur_frm.doc.items.map(item => item.item_group).filter(Boolean).filter((value, index, self) => self.indexOf(value) === index);
+
+		frappe.prompt([
+			{
 				label: 'Item Group',
 				fieldname: 'item_group',
 				fieldtype: 'Link',
-				options: 'Item Group', // Replace with the doctype of your item group
+				options: 'Item Group',
 				reqd: 1,
+				read_only: 1,
+				default: cur_frm.doc.items[0].item_group,  // Set a default value based on the first item's group (adjust as needed)
 				get_query: function () {
-				  return {
-					filters: {
-					  // Add any additional filters if needed
-					}
-				  };
+					return {
+						filters: {
+							'name': ['in', itemGroups]
+						}
+					};
 				}
-			  },
+			},
 			  {
 				label: 'Item Code',
 				fieldname: 'item_code',

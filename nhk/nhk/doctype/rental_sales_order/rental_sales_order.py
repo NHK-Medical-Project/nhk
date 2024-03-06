@@ -294,7 +294,8 @@ class RentalSalesOrder(SellingController):
 
 
 	def on_trash(self):
-		self.item_status_change_cancel()
+		pass
+		# self.item_status_change_cancel()
 
 	def change_item_status_on_submit(self):
 		for item in self.items:
@@ -505,7 +506,7 @@ class RentalSalesOrder(SellingController):
 		# 	self.create_stock_reservation_entries()
 
 	def on_cancel(self):
-		self.item_status_change_cancel()
+		# self.item_status_change_cancel()
 		self.ignore_linked_doctypes = ("GL Entry", "Stock Ledger Entry", "Payment Ledger Entry")
 		super(RentalSalesOrder, self).on_cancel()
 
@@ -513,7 +514,7 @@ class RentalSalesOrder(SellingController):
 		if self.status == "Closed":
 			frappe.throw(_("Closed order cannot be cancelled. Unclose to cancel."))
 
-		self.check_nextdoc_docstatus()
+		# self.check_nextdoc_docstatus()
 		self.update_reserved_qty()
 		self.update_project()
 		self.update_prevdoc_status("cancel")
@@ -1838,32 +1839,31 @@ def make_rental_device_assign(docname, item_group, item_code):
         # Your logic here
         doc = frappe.get_doc('Rental Sales Order', docname)
 
-        for item in doc.items:
-            item_code = item.item_code
-            item_status = frappe.get_value("Item", item_code, "status")
+        # Check if the user has permission to update the Item doctype
+        frappe.only_for('Item', 'write')
 
-            if item_status == "Available":
-                # Check if the user has permission to update the Item doctype
-                frappe.only_for('Item', 'write')
-                
-                item_doc = frappe.get_doc("Item", item_code)
-                item_doc.status = "Reserved"
-                item_doc.save()
-                # Optionally, you may want to commit the changes to the database
-                frappe.db.commit()
+        item_status = frappe.get_value("Item", item_code, "status")
 
-        # Set values for rental device and update status
-        doc.rental_item_group = item_group
-        doc.rental_item_code = item_code
-        doc.status = 'Rental Device Assigned'
-        doc.save()
+        if item_status == "Available":
+            item_doc = frappe.get_doc("Item", item_code)
+            item_doc.status = "Reserved"
+            item_doc.save()
+            # Optionally, you may want to commit the changes to the database
+            frappe.db.commit()
 
-        return "Rental Device Assigned Success"
+            # Set values for rental device and update status
+            doc.rental_item_group = item_group
+            doc.rental_item_code = item_code
+            doc.status = 'Rental Device Assigned'
+            doc.save()
+
+            return "Rental Device Assigned Success"
+        else:
+            frappe.msgprint("Item is not available for reservation.")
 
     except Exception as e:
         frappe.log_error(f"Error in make_rental_device_assign: {e}")
         frappe.throw("An error occurred while processing the request. Please try again.")
-
 
 # @frappe.whitelist()
 # def get_item_groups():

@@ -43,7 +43,6 @@
   "ignore_pricing_rule",
   "sec_warehouse",
   "column_break_rzdp",
-  "scan_barcode",
   "column_break_kaqg",
   "set_warehouse",
   "reserve_stock",
@@ -521,11 +520,6 @@
   {
    "fieldname": "column_break_rzdp",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "scan_barcode",
-   "fieldtype": "Data",
-   "label": "Scan Barcode"
   },
   {
    "fieldname": "column_break_kaqg",
@@ -1813,7 +1807,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-03-05 18:04:09.271374",
+ "modified": "2024-03-05 18:45:10.241408",
  "modified_by": "Administrator",
  "module": "NHK",
  "name": "Rental Sales Order",
