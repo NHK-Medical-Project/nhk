@@ -1,0 +1,70 @@
+{% extends "templates/web_base.html" %}
+{% block content %}
+<!-- ============ BANNER START ========== -->
+<section class="blog-banner clearfix">
+    <div class="blog-slide">
+        <div class="container">
+            <img src="{{ blog_detail.image }}" class="img-fluid" alt="{{ blog_detail.title }}">
+            <h2>{{ blog_detail.title }}</h2>
+            <p><span>{{ blog_detail.date.strftime('%d-%b-%Y') }}</span> {{ blog_detail.description }}</p>
+        </div>
+    </div>
+</section>
+ 
+<!-- ============ Blog Detail START ========== -->
+ 
+<section class="blogdetail clearfix">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-1 col-md-2 col-12">
+                <div class="date-txt">{{ blog_detail.date.strftime('%d-%b-%Y') }}</div>
+            </div>
+            <div class="col-lg-11 col-md-10 col-12">
+                <p>{{ blog_detail.content }}</p>
+                <!-- <div class="row">
+                    <div class="col-lg-6 col-md-6 col-6 mb-3"><img src="{{ blog_detail.content_image1 }}" class="img-fluid" alt=""/></div>
+                    <div class="col-lg-6 col-md-6 col-6 mb-3"><img src="{{ blog_detail.content_image2 }}" class="img-fluid" alt=""/></div>
+                </div>
+                <p>{{ blog_detail.content }}</p> -->
+                
+                <div class="blogProfile clearfix">
+                    <img src="{{ blog_detail.author_image }}" class="img-fluid" alt=""/>
+                    <h5>{{ blog_detail.author }}</h5>
+                    <span>content writer</span>
+                </div>
+                
+          </div>
+        </div>
+    </div>
+</section>
+    
+<!-- ============ Popular Topics START ========== -->
+<section class="PopularTopics clearfix">
+    <div class="container">
+        <h2>Popular <span>Topics</span></h2>
+        <div class="row">
+            <!-- Repeat this block for each blog item -->
+            {% for blog in blogsdetail %}
+                {% if blog.title != blog_detail.title %} <!-- Exclude the currently viewed blog -->
+                    <div class="col-lg-3 col-md-4 col-12">
+                        <div class="card clearfix">
+                            <div class="card-thumb">
+                                <a href="blogdetail?id={{ blog.name }}"><img src="{{ blog.image }}" class="img-fluid" alt="{{ blog.title }}"/></a>                            </div>
+                            <div class="card-body">
+                                <div class="date-txt">{{ blog.date.strftime('%d-%b-%Y') }}</div>
+                                <h3><a href="blogdetail?id={{ blog.name }}">{{ blog.title }}</a></h3>
+                                <p>{{ blog.description }}</p>
+                                <div class="journal-title">
+                                    By {{ blog.author }} <span>Journalist</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+ 
+ 
+{% endblock %}

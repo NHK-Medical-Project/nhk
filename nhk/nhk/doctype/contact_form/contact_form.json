@@ -1,0 +1,107 @@
+{
+ "actions": [],
+ "autoname": "autoincrement",
+ "creation": "2024-03-15 14:22:56.294051",
+ "default_view": "List",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "name1",
+  "phone",
+  "city",
+  "form_type",
+  "column_break_fzor",
+  "email",
+  "message",
+  "pincode",
+  "sender_email_id"
+ ],
+ "fields": [
+  {
+   "fieldname": "name1",
+   "fieldtype": "Data",
+   "label": "Name"
+  },
+  {
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Phone"
+  },
+  {
+   "fieldname": "city",
+   "fieldtype": "Data",
+   "label": "city"
+  },
+  {
+   "fieldname": "form_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Form Type",
+   "options": "Timing Popup\nGet In Touch\nContact Form"
+  },
+  {
+   "fieldname": "column_break_fzor",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email"
+  },
+  {
+   "fieldname": "message",
+   "fieldtype": "Data",
+   "label": "Message"
+  },
+  {
+   "fieldname": "pincode",
+   "fieldtype": "Data",
+   "label": "Pincode"
+  },
+  {
+   "default": "vishnuviratians18@gmail.com",
+   "fieldname": "sender_email_id",
+   "fieldtype": "Data",
+   "label": "Sender Email Id",
+   "options": "Email"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-03-15 16:49:47.366365",
+ "modified_by": "Administrator",
+ "module": "NHK",
+ "name": "Contact Form",
+ "naming_rule": "Autoincrement",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Guest",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -1,0 +1,169 @@
+{% extends "templates/web_base.html" %}
+{% block content %}
+<!-- ============ Checkout START ========== -->
+<section class="checkoutwrap clearfix">
+	<div class="container">
+		<div class="row">
+			<div class="col-lg-8 col-md-7 col-12">
+			   <div class="checkout__data clearfix">
+				   
+				   <div class="Status__cart clearfix">
+					   <ul>
+						   <li class="active">
+							   <span class="check">
+								   <i class="fa fa-check"></i>
+							   </span>
+							   <span class="cart-txt">Sign In</span>
+						   </li>
+						   <li class="active">
+							   <span class="check">
+								   <i class="fa fa-check"></i>
+							   </span>
+							   <span class="cart-txt">Address</span>
+						   </li>
+						   <li>
+							   <span class="check">
+								   <i class="fa fa-check"></i>
+							   </span>
+							   <span class="cart-txt">Payment</span>
+						   </li>
+						   <li>
+							   <span class="check">
+								   <i class="fa fa-check"></i>
+							   </span>
+							   <span class="cart-txt">Payment Complete</span>
+						   </li>
+					   </ul>
+				   </div>
+				   
+				   
+				   
+				   <div class="payment__card clearfix">
+					 
+					  <div class="CardShow nopadmar clearfix">
+						    <div class="custom-control custom-radio">
+							<input type="radio" class="custom-control-input" id="card" name="example1" value="customEx">
+							<label class="custom-control-label" for="card">Credit / Debit card</label>
+						  </div>
+					   </div> 
+					   
+				     <div class="cartDetail clearfix" style="display: none;">
+						   
+					   <div class="card-pic m-hide"><img src="assets/nhk/assets/images/card-pic.svg" class="img-fluid" alt=""/> </div>
+						   
+					   <div class="row">
+							   
+							   <div class="col-lg-12 col-md-12 col-12">
+								   <div class="form-group">
+									   <label>Card number</label>
+									   <input class="form-control" type="text" placeholder="1234 5678 9632 1254">
+								   </div>
+							   </div>
+							   <div class="col-lg-12 col-md-12 col-12">
+								   <div class="form-group">
+									   <label>Card holder name</label>
+									   <input class="form-control" type="text" placeholder="Name">
+								   </div>
+							   </div>
+							   <div class="col-lg-8 col-md-8 col-7">
+								   <div class="form-group">
+									   <label>Valid Thru</label>
+									   <input class="form-control" type="text" placeholder="Name">
+								   </div>
+							   </div>
+							   <div class="col-lg-4 col-md-4 col-5">
+								   <div class="form-group">
+									   <label>CVV</label>
+									   <input class="form-control" type="text" placeholder="Name">
+								   </div>
+							   </div>
+							   <div class="col-lg-12 col-md-12 col-12">
+								     <div class="custom-control custom-checkbox">
+										<input type="checkbox" class="custom-control-input" id="customCheck" name="example1">
+										<label class="custom-control-label" for="customCheck">Save this card for furture payments </label>
+									  </div>
+							   </div>
+							   
+							   
+						   </div>
+						   
+					   </div>
+					   
+					  <div class="CardShow clearfix">
+						    <div class="custom-control custom-radio">
+							<input type="radio" class="custom-control-input" id="net" name="example1" value="customEx">
+							<label class="custom-control-label" for="net">Net banking</label>
+						  </div>
+					   </div> 
+					   
+					   <div class="CardShow clearfix">
+						    <div class="custom-control custom-radio">
+							<input type="radio" class="custom-control-input" id="upi" name="example1" value="customEx" checked>
+							<label class="custom-control-label" for="upi">UPI</label>
+						  </div>
+					   </div>  
+					  
+					   <div class="upi__data clearfix">
+						   <p>Pay with UPI App</p>
+						   <p><strong>You will be redirect ti the selected UPI app</strong></p>
+				       <img src="assets/nhk/assets/images/upi-card.png" class="img-fluid" alt=""/> </div>
+					   
+					   
+					   
+				   </div>
+				    
+						    
+				   </div>
+			   </div>
+				  
+			<div class="col-lg-4 col-md-5 col-12">
+				
+				<div class="checkoutPayment clearfix m-hide">
+				 <div class="cardProduct clearfix">
+					 <div class="row">
+						 <div class="col-lg-4 col-md-4 col-12">
+							 <div class="productcard">
+						     <img src="assets/nhk/assets/images/product/sefam-ecostar.png" class="img-fluid" alt=""/> </div>
+					   </div>
+						 <div class="col-lg-8 col-md-8 col-12">
+							 <h4>Sefam S box (Positiv..</h4>
+							 <p>Order ID # 1079458 </p>
+							 <p><strong>₹1,500</strong></p>
+						 </div>
+					 </div>
+				 </div>
+					
+				 <div class="form-group">
+					<label>Apply Coupon</label>
+					<input type="text" class="form-control"> 
+				</div>
+			 	<div class="PriceShow clearfix">
+					<ul>
+						<li>Subtotal</li>
+						<li>₹1500</li>
+					</ul>
+				</div>
+				<div class="PriceShow clearfix">
+					<ul>
+						<li>Shipping</li>
+						<li>0</li>
+					</ul>
+				</div>	
+				<div class="PriceShow totalprice clearfix">
+					<ul>
+						<li>Total</li>
+						<li>₹1500</li>
+					</ul>
+				</div>	
+				</div>
+				
+				<div class="makepayment">
+					<a href="order-successful.html">Make Payment</a>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>   
+	
+ 
+{% endblock %}

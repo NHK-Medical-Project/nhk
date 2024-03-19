@@ -1,0 +1,567 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>NHK Medical Pvt Ltd, Electronic</title>
+
+  <link rel="icon" type="image/png" href="assets/nhk/images/favicon.png">
+  <link href="assets/nhk/assets/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+  <link href="assets/nhk/assets/css/slick.css" rel="stylesheet" type="text/css" />
+  <link href="assets/nhk/assets/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
+  <link href="assets/nhk/assets/css/styles.css" rel="stylesheet" type="text/css" />
+  <link href="assets/nhk/assets/css/responsive.css" rel="stylesheet" type="text/css" />
+  
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-K9HG539TJD"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-K9HG539TJD');
+  </script>
+
+
+  <!-- clarity code -->
+<script type="text/javascript">
+  (function(c,l,a,r,i,t,y){
+      c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+      t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+      y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+  })(window, document, "clarity", "script", "kzk5sx98np");
+</script>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-11147764601"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'AW-11147764601');
+  </script>
+    <script>
+      window.frappe = {};
+      frappe.ready_events = [];
+      frappe.ready = function(fn) {
+          frappe.ready_events.push(fn);
+      }
+      window.dev_server = {{ dev_server }};
+      window.socketio_port = {{ (frappe.socketio_port or 9000) }};
+      window.show_language_picker = {{ show_language_picker or 'false' }};
+  </script>
+  
+  {% block base_scripts %}
+  <!-- js should be loaded in body! -->
+  <script>
+      frappe.boot = {{ boot }}
+      // for backward compatibility of some libs
+      frappe.sys_defaults = frappe.boot.sysdefaults;
+  </script>
+  {{ include_script('frappe-web.bundle.js') }}
+  {% endblock %}
+   
+  {%- for link in web_include_js %}
+  {{ include_script(link) }}
+  {%- endfor -%}
+   
+  {%- block script %}
+      {% if colocated_js -%}
+          <script>{{ colocated_js }}</script>
+      {%- endif %}
+  {%- endblock %}
+  <!-- csrf_token -->
+  {%- block body_include %}{{ body_include or "" }}{% endblock -%}
+
+</head>
+
+<body>
+  <!-- ============ HEADER SECTION START ========== -->
+  <header>
+    <nav class="navbar navbar-expand-md">
+      <div class="container">
+        <!-- Brand -->
+        <a class="navbar-brand" href="index"> <img src="assets/nhk/assets/images/logo.svg" alt="" /> </a>
+
+        <!-- Toggler/collapsibe Button -->
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#collapsibleNavbar"> <span
+            class="navbar-toggler-icon"></span> </button>
+        <!-- Navbar links -->
+        <div class="collapse navbar-collapse" id="collapsibleNavbar">
+          <ul class="navbar-nav ml-auto">
+            <li class="nav-item"><a class="nav-link" href="index">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="sleepstudy">Sleep Study</a></li>
+            <li class="nav-item"><a class="nav-link" href="pap-devices">Devices </a></li>
+            <li class="nav-item"><a class="nav-link" href="about">About Us</a></li>
+            <li class="nav-item"><a class="nav-link" href="contacts">Contact</a></li>
+            <li class="nav-item"><a class="nav-link" href="pap-rentals">Rentals</a></li>
+            <li class="nav-item"><a class="nav-link" href="blogs">Blogs</a></li>
+            <li class="nav-item m-hide position-relative pl-5">
+              <div class=" wrap">
+                <form>
+                  <input type="text" class="input" placeholder="Search">
+                </form>
+                <i class="fa fa-search" aria-hidden="true"></i>
+              </div>
+            </li>
+            <li class="nav-item m-hide"><a class="nav-link " href="#"><img src="assets/nhk/assets/images/shopping-cart.svg"
+                  alt="" /></a></li>
+            <li class="nav-item m-hide"><a class="nav-link " href="#"><img src="assets/nhk/assets/images/sr-user.svg"
+                  alt="" /></a></li>
+          </ul>
+        </div>
+        <div class="mobileCart m-hide d-hide">
+          <ul>
+            <li>
+              <div class=" wrap">
+                <form>
+                  <input type="text" class="input" placeholder="Search">
+                </form>
+                <i class="fa fa-search" aria-hidden="true"></i>
+              </div>
+            </li>
+            <li><a href="#"><img src="assets/nhk/assets/images/shopping-cart.svg" alt="" /></a></li>
+            <li><a href="#"><img src="assets/nhk/assets/images/sr-user.svg" alt="" /></a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  {% block content %}
+
+
+  {% endblock %}
+   
+  
+
+
+
+
+  <!-- ============ FOOTER START ========== -->
+  <footer>
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-3 col-md-6 col-12">
+          <h2>About</h2>
+          <p>NHK Medical Pvt Ltd is India’s most reputed sleep diagnostic and respiratory care. We are your partner
+            providing top quality CPAP, BIPAP, Oxygen Concentrator and sleep study test. Our products are ISO 9001 and
+            CE certified.</p>
+          <h3>Opening Hours</h3>
+          <p><span class="hours-txt mr-3">Mon - Sun</span> <span class="hours-txt">8.00 am - 10.00 pm</span></p>
+          <p><span class="emcservice">Emergency services : 24/7</span></p>
+        </div>
+        <div class="col-lg-3 col-md-6 col-12">
+          <h2>Our Services</h2>
+          <ul>
+            <li><a href="#">Home</a></li>
+            <li><a href="#">Equipment's on Rent &amp; Sale</a></li>
+            <li><a href="#">Home Care Services</a></li>
+            <li><a href="#">Sleep Diagnostics Theraphy</a></li>
+            <li><a href="#">Gallery</a></li>
+            <li><a href="#">Career</a></li>
+            <li><a href="#">Contact Us</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-3 col-md-6 col-12">
+          <h2>QR Code</h2>
+          <div class="qrcode"><img src="assets/nhk/assets/images/qrcode.png" class="img-fluid" alt="" /> </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-12">
+          <h2>Contact</h2>
+          <div class="foot-work position-relative"> <span>
+              <svg width="27" height="22" viewBox="0 0 27 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M0 5.05123C0 4.45772 0.365235 3.90987 0.913088 3.6816L7.30471 1.12495V18.6562L0.958743 21.5325C0.502199 21.7607 0 21.3955 0 20.8477V5.05123ZM8.76565 18.6562V1.12495L17.5313 4.04683V21.5781L8.76565 18.6562ZM25.2926 1.21626C25.7491 0.987984 26.2969 1.35322 26.2969 1.90107V17.6975C26.2969 18.291 25.8861 18.8389 25.3382 19.0671L18.9922 21.5781V4.04683L25.2926 1.21626Z"
+                  fill="#1EC29D" />
+              </svg>
+            </span>
+            <h4>Office</h4>
+            NHK Medical Pvt Ltd, Electronic<br>
+            City, Bommasandra<br>
+            Landmark : Near Laxshmi Hotel<br>
+            Bengaluru, Karnataka - 560 099.
+          </div>
+          <div class="foot-work position-relative"> <span>
+              <svg width="25" height="25" viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M23.5076 1.99091C24.0098 2.12788 24.3751 2.53877 24.3751 3.04096C24.3751 14.7742 14.8789 24.2246 3.19141 24.2246C2.64356 24.2246 2.23267 23.905 2.09571 23.4028L1 18.6548C0.908691 18.1526 1.13696 17.6047 1.63916 17.3765L6.75246 15.185C7.209 15.0024 7.7112 15.1394 8.03078 15.5046L10.3135 18.2895C13.8745 16.6003 16.7508 13.6784 18.3943 10.2087L15.6094 7.92599C15.2442 7.60641 15.1072 7.10421 15.2898 6.64766L17.4812 1.53437C17.7095 1.03217 18.2574 0.758244 18.7596 0.895207L23.5076 1.99091Z"
+                  fill="#1EC29D" />
+              </svg>
+            </span>
+            <h4>Phone</h4>
+            <a href="#">+91-8884880024</a>
+          </div>
+          <div class="foot-work position-relative"> <span>
+              <svg width="23" height="24" viewBox="0 0 23 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M22.8019 20.9959C22.8019 22.1657 21.8487 23.0755 20.7223 23.0755H2.69965C1.52991 23.0755 0.620117 22.1657 0.620117 20.9959V9.60178C0.620117 8.95192 0.923383 8.34539 1.39994 7.95548C2.48304 7.13233 3.34951 6.43915 8.50503 2.71331C9.24153 2.19343 10.6712 0.893715 11.711 0.937039C12.7074 0.893715 14.1371 2.19343 14.8736 2.71331C20.0291 6.43915 20.8956 7.13233 21.9787 7.95548C22.4553 8.34539 22.8019 8.95192 22.8019 9.60178V20.9959ZM19.9425 12.5045C19.8125 12.3312 19.5959 12.2878 19.4226 12.4178C18.4695 13.1543 17.0398 14.1941 14.8736 15.7537C14.1371 16.2736 12.7074 17.5733 11.711 17.53C10.6712 17.5733 9.24153 16.2736 8.50503 15.7537C6.33885 14.1941 4.90916 13.1543 3.95604 12.4178C3.78275 12.2878 3.56613 12.3312 3.43616 12.5045L3.04624 13.0677C3.00292 13.111 3.00292 13.1976 3.00292 13.2843C3.00292 13.3709 3.04624 13.5009 3.13289 13.5442C4.12934 14.2807 5.5157 15.3205 7.68188 16.8802C8.59168 17.53 10.1513 18.9597 11.711 18.9164C13.2273 18.9597 14.787 17.53 15.6968 16.8802C17.863 15.3205 19.2493 14.2807 20.2458 13.5442C20.3324 13.5009 20.3757 13.3709 20.3757 13.2843C20.3757 13.1976 20.3757 13.111 20.3324 13.0677L19.9425 12.5045Z"
+                  fill="#1EC29D" />
+              </svg>
+            </span>
+            <h4>mail</h4>
+            <a href="#">nhkmedical@gmail.com</a>
+          </div>
+        </div>
+      </div>
+      <div class="copyright">
+        <div class="row flex-column-reverse flex-lg-row">
+          <div class="col-lg-9 col-md-6 col-12 copytop"> &copy; 2023 All Rights Reserved </div>
+          <div class="col-lg-3 col-md-6 col-12">
+            <div class="socialfooter"> <a href="#"><span class="fa fa-location-arrow"></span></a> <a href="#"><span
+                  class="fa fa-facebook"></span></a> <a href="#"><span class="fa fa-twitter"></span></a> <a
+                href="#"><span class="fa fa-instagram"></span></a> <a href="#"><span
+                  class="fa fa-youtube-play"></span></a> </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- -----------------------Popup-form-------------- -->
+  <div class="modal fade" id="ModalForm" tabindex="-1" aria-labelledby="ModalFormLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+                    style="background-color: #007bff; color: #ffffff; border: none; padding: 10px 15px; border-radius: 8px; font-size: 40px; cursor:pointer;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <div class="form-area bg-primary">
+                    <h1 class="text-center" style="font-size: 22px;">Get in Touch With Us</h1>
+                    <form id="submitForm" role="form" class="php-email-form" data-form-type="Get In Touch">
+                        <div class="mb-3 mt-4">
+                            <label class="form-label">Your Name</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="mb-3 mt-4">
+                            <label class="form-label">Your Mobile</label>
+                            <input type="tel" class="form-control" name="phone" required>
+                        </div>
+                        <div class="mb-3 mt-4">
+                            <label class="form-label">Your Email</label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                        <div class="mb-3 mt-4">
+                            <label class="form-label">Your City</label>
+                            <input type="text" class="form-control" name="city" required>
+                        </div>
+                        <!-- Hidden input field to store form type -->
+                        <input type="hidden" name="form_type" id="form_type" value="Get In Touch">
+                        <!-- Submit button -->
+                        <button type="submit" name="send" id="sendBtn" class="btn btn-light mt-3">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M23.9471 1.02871C24.0017 0.892413 24.015 0.743103 23.9855 0.599288C23.956 0.455474 23.885 0.32348 23.7812 0.21967C23.6774 0.11586 23.5454 0.0448002 23.4015 0.015299C23.2577 -0.0142021 23.1084 -0.000846891 22.9721 0.0537091L1.15162 8.78221H1.15012L0.472125 9.05221C0.34371 9.10343 0.231953 9.18915 0.149198 9.2999C0.0664433 9.41066 0.0159116 9.54213 0.00318483 9.67979C-0.00954198 9.81746 0.0160314 9.95597 0.0770801 10.08C0.138129 10.2041 0.232277 10.3088 0.349125 10.3827L0.964125 10.7727L0.965625 10.7757L8.45812 15.5427L13.2251 23.0352L13.2281 23.0382L13.6181 23.6532C13.6923 23.7696 13.7971 23.8633 13.921 23.924C14.045 23.9846 14.1833 24.0099 14.3207 23.997C14.4581 23.9842 14.5892 23.9336 14.6998 23.851C14.8103 23.7684 14.8959 23.6569 14.9471 23.5287L23.9471 1.02871ZM21.1976 3.86371L9.95662 15.1047L9.63412 14.5977C9.57503 14.5047 9.49616 14.4258 9.40312 14.3667L8.89612 14.0442L20.1371 2.80321L21.9041 2.09671L21.1991 3.86371H21.1976Z"
+                                    fill="white" />
+                            </svg>
+                            Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+   <!-- -----------------------Timing Popup-form-------------- -->
+   <div class="modal fade" id="CustomModalForm" tabindex="-1" aria-labelledby="ModalFormLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-body">
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="background-color: #007bff; color: #ffffff; border: none; padding: 10px 15px; border-radius: 8px; font-size: 40px; cursor:pointer;">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        
+          <div class="form-area bg-primary">
+            <h1 class="text-center" style="font-size: 22px;">Still Confused?</h1>
+            <p class="text-center" style="font-size: 14px; padding-top: 8px;">Unlock peaceful sleep with our Apena solutions</p>
+            <!-- <form id="submitForm" action="home1.php" method="post"> -->
+            <form id="popupform" role="form" class="php-email-form">  
+              <div class="mb-3 mt-4">
+                <input type="text" class="form-control" name="name" required placeholder="Name">
+              </div>
+              <div class="mb-3 mt-4">
+                <input type="tel" class="form-control" name="phone" required placeholder="Phone">
+              </div>
+              <div class="mb-3 mt-4">
+                <input type="text" class="form-control" name="pincode" required placeholder="Pincode">
+              </div>
+              <!-- <div class="mb-3 mt-4">
+                <label class="form-label">Your Email</label>
+                <input type="email" class="form-control" name="email" required>
+              </div>
+              <div class="mb-3 mt-4">
+                <label class="form-label">Your City</label>
+                <input type="text" class="form-control" name="city" required>
+              </div> -->
+
+              <!-- <button type="submit" class="btn btn-light mt-3" name="send1">Arrange A Call Back</button> -->
+              <button type="submit" name="send" id="sendBtn" class="btn btn-light mt-3">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M23.9471 1.02871C24.0017 0.892413 24.015 0.743103 23.9855 0.599288C23.956 0.455474 23.885 0.32348 23.7812 0.21967C23.6774 0.11586 23.5454 0.0448002 23.4015 0.015299C23.2577 -0.0142021 23.1084 -0.000846891 22.9721 0.0537091L1.15162 8.78221H1.15012L0.472125 9.05221C0.34371 9.10343 0.231953 9.18915 0.149198 9.2999C0.0664433 9.41066 0.0159116 9.54213 0.00318483 9.67979C-0.00954198 9.81746 0.0160314 9.95597 0.0770801 10.08C0.138129 10.2041 0.232277 10.3088 0.349125 10.3827L0.964125 10.7727L0.965625 10.7757L8.45812 15.5427L13.2251 23.0352L13.2281 23.0382L13.6181 23.6532C13.6923 23.7696 13.7971 23.8633 13.921 23.924C14.045 23.9846 14.1833 24.0099 14.3207 23.997C14.4581 23.9842 14.5892 23.9336 14.6998 23.851C14.8103 23.7684 14.8959 23.6569 14.9471 23.5287L23.9471 1.02871ZM21.1976 3.86371L9.95662 15.1047L9.63412 14.5977C9.57503 14.5047 9.49616 14.4258 9.40312 14.3667L8.89612 14.0442L20.1371 2.80321L21.9041 2.09671L21.1991 3.86371H21.1976Z" fill="white"/>
+  </svg>
+  Arrange A Call Back</button>
+            </form>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+    
+
+
+
+  <!-- JavaScript	-->
+  
+  <!-- jQuery -->
+  <script type="text/javascript" src="assets/nhk/assets/js/jquery-1.11.1.min.js"></script>
+
+  <!-- Bootstrap -->
+  <script type="text/javascript" src="assets/nhk/assets/js/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Other scripts (Slick, Custom) -->
+  <script type="text/javascript" src="assets/nhk/assets/js/slick.js"></script>
+  <script type="text/javascript" src="assets/nhk/assets/js/custom.js"></script>
+
+<!-- Your existing JavaScript code -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script> 
+
+
+
+<script>
+
+  // Get the current page URL
+
+  var currentUrl = window.location.href;
+ 
+  // Select all navigation links
+
+  var navLinks = document.querySelectorAll('.navbar-nav a');
+ 
+  // Loop through each navigation link
+
+  navLinks.forEach(function(link) {
+
+    // Remove 'active' class from all links
+
+    link.classList.remove('active');
+ 
+    // Check if the current page is a blog detail page
+
+    if (currentUrl.includes("blogdetail")) {
+
+      // Add the 'active' class to the blog link
+
+      if (link.href.includes("blogs")) {
+
+        link.classList.add('active');
+
+      }
+
+    }
+
+    // If not on the blog detail page, check if the link matches the current URL
+
+    else if (link.href === currentUrl) {
+
+      link.classList.add('active');
+
+    }
+
+  });
+
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+	$(document).ready(function() {
+		$("#submitForm").submit(function(event) {
+			event.preventDefault(); // Prevent the default form submission behavior
+  
+			// Serialize the form data
+			var formData = $(this).serialize();
+			
+			// Send the data to the server-side method using Frappe's AJAX API (frappe.call)
+			frappe.call({
+				method: "nhk.nhk.api.contact_form_data",
+				args: {
+					form_data: formData
+				},
+				
+				callback: function(response) {
+				  console.log(response);
+					if (!response.exc) {
+						// Reset the form
+						$("#submitForm")[0].reset();
+  
+						// Use SweetAlert for a more user-friendly notification
+						Swal.fire("Success!", "Get In Touch Form submitted successfully", "success");
+					} else {
+						// Display error using SweetAlert
+						Swal.fire("Error", "Error submitting form data: " + response.exc, "error");
+					}
+				}
+			});
+		});
+	});
+  </script>
+  <script>
+    $(document).ready(function() {
+      $("#popupform").submit(function(event) {
+        event.preventDefault(); // Prevent the default form submission behavior
+    
+        // Serialize the form data
+        var formData = $(this).serialize();
+        
+        // Send the data to the server-side method using Frappe's AJAX API (frappe.call)
+        frappe.call({
+          method: "nhk.nhk.api.contact_form_data",
+          args: {
+            form_data: formData
+          },
+          
+          callback: function(response) {
+            console.log(response);
+            if (!response.exc) {
+              // Reset the form
+              $("#popupform")[0].reset();
+    
+              // Use SweetAlert for a more user-friendly notification
+              Swal.fire("Success!", "Timing Popup Form submitted successfully", "success");
+            } else {
+              // Display error using SweetAlert
+              Swal.fire("Error", "Error submitting form data: " + response.exc, "error");
+            }
+          }
+        });
+      });
+    });
+    </script>
+
+
+
+  
+
+  <!-- <script>
+  document.getElementById('CustomModalForm').addEventListener('submit', function (event) {
+    // Prevent the default form submission behavior
+    event.preventDefault();
+    window.location.href = 'success.html';
+  });
+</script> -->
+
+  <!-- <script>
+  document.getElementById('ModalForm').addEventListener('submit', function (event) {
+    // Prevent the default form submission behavior
+    event.preventDefault();
+    window.location.href = "success.html";
+  });
+</script>
+
+
+<script>
+  document.getElementById('ctaform').addEventListener('submit', function (event) {
+    // Prevent the default form submission behavior
+    event.preventDefault();
+    window.location.href = "success.html";
+  });
+</script> -->
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var modal = new bootstrap.Modal(document.getElementById('CustomModalForm'), {
+      keyboard: false
+    });
+ 
+    var modalForm = new bootstrap.Modal(document.getElementById('ModalForm'), {
+      keyboard: false
+    });
+ 
+    // Set the last activity timestamp to the current time
+    var lastActivityTime = Date.now();
+ 
+    // Function to check for user inactivity
+    function isUserInactive() {
+      var currentTime = Date.now();
+      var inactivityDuration = currentTime - lastActivityTime;
+      return inactivityDuration > 25000; // Adjust the inactivity duration as needed
+    }
+ 
+    // Show the modal after 25 seconds only if the regular popup form is not active
+    setTimeout(function() {
+      if (!modalForm._isShown && isUserInactive()) {
+        modal.show();
+      }
+    }, 25000);
+ 
+    // Close the modals when the close buttons are clicked
+    document.querySelectorAll('.btn-close').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        modal.hide();
+        modalForm.hide();
+        // Update the last activity timestamp when the modals are closed
+        lastActivityTime = Date.now();
+      });
+    });
+ 
+    // Event listeners to update the last activity timestamp
+    document.addEventListener('mousemove', function() {
+      lastActivityTime = Date.now();
+    });
+ 
+    document.addEventListener('keydown', function() {
+      lastActivityTime = Date.now();
+    });
+ 
+    // Show the modal every 30 seconds if keyboard and mouse are not working and the regular popup form is not active
+    setInterval(function() {
+      if (!modalForm._isShown && isUserInactive()) {
+        // Check if the modal is not already visible
+        var modalElement = document.getElementById('CustomModalForm');
+        if (!modalElement.classList.contains('show')) {
+          modal.show();
+        }
+      }
+    }, 25000);
+  });
+</script>
+
+
+
+<script type="text/javascript">
+  (function(c,l,a,r,i,t,y){
+      c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+      t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+      y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+  })(window, document, "clarity", "script", "kzk5sx98np");
+</script>
+
+
+
+</body>
+
+</html>

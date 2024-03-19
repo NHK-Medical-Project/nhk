@@ -1779,16 +1779,7 @@
    "fieldtype": "Data",
    "label": "Submitted Device ID"
   },
-  {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Rental Sales Order",
-   "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
-  },
+  
   {
    "allow_on_submit": 1,
    "fieldname": "item_group",

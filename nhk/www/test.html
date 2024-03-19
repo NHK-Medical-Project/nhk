@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Email Form</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- clarity code -->
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "kzk5sx98np");
+  </script>
+</head>
+<body>
+    <h1>Send Email</h1>
+    <form id="emailForm">
+        <label for="senderEmail">Sender Email:</label>
+        <input type="email" id="senderEmail" name="senderEmail" required><br><br>
+        
+        <label for="receiverEmail">Receiver Email:</label>
+        <input type="email" id="receiverEmail" name="receiverEmail" required><br><br>
+        
+        <label for="subject">Subject:</label>
+        <input type="text" id="subject" name="subject" required><br><br>
+        
+        <label for="body">Body:</label><br>
+        <textarea id="body" name="body" rows="4" cols="50" required></textarea><br><br>
+        
+        <button type="button" id="sendEmailButton">Send Email</button>
+    </form>
+
+    <script>
+        $(document).ready(function() {
+            $("#sendEmailButton").click(function() {
+                // Collect form data
+                var senderEmail = $("#senderEmail").val();
+                var receiverEmail = $("#receiverEmail").val();
+                var subject = $("#subject").val();
+                var body = $("#body").val();
+
+                // Send AJAX request
+                $.ajax({
+                    url: "python/sendEmail.py", // Adjust the path as needed
+                    type: "POST",
+                    data: {
+                        senderEmail: senderEmail,
+                        receiverEmail: receiverEmail,
+                        subject: subject,
+                        body: body
+                    },
+                    success: function(response) {
+                        alert(response); // Display success message
+                    },
+                    error: function(xhr, status, error) {
+                        alert("Failed to send email. Error: " + error); // Display error message
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

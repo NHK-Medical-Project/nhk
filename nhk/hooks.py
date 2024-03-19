@@ -1,7 +1,7 @@
 app_name = "nhk"
-app_title = "NHK"
-app_publisher = "Vishnu"
-app_description = "NHK"
+app_title = "nhk"
+app_publisher = "vishnu"
+app_description = "nhk"
 app_email = "vishnuram@360ithub.com"
 app_license = "mit"
 # required_apps = []
