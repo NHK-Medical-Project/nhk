@@ -16,7 +16,7 @@ import frappe
 
 # Your custom Python method
 @frappe.whitelist()
-def append_service_history(docname, vendor_link, date, amount):
+def append_service_history(docname,attachment, vendor_link, date, amount):
     try:
         # Get the Item document
         item_doc = frappe.get_doc('Item', docname)
@@ -26,6 +26,7 @@ def append_service_history(docname, vendor_link, date, amount):
         service_history.vendor = vendor_link
         service_history.date = date
         service_history.amount = amount
+        service_history.attachment = attachment
         
         # Update status to "Service"
         item_doc.status = "Under Service"
