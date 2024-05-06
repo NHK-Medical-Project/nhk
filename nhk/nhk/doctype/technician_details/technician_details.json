@@ -7,7 +7,9 @@
  "engine": "InnoDB",
  "field_order": [
   "name1",
-  "mobile_number"
+  "mobile_number",
+  "column_break_rqpa",
+  "user_mail_id"
  ],
  "fields": [
   {
@@ -20,11 +22,21 @@
    "fieldname": "mobile_number",
    "fieldtype": "Data",
    "label": "Mobile Number"
+  },
+  {
+   "fieldname": "column_break_rqpa",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "user_mail_id",
+   "fieldtype": "Link",
+   "label": "User Mail Id",
+   "options": "User"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-03-25 14:35:50.110769",
+ "modified": "2024-05-06 10:50:38.874298",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Technician Details",
