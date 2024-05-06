@@ -23,6 +23,7 @@
   "rental_group_id",
   "sales_order_id",
   "column_break1",
+  "referrer",
   "po_no",
   "po_date",
   "company",
@@ -1822,15 +1823,22 @@
    "fieldtype": "Link",
    "label": "Sales Order Id",
    "options": "Sales Order"
+  },
+  {
+   "fieldname": "referrer",
+   "fieldtype": "Link",
+   "label": "Referrer",
+   "options": "Referrer",
+   "reqd": 1
   }
  ],
  "icon": "fa fa-file-text",
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-03-18 18:14:46.254029",
+ "modified": "2024-05-04 15:55:26.492749",
  "modified_by": "Administrator",
- "module": "NHK",
+ "module": "nhk",
  "name": "Rental Order",
  "naming_rule": "Expression",
  "owner": "Administrator",

@@ -1,0 +1,151 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "format:",
+ "creation": "2024-05-04 14:57:14.634818",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "doctor_name",
+  "mobile_number",
+  "email_id",
+  "dob",
+  "anniversary",
+  "category",
+  "currently_handled_by",
+  "converted_month",
+  "converted_by",
+  "column_break_wxgo",
+  "status",
+  "hospital_name",
+  "speciality",
+  "sales_commision",
+  "rental_commision",
+  "sleep_study_commision",
+  "balance",
+  "handling_mobile"
+ ],
+ "fields": [
+  {
+   "fieldname": "speciality",
+   "fieldtype": "Data",
+   "label": "Speciality"
+  },
+  {
+   "fieldname": "hospital_name",
+   "fieldtype": "Data",
+   "label": "Hospital Name"
+  },
+  {
+   "fieldname": "mobile_number",
+   "fieldtype": "Data",
+   "label": "Mobile Number"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nActive\nInactive"
+  },
+  {
+   "fieldname": "email_id",
+   "fieldtype": "Data",
+   "label": "Email Id"
+  },
+  {
+   "fieldname": "currently_handled_by",
+   "fieldtype": "Link",
+   "label": "Currently Handled By",
+   "options": "Sales Person"
+  },
+  {
+   "fieldname": "dob",
+   "fieldtype": "Date",
+   "label": "DOB"
+  },
+  {
+   "fieldname": "converted_by",
+   "fieldtype": "Link",
+   "label": "Converted By",
+   "options": "Sales Person"
+  },
+  {
+   "fieldname": "anniversary",
+   "fieldtype": "Date",
+   "label": "Anniversary"
+  },
+  {
+   "fieldname": "sales_commision",
+   "fieldtype": "Percent",
+   "label": "Sales Commision"
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Data",
+   "label": "Category"
+  },
+  {
+   "fieldname": "rental_commision",
+   "fieldtype": "Percent",
+   "label": "Rental Commision"
+  },
+  {
+   "fieldname": "handling_mobile",
+   "fieldtype": "Data",
+   "label": "Handling Mobile"
+  },
+  {
+   "fieldname": "converted_month",
+   "fieldtype": "Date",
+   "label": "Converted Month"
+  },
+  {
+   "fieldname": "sleep_study_commision",
+   "fieldtype": "Percent",
+   "label": "Sleep Study Commision"
+  },
+  {
+   "fieldname": "balance",
+   "fieldtype": "Currency",
+   "label": "Balance"
+  },
+  {
+   "fieldname": "column_break_wxgo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "doctor_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Doctor Name",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-05-04 16:14:40.323449",
+ "modified_by": "Administrator",
+ "module": "nhk",
+ "name": "Referrer",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "doctor_name"
+}
