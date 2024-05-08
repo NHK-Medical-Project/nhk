@@ -16,6 +16,7 @@
   "middle_name",
   "last_name",
   "email",
+  "role",
   "column_break_ednq",
   "enabled",
   "send_welcome_email",
@@ -125,6 +126,7 @@
   {
    "fieldname": "section_break_xeud",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Roles"
   },
   {
@@ -140,12 +142,20 @@
   {
    "fieldname": "nhk_roles",
    "fieldtype": "HTML",
+   "hidden": 1,
    "label": "NHK Roles"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "role",
+   "fieldtype": "Table MultiSelect",
+   "label": "Role",
+   "options": "User Role Profile"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-04-12 12:49:52.324712",
+ "modified": "2024-05-08 13:06:31.465938",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "NHK User",
@@ -165,6 +175,7 @@
    "write": 1
   }
  ],
+ "search_fields": "full_name,mobile_no",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
