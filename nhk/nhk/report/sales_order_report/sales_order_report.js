@@ -3,16 +3,30 @@ frappe.query_reports["Sales order Report"] = {
         {
             "fieldname": "order_type",
             "label": __("Order Type"),
-            "fieldtype": "Select",
-            "options": ["Sales", "Rental", "Service"],
-            "default": "Rental",
+            "fieldtype": "MultiSelect",
+            "options": ["", "Sales", "Rental", "Service"],
+            "default": ["Rental"],
             "reqd": 1
         },
         {
             "fieldname": "order_date",
             "label": __("Date Range"),
             "fieldtype": "DateRange",
-            "reqd": 1
+            "reqd": 0
+        },
+        {
+            "fieldname": "customer",
+            "label": __("Customer"),
+            "fieldtype": "Link",
+            "options": "Customer",
+            "reqd": 0
+        },
+        {
+            "fieldname": "status",
+            "label": __("Status"),
+            "fieldtype": "MultiSelect",
+            "options": ["", "Pending", "Approved", "Rental Device Assigned", "Ready for Delivery", "DISPATCHED", "Active", "Ready for Pickup", "Picked Up", "Submitted to Office", "RENEWED"],
+            "reqd": 0  // Optional field
         }
     ],
     "onload": function(report) {
