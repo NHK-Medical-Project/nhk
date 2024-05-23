@@ -51,12 +51,16 @@ class NHKUser(Document):
     def before_update_after_submit(self):
         # Extract role profile names from UserRoleProfile objects
         role_profile_names = [role_profile.role_profile for role_profile in self.role]
+        frappe.logger().info(f"Role Profiles: {role_profile_names}")
 
         # Update core user information on NHK User update
         core_users = frappe.get_all("User", filters={"email": self.email}, fields=["name"])
+        frappe.logger().info(f"Core Users: {core_users}")
 
         if core_users:
             core_user = frappe.get_doc("User", core_users[0].name)
+            frappe.logger().info(f"Core User before update: {core_user.as_dict()}")
+
             core_user.update({
                 "full_name": self.full_name,
                 "first_name": self.first_name,
@@ -70,6 +74,7 @@ class NHKUser(Document):
             })
 
             # Update password if not "NULL"
+            frappe.logger().info(f"Password Update: {self.password}")
             if self.password != "NULL":
                 core_user.new_password = self.password
 
@@ -79,12 +84,19 @@ class NHKUser(Document):
                 core_user.append("role_profiles", {
                     "role_profile": role_profile_name
                 })
+            frappe.logger().info(f"Assigned Role Profiles: {core_user.role_profiles}")
+
             if "NHK Sales" in role_profile_names:
+                frappe.logger().info(f"Creating Sales Person for: {core_user.name}")
                 create_sales_person(core_user)
             else:
                 employee_id = frappe.get_value("Employee", {"user_id": self.email}, "name")
+                frappe.logger().info(f"Deleting Sales Person for Employee ID: {employee_id}")
                 delete_sales_person(employee_id)
+
             core_user.save()
+            frappe.logger().info(f"Core User saved: {core_user.name}")
+
 
 
     def on_trash(self):
