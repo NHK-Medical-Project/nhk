@@ -1,0 +1,42 @@
+{
+ "add_total_row": 0,
+ "columns": [],
+ "creation": "2024-05-28 14:47:30.027658",
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [],
+ "idx": 0,
+ "is_standard": "Yes",
+ "json": "{\"filters\":[],\"fields\":[[\"name\",\"Sales Order\"],[\"customer\",\"Sales Order\"],[\"customer_name\",\"Sales Order\"],[\"customer_mobile_no\",\"Sales Order\"],[\"overdue_status\",\"Sales Order\"],[\"transaction_date\",\"Sales Order\"],[\"start_date\",\"Sales Order\"],[\"end_date\",\"Sales Order\"],[\"renewal_order_count\",\"Sales Order\"],[\"order_type\",\"Sales Order\"],[\"payment_status\",\"Sales Order\"],[\"security_deposit_status\",\"Sales Order\"],[\"grand_total\",\"Sales Order\"],[\"status\",\"Sales Order\"],[\"item_name\",\"Sales Order\"]],\"order_by\":\"`tabSales Order`.transaction_date asc, `tabSales Order`.name asc\",\"add_totals_row\":0,\"page_length\":20,\"column_widths\":{\"name\":120,\"customer\":120,\"customer_name\":120,\"customer_mobile_no\":120,\"overdue_status\":120,\"transaction_date\":160,\"start_date\":120,\"end_date\":120,\"renewal_order_count\":43,\"order_type\":120,\"payment_status\":120,\"security_deposit_status\":120,\"grand_total\":150,\"status\":100,\"item_name\":120},\"group_by\":null}",
+ "letterhead": null,
+ "modified": "2024-05-28 14:53:02.470189",
+ "modified_by": "Administrator",
+ "module": "nhk",
+ "name": "sales  order",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "ref_doctype": "Sales Order",
+ "report_name": "sales  order",
+ "report_type": "Report Builder",
+ "roles": [
+  {
+   "role": "Sales Manager"
+  },
+  {
+   "role": "Maintenance User"
+  },
+  {
+   "role": "Accounts User"
+  },
+  {
+   "role": "Sales User"
+  },
+  {
+   "role": "Stock User"
+  },
+  {
+   "role": "NHK Admin"
+  }
+ ]
+}
