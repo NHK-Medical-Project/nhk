@@ -1,0 +1,144 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:RZP-LNK-{MM}-{YY}-{#####}",
+ "creation": "2024-05-30 17:04:29.893690",
+ "default_view": "List",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "sales_order",
+  "customer_id",
+  "customer_name",
+  "contact_person",
+  "mobile_number",
+  "live_link",
+  "column_break_yucj",
+  "date_of_generation",
+  "total_amount",
+  "payment_status",
+  "link_short_url",
+  "link_id",
+  "enabled"
+ ],
+ "fields": [
+  {
+   "fieldname": "sales_order",
+   "fieldtype": "Link",
+   "label": "Sales Order",
+   "options": "Sales Order",
+   "read_only": 1
+  },
+  {
+   "fieldname": "customer_id",
+   "fieldtype": "Link",
+   "in_filter": 1,
+   "in_standard_filter": 1,
+   "label": "Customer ID",
+   "options": "Customer",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "customer_id.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Customer Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "customer_id.mobile_number",
+   "fieldname": "contact_person",
+   "fieldtype": "Data",
+   "label": "Contact Person",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "customer_id.mobile_number",
+   "fieldname": "mobile_number",
+   "fieldtype": "Data",
+   "label": "Mobile Number",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "live_link",
+   "fieldtype": "Check",
+   "label": "Live Link",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_yucj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Now",
+   "fieldname": "date_of_generation",
+   "fieldtype": "Datetime",
+   "label": "Date of Generation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "label": "Total Amount",
+   "read_only": 1
+  },
+  {
+   "default": "Unpaid",
+   "fieldname": "payment_status",
+   "fieldtype": "Select",
+   "in_filter": 1,
+   "in_standard_filter": 1,
+   "label": "Payment Status",
+   "options": "Unpaid\nPaid",
+   "read_only": 1
+  },
+  {
+   "fieldname": "link_short_url",
+   "fieldtype": "Data",
+   "label": "Link Short URL",
+   "read_only": 1
+  },
+  {
+   "fieldname": "link_id",
+   "fieldtype": "Data",
+   "label": "Link ID",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "in_filter": 1,
+   "in_standard_filter": 1,
+   "label": "Enabled",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-05-30 17:57:54.254961",
+ "modified_by": "Administrator",
+ "module": "nhk",
+ "name": "Payment Link Log",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

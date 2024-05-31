@@ -124,7 +124,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-05-06 18:15:56.938080",
+ "modified": "2024-05-31 11:47:35.486544",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Referrer",
@@ -144,7 +144,6 @@
    "write": 1
   }
  ],
- "show_title_field_in_link": 1,
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],

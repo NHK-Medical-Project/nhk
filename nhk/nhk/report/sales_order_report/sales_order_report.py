@@ -7,7 +7,12 @@ def execute(filters=None):
         {"label": "Order Type", "fieldname": "order_type", "fieldtype": "Data", "width": 80},
         {"label": "Customer", "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 120},
         {"label": "Customer Name", "fieldname": "customer_name", "fieldtype": "Data", "width": 150},
+        {"label": "Mobile No.", "fieldname": "customer_mobile_no", "fieldtype": "Data", "width": 100},
+        {"label": "Referrer", "fieldname": "custom_referrer", "fieldtype": "Link", "options": "Referrer", "width": 150},
+        {"label": "Referrer Name", "fieldname": "custom_referrer_name", "fieldtype": "Data", "width": 150},
         {"label": "Order Date", "fieldname": "order_date", "fieldtype": "Date", "width": 100},
+        {"label": "Start Date", "fieldname": "start_date", "fieldtype": "Date", "width": 100},
+        {"label": "End Date", "fieldname": "end_date", "fieldtype": "Date", "width": 100},
         {"label": "Status", "fieldname": "status", "fieldtype": "Data", "width": 100},
         {"label": "Grand Total", "fieldname": "total_rental_amount", "fieldtype": "Currency", "width": 100},
         {"label": "Paid Amount", "fieldname": "paid_amount", "fieldtype": "Currency", "width": 100},
@@ -44,12 +49,13 @@ def execute(filters=None):
     if statuses:
         conditions["status"] = ("in", statuses)
 
-    print("Debug: Conditions:", conditions)
+    # print("Debug: Conditions:", conditions)
 
     # Fetch sales order records from the database based on the selected filters
-    sales_orders = frappe.get_all("Sales Order", fields=["name", "customer", "transaction_date", "order_type", "customer_name", "status","security_deposit_status","payment_status","total_rental_amount","outstanding_security_deposit_amount","paid_security_deposite_amount","received_amount","balance_amount","is_renewed"], filters=conditions)
+    # sales_orders = frappe.get_all("Sales Order", fields=["name", "customer", "transaction_date", "order_type", "customer_name", "status","security_deposit_status","payment_status","total_rental_amount","outstanding_security_deposit_amount","paid_security_deposite_amount","received_amount","balance_amount","is_renewed"], filters=conditions)
+    sales_orders = frappe.get_all("Sales Order", fields=["*"], filters=conditions)
 
-    print("Debug: Sales Orders:", sales_orders)
+    # print("Debug: Sales Orders:", sales_orders)
 
     # Prepare the data to be displayed
     data = []
@@ -59,8 +65,13 @@ def execute(filters=None):
             "name": order.name,
             "customer": order.customer,
             "order_date": order.transaction_date,
+            "start_date": order.start_date,
+            "end_date": order.end_date,
             "order_type": order.order_type,
             "customer_name": order.customer_name,
+            "custom_referrer": order.custom_referrer,
+            "custom_referrer_name": order.custom_referrer_name,
+            "customer_mobile_no": order.customer_mobile_no,
             "status": order.status,
             "total_rental_amount": order.total_rental_amount,
             "security_deposit_status": order.security_deposit_status,
