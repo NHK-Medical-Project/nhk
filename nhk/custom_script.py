@@ -163,49 +163,12 @@ def cancel_link(p_id=None):
 
 
 
-# @frappe.whitelist()
-# def update_custom_sales_order_ids():
-#     try:
-#         # Query to fetch item_code and related sales orders
-#         sql_query = """
-#             SELECT so_item.item_code, GROUP_CONCAT(so.name) AS sales_order_ids
-#             FROM `tabSales Order Item` so_item
-#             INNER JOIN `tabSales Order` so ON so.name = so_item.parent
-#             WHERE so.docstatus = 1
-#             AND so.status IN ('Active', 'Partially Closed')
-#             AND so_item.item_code IN (
-#                 SELECT name
-#                 FROM `tabItem`
-#                 WHERE device_type = 'Rental'
-#             )
-#             GROUP BY so_item.item_code
-#         """
-#         data = frappe.db.sql(sql_query, as_dict=True)
-
-#         for item in data:
-#             item_doc = frappe.get_doc('Item', item.item_code)
-#             item_doc.custom_sales_order_id = item.sales_order_ids
-
-#             # Retrieve customer from the first Sales Order associated with the item
-#             first_sales_order = item.sales_order_ids.split(',')[0].strip()  # Get the first sales order
-#             sales_order_doc = frappe.get_doc('Sales Order', first_sales_order)
-#             item_doc.customer_n = sales_order_doc.customer
-
-#             item_doc.save()
-
-#         return {"message": "Sales Order IDs and Customer updated successfully"}
-#     except Exception as e:
-#         frappe.log_error(f"Error in updating Sales Order IDs and Customer: {str(e)}")
-#         return {"message": "Error updating Sales Order IDs and Customer. Please check logs for details."}
-
-
 @frappe.whitelist()
 def update_custom_sales_order_ids():
     try:
-        # Query to fetch item_code, sales order IDs, and child statuses
+        # Query to fetch item_code and related sales orders
         sql_query = """
-            SELECT so_item.item_code, GROUP_CONCAT(so.name) AS sales_order_ids,
-                   GROUP_CONCAT(so_item.child_status) AS child_statuses
+            SELECT so_item.item_code, GROUP_CONCAT(so.name) AS sales_order_ids
             FROM `tabSales Order Item` so_item
             INNER JOIN `tabSales Order` so ON so.name = so_item.parent
             WHERE so.docstatus = 1
@@ -222,22 +185,11 @@ def update_custom_sales_order_ids():
         for item in data:
             item_doc = frappe.get_doc('Item', item.item_code)
             item_doc.custom_sales_order_id = item.sales_order_ids
-            
-            # Split sales order IDs and child statuses into lists
-            sales_order_ids = item.sales_order_ids.split(',')
-            child_statuses = item.child_statuses.split(',')
 
-            # Check if any sales order has child_status == 'Active'
-            has_active_child = any(status.strip().lower() == 'active' for status in child_statuses)
-
-            if has_active_child:
-                # Retrieve customer from the first Sales Order associated with the item
-                first_sales_order = sales_order_ids[0].strip()
-                sales_order_doc = frappe.get_doc('Sales Order', first_sales_order)
-                item_doc.customer_n = sales_order_doc.customer
-            else:
-                # Log the Sales Order IDs without active child status
-                frappe.log_error(f"Could not find Sales Order Id with active child status: {item.sales_order_ids}")
+            # Retrieve customer from the first Sales Order associated with the item
+            first_sales_order = item.sales_order_ids.split(',')[0].strip()  # Get the first sales order
+            sales_order_doc = frappe.get_doc('Sales Order', first_sales_order)
+            item_doc.customer_n = sales_order_doc.customer
 
             item_doc.save()
 
