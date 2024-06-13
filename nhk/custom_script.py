@@ -172,7 +172,7 @@ def update_custom_sales_order_ids():
             FROM `tabSales Order Item` so_item
             INNER JOIN `tabSales Order` so ON so.name = so_item.parent
             WHERE so.docstatus = 1
-            AND so.status = 'Active'
+            AND so.status IN ('Active', 'Partially Closed')
             AND so_item.item_code IN (
                 SELECT name
                 FROM `tabItem`
