@@ -125,6 +125,80 @@ def cancel_link(p_id=None):
 
 
 
+# @frappe.whitelist()
+# def check_items_with_multiple_sales_orders():
+#     try:
+#         # Query to fetch item_code and related sales orders
+#         sql_query = """
+#             SELECT so_item.item_code, GROUP_CONCAT(so.name) AS sales_order_ids
+#             FROM `tabSales Order Item` so_item
+#             INNER JOIN `tabSales Order` so ON so.name = so_item.parent
+#             WHERE so.docstatus = 1
+#             AND so.status = 'Active'
+#             AND so_item.item_code IN (
+#                 SELECT name
+#                 FROM `tabItem`
+#                 WHERE device_type = 'Rental'
+#             )
+#             GROUP BY so_item.item_code
+#         """
+#         data = frappe.db.sql(sql_query, as_dict=True)
+
+#         # List to store items with multiple sales orders
+#         multiple_orders = []
+
+#         # Check for items with multiple sales orders
+#         for item in data:
+#             # Check if the item has multiple sales orders
+#             if ',' in item.sales_order_ids:
+#                 multiple_orders.append(f"Item Code: {item.item_code}, Sales Orders: {item.sales_order_ids}")
+
+#         return {
+#             "success": True,
+#             "multiple_orders": multiple_orders
+#         }
+#     except Exception as e:
+#         frappe.log_error(f"Error in checking Sales Order IDs: {str(e)}")
+#         frappe.throw("Error checking Sales Order IDs. Please check logs for details.")
+
+
+
+@frappe.whitelist()
+def update_custom_sales_order_ids():
+    try:
+        # Query to fetch item_code and related sales orders
+        sql_query = """
+            SELECT so_item.item_code, GROUP_CONCAT(so.name) AS sales_order_ids
+            FROM `tabSales Order Item` so_item
+            INNER JOIN `tabSales Order` so ON so.name = so_item.parent
+            WHERE so.docstatus = 1
+            AND so.status = 'Active'
+            AND so_item.item_code IN (
+                SELECT name
+                FROM `tabItem`
+                WHERE device_type = 'Rental'
+            )
+            GROUP BY so_item.item_code
+        """
+        data = frappe.db.sql(sql_query, as_dict=True)
+
+        for item in data:
+            item_doc = frappe.get_doc('Item', item.item_code)
+            item_doc.custom_sales_order_id = item.sales_order_ids
+
+            # Retrieve customer from the first Sales Order associated with the item
+            first_sales_order = item.sales_order_ids.split(',')[0].strip()  # Get the first sales order
+            sales_order_doc = frappe.get_doc('Sales Order', first_sales_order)
+            item_doc.customer_n = sales_order_doc.customer
+
+            item_doc.save()
+
+        return {"message": "Sales Order IDs and Customer updated successfully"}
+    except Exception as e:
+        frappe.log_error(f"Error in updating Sales Order IDs and Customer: {str(e)}")
+        return {"message": "Error updating Sales Order IDs and Customer. Please check logs for details."}
+
+
 @frappe.whitelist()
 def check_items_with_multiple_sales_orders():
     try:
@@ -149,7 +223,6 @@ def check_items_with_multiple_sales_orders():
 
         # Check for items with multiple sales orders
         for item in data:
-            # Check if the item has multiple sales orders
             if ',' in item.sales_order_ids:
                 multiple_orders.append(f"Item Code: {item.item_code}, Sales Orders: {item.sales_order_ids}")
 
@@ -159,4 +232,7 @@ def check_items_with_multiple_sales_orders():
         }
     except Exception as e:
         frappe.log_error(f"Error in checking Sales Order IDs: {str(e)}")
-        frappe.throw("Error checking Sales Order IDs. Please check logs for details.")
+        return {
+            "success": False,
+            "message": "Error checking Sales Order IDs. Please check logs for details."
+        }
