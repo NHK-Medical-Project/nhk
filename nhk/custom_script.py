@@ -89,3 +89,36 @@ def cancel_link(p_id=None):
         except requests.exceptions.RequestException as e:
             return "Error in Payment Link Log"
 
+
+
+import frappe
+
+@frappe.whitelist()
+def update_custom_sales_order_ids():
+    try:
+        # Query to fetch item_code and related sales orders
+        sql_query = """
+            SELECT so_item.item_code, GROUP_CONCAT(so.name) AS sales_order_ids
+            FROM `tabSales Order Item` so_item
+            INNER JOIN `tabSales Order` so ON so.name = so_item.parent
+            WHERE so.docstatus = 1
+            AND so.status = 'Active'
+            AND so_item.item_code IN (
+                SELECT name
+                FROM `tabItem`
+                WHERE device_type = 'Rental'
+            )
+            GROUP BY so_item.item_code
+        """
+        data = frappe.db.sql(sql_query, as_dict=True)
+
+        # Update Item doctype with Sales Order IDs
+        for item in data:
+            item_doc = frappe.get_doc('Item', item.item_code)
+            item_doc.custom_sales_order_id = item.sales_order_ids
+            item_doc.save()
+
+        return "Sales Order IDs updated successfully"
+    except Exception as e:
+        frappe.log_error(f"Error in updating Sales Order IDs: {str(e)}")
+        frappe.throw("Error updating Sales Order IDs. Please check logs for details.")
