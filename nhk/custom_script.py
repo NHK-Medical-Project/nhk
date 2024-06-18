@@ -236,3 +236,23 @@ def check_items_with_multiple_sales_orders():
             "success": False,
             "message": "Error checking Sales Order IDs. Please check logs for details."
         }
+
+
+
+
+@frappe.whitelist()
+def get_serial_numbers(item_code):
+    serial_numbers = frappe.get_all("Serial No", filters={"item_code": item_code}, fields=["name", "status","purchase_document_no"])
+    return serial_numbers
+
+
+
+@frappe.whitelist()
+def get_sales_orders(item_code):
+    sales_orders = frappe.get_all("Sales Order Item", filters={"item_code": item_code}, fields=["parent", "qty", "rate", "amount","child_status"])
+    return sales_orders
+
+@frappe.whitelist()
+def get_delivery_notes(item_code):
+    delivery_notes = frappe.get_all("Delivery Note Item", filters={"item_code": item_code}, fields=["parent", "qty", "rate", "amount"])
+    return delivery_notes
