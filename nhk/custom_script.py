@@ -249,7 +249,16 @@ def get_serial_numbers(item_code):
 
 @frappe.whitelist()
 def get_sales_orders(item_code):
-    sales_orders = frappe.get_all("Sales Order Item", filters={"item_code": item_code}, fields=["parent", "qty", "rate", "amount","child_status"])
+    sales_orders = frappe.db.sql("""
+        SELECT 
+            soi.parent, soi.qty, soi.rate, soi.amount, soi.child_status, so.status AS parent_status
+        FROM 
+            `tabSales Order Item` soi
+        JOIN 
+            `tabSales Order` so ON soi.parent = so.name
+        WHERE 
+            soi.item_code = %s
+    """, (item_code), as_dict=True)
     return sales_orders
 
 @frappe.whitelist()
