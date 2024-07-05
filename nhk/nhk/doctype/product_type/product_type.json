@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "format:{product_type}",
  "creation": "2024-02-29 10:31:56.212635",
@@ -17,9 +18,9 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-02-29 10:36:59.845005",
+ "modified": "2024-05-30 12:24:09.173871",
  "modified_by": "Administrator",
- "module": "NHK",
+ "module": "nhk",
  "name": "PRODUCT TYPE",
  "naming_rule": "Expression",
  "owner": "Administrator",
