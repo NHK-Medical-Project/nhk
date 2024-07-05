@@ -1,0 +1,101 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "RPD.####",
+ "creation": "2024-07-04 11:41:46.548862",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "date",
+  "customer_id",
+  "sales_order_id",
+  "order_type",
+  "column_break_godf",
+  "payment_entry_id",
+  "journal_entry_id",
+  "razorpay_link",
+  "reference_id",
+  "payment_settlement_id"
+ ],
+ "fields": [
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date"
+  },
+  {
+   "fieldname": "customer_id",
+   "fieldtype": "Link",
+   "label": "Customer Id",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "sales_order_id",
+   "fieldtype": "Link",
+   "label": "Sales Order Id",
+   "options": "Sales Order"
+  },
+  {
+   "fieldname": "order_type",
+   "fieldtype": "Select",
+   "label": "Order Type",
+   "options": "\nSales\nService\nRental"
+  },
+  {
+   "fieldname": "payment_entry_id",
+   "fieldtype": "Link",
+   "label": "Payment Entry Id",
+   "options": "Payment Entry"
+  },
+  {
+   "fieldname": "journal_entry_id",
+   "fieldtype": "Link",
+   "label": "Journal Entry Id",
+   "options": "Journal Entry"
+  },
+  {
+   "fieldname": "razorpay_link",
+   "fieldtype": "Data",
+   "label": "Razorpay Link"
+  },
+  {
+   "fieldname": "reference_id",
+   "fieldtype": "Data",
+   "label": "Reference Id"
+  },
+  {
+   "fieldname": "payment_settlement_id",
+   "fieldtype": "Data",
+   "label": "Payment Settlement Id"
+  },
+  {
+   "fieldname": "column_break_godf",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-07-04 12:30:58.258272",
+ "modified_by": "Administrator",
+ "module": "nhk",
+ "name": "Razorpay Payment Details",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -265,3 +265,41 @@ def get_sales_orders(item_code):
 def get_delivery_notes(item_code):
     delivery_notes = frappe.get_all("Delivery Note Item", filters={"item_code": item_code}, fields=["parent", "qty", "rate", "amount"])
     return delivery_notes
+
+
+
+
+
+
+
+# Assuming 'status' is a linked field to 'Sales Order'
+@frappe.whitelist()
+def check_rented_out_items():
+    rented_items = []
+
+    # Query Sales Order Items for items with status 'Active'
+    sales_order_items = frappe.db.sql("""
+        SELECT
+            so_item.item_code,
+            so.status as item_status
+        FROM
+            `tabSales Order Item` so_item
+        LEFT JOIN `tabSales Order` so ON so_item.parent = so.name
+        WHERE
+            so_item.docstatus = 1  # Considering only submitted Sales Orders
+            AND so.status != 'Active'  # Adjust this condition based on how status is stored
+    """, as_dict=True)
+
+    if sales_order_items:
+        for item in sales_order_items:
+            rented_items.append(f"{item.item_code} - {item.item_status}")
+
+        return {
+            'success': True,
+            'rented_items': rented_items
+        }
+    else:
+        return {
+            'success': False,
+            'message': 'No rented out items with status \'Active\' found.'
+        }
