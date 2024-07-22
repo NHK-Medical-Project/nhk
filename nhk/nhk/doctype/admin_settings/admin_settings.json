@@ -5,7 +5,12 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "sales_order_email_notification_cc"
+  "mail_section",
+  "sales_order_email_notification_cc",
+  "section_break_ctpr",
+  "razorpay_base_url",
+  "razorpay_api_key",
+  "razorpay_secret"
  ],
  "fields": [
   {
@@ -13,12 +18,37 @@
    "fieldtype": "Table MultiSelect",
    "label": "Sales Order Email Notification CC",
    "options": "Multiselect User"
+  },
+  {
+   "fieldname": "mail_section",
+   "fieldtype": "Section Break",
+   "label": "Mail"
+  },
+  {
+   "fieldname": "section_break_ctpr",
+   "fieldtype": "Section Break",
+   "label": "Razorpay settings"
+  },
+  {
+   "fieldname": "razorpay_base_url",
+   "fieldtype": "Data",
+   "label": "Razorpay Base URL"
+  },
+  {
+   "fieldname": "razorpay_api_key",
+   "fieldtype": "Data",
+   "label": "Razorpay Api Key"
+  },
+  {
+   "fieldname": "razorpay_secret",
+   "fieldtype": "Data",
+   "label": "Razorpay Secret"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2024-07-16 17:32:29.950100",
+ "modified": "2024-07-22 13:55:13.713673",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Admin Settings",
