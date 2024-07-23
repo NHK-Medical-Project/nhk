@@ -91,7 +91,9 @@
    "in_filter": 1,
    "in_standard_filter": 1,
    "label": "Payment Status",
-   "options": "Created\nUnPaid\nPaid\nPartially Paid\nCancelled\nExpired",
+
+   "options": "Created\nPaid\nPartially Paid\nCancelled\nExpired",
+
    "read_only": 1
   },
   {
@@ -124,7 +126,9 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-07-23 10:05:06.455889",
+
+ "modified": "2024-07-23 10:57:27.917270",
+
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Payment Link Log",
