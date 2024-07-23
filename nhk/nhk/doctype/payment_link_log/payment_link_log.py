@@ -63,32 +63,25 @@ def sync_payment(link_id, p_id):
         response = requests.get(razorpay_api_url, auth=(razorpay_key_id, razorpay_key_secret))
         data = response.json()
 
-        # Fetch the payment link document in Frappe
-        payment_link_doc = frappe.get_doc('Payment Link Log', p_id,for_update=True)
-
         # Extract the relevant details from the response
         received_amount = data.get('amount_paid')
         payment_status = data.get('status')
+        paid_amount = float(received_amount) / 100
 
         # Update the payment link document in Frappe
-        
-        # received_amount = float(received_amount) / 100
-        sales_order_id = payment_link_doc.sales_order
-        customer_id = payment_link_doc.customer_id
-
-        # Update payment status based on the status from Razorpay
         if payment_status == 'paid':
-            
+            sales_order_id = frappe.db.get_value('Payment Link Log', p_id, 'sales_order')
+            customer_id = frappe.db.get_value('Payment Link Log', p_id, 'customer_id')
             get_razorpay_payment_details(received_amount, sales_order_id, customer_id, link_id)
-            payment_link_doc.payment_status = "Paid"
-            payment_link_doc.paid_amount = float(received_amount) / 100
+            frappe.db.set_value('Payment Link Log', p_id, 'payment_status', 'Paid')
+            frappe.db.set_value('Payment Link Log', p_id, 'paid_amount', paid_amount)
         elif payment_status == 'cancelled':
-            payment_link_doc.payment_status = "Cancelled"
+            frappe.db.set_value('Payment Link Log', p_id, 'payment_status', 'Cancelled')
         elif payment_status == 'expired':
-            payment_link_doc.payment_status = "Expired"
+            frappe.db.set_value('Payment Link Log', p_id, 'payment_status', 'Expired')
 
-        # Save the changes to the document
-        payment_link_doc.save()
+        # Commit the transaction to ensure changes are saved
+        frappe.db.commit()
 
         # Return the details to the client script
         return {"status": True, "msg": "Payment Link status synced successfully"}

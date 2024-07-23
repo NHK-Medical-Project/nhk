@@ -21,47 +21,55 @@
   {
    "fieldname": "date",
    "fieldtype": "Date",
-   "label": "Date"
+   "label": "Date",
+   "read_only": 1
   },
   {
    "fieldname": "customer_id",
    "fieldtype": "Link",
    "label": "Customer Id",
-   "options": "Customer"
+   "options": "Customer",
+   "read_only": 1
   },
   {
    "fieldname": "sales_order_id",
    "fieldtype": "Link",
    "label": "Sales Order Id",
-   "options": "Sales Order"
+   "options": "Sales Order",
+   "read_only": 1
   },
   {
    "fieldname": "order_type",
    "fieldtype": "Select",
    "label": "Order Type",
-   "options": "\nSales\nService\nRental"
+   "options": "\nSales\nService\nRental",
+   "read_only": 1
   },
   {
    "fieldname": "payment_entry_id",
    "fieldtype": "Link",
    "label": "Payment Entry Id",
-   "options": "Payment Entry"
+   "options": "Payment Entry",
+   "read_only": 1
   },
   {
    "fieldname": "journal_entry_id",
    "fieldtype": "Link",
    "label": "Journal Entry Id",
-   "options": "Journal Entry"
+   "options": "Journal Entry",
+   "read_only": 1
   },
   {
    "fieldname": "razorpay_link",
    "fieldtype": "Data",
-   "label": "Razorpay Link"
+   "label": "Razorpay Link",
+   "read_only": 1
   },
   {
    "fieldname": "reference_id",
    "fieldtype": "Data",
-   "label": "Reference Id"
+   "label": "Reference Id",
+   "read_only": 1
   },
   {
    "fieldname": "payment_settlement_id",
@@ -75,7 +83,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-07-04 12:30:58.258272",
+ "modified": "2024-07-23 10:58:41.753659",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Razorpay Payment Details",
