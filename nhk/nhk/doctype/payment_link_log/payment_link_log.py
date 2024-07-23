@@ -21,17 +21,22 @@ import requests
 def cancel_link(p_id=None):
     if p_id:
         payment_link = frappe.get_doc('Payment Link Log', p_id)
-        razorpay_api_cancel = frappe.get_doc('Razorpay Api to cancel link')
+        admin_settings = frappe.get_doc('Admin Settings')
+        razorpay_base_url = admin_settings.razorpay_base_url
+        razorpay_key_id = admin_settings.razorpay_api_key
+        razorpay_key_secret = admin_settings.get_password('razorpay_secret')
+        razorpay_api_url = razorpay_base_url + "payment_links/"+ payment_link.link_id +"/cancel"
+        # razorpay_api_cancel = frappe.get_doc('Razorpay Api to cancel link')
 
-        razorpay_api_key = razorpay_api_cancel.razorpay_api_key
-        razorpay_api_secret = razorpay_api_cancel.razorpay_secret
+        # razorpay_api_key = razorpay_api_cancel.razorpay_api_key
+        # razorpay_api_secret = razorpay_api_cancel.razorpay_secret
 
         # Razorpay API endpoint for canceling a payment link
-        api_url = razorpay_api_cancel.razorpay_url
-        new_api_url = api_url.replace("link_id", payment_link.link_id)
+        # api_url = razorpay_api_cancel.razorpay_url
+        # new_api_url = api_url.replace("link_id", payment_link.link_id)
 
         try:
-            response = requests.post(new_api_url, auth=(razorpay_api_key, razorpay_api_secret))
+            response = requests.post(razorpay_api_url, auth=(razorpay_key_id, razorpay_key_secret))
             response_dict = response.json()
             if response.status_code == 200:
                 payment_link.enabled = 0
@@ -91,11 +96,17 @@ def sync_payment(link_id, p_id):
 @frappe.whitelist(allow_guest=True)
 def get_razorpay_payment_details(received_amount, sales_order_id, customer_id, link_id):
     try:
-        razorpay_payment_link_id = link_id
-        razorpay_api = frappe.get_doc('Razorpay Api')
-        custom_razorpay_api_url = f'https://api.razorpay.com/v1/payment_links/{razorpay_payment_link_id}'
+        admin_settings = frappe.get_doc('Admin Settings')
+        razorpay_base_url = admin_settings.razorpay_base_url
+        razorpay_key_id = admin_settings.razorpay_api_key
+        razorpay_key_secret = admin_settings.razorpay_secret
+        razorpay_api_url = razorpay_base_url + "payment_links/" + link_id
 
-        response = requests.get(custom_razorpay_api_url, auth=(razorpay_api.razorpay_api_key, razorpay_api.razorpay_secret))
+        razorpay_payment_link_id = link_id
+        # razorpay_api = frappe.get_doc('Razorpay Api')
+        # custom_razorpay_api_url = f'https://api.razorpay.com/v1/payment_links/{razorpay_payment_link_id}'
+
+        response = requests.get(razorpay_api_url, auth=(razorpay_key_id, razorpay_key_secret))
         if response.status_code == 200:
             razorpay_response = response.json()
             payments = razorpay_response.get('payments')
