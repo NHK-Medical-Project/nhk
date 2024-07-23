@@ -317,7 +317,7 @@ def get_sales_order_info(customer):
     due_amount_query = """
         SELECT SUM(so.balance_amount) AS total_due
         FROM `tabSales Order` so
-        WHERE so.customer = %s AND so.status = 'Active' AND so.docstatus = 1
+        WHERE so.customer = %s AND so.status IN ('Active', 'Approved' , 'Rental Device Assigned', 'Ready for Delivery', 'DISPATCHED','DELIVERED','Ready for Pickup','Picked Up', 'Partially Closed' ) AND so.docstatus = 1
     """
     due_amount = frappe.db.sql(due_amount_query, (customer,), as_dict=True)[0].total_due or 0
     
@@ -325,15 +325,15 @@ def get_sales_order_info(customer):
     refundable_sd_query = """
         SELECT SUM(refundable_security_deposit) AS total_refundable_sd
         FROM `tabSales Order`
-        WHERE customer = %s AND status = 'Active' AND docstatus = 1
+        WHERE customer = %s AND status IN ('Active', 'Approved' , 'Rental Device Assigned', 'Ready for Delivery', 'DISPATCHED','DELIVERED','Ready for Pickup','Picked Up', 'Partially Closed' ) AND docstatus = 1
     """
     refundable_sd = frappe.db.sql(refundable_sd_query, (customer,), as_dict=True)[0].total_refundable_sd or 0
     
     # SQL query to get active sales orders details with start_date, end_date, and payment_status
     sales_orders_query = """
-        SELECT so.name AS sales_order, so.transaction_date, so.grand_total, so.start_date, so.end_date, so.payment_status, so.order_type
+        SELECT so.name AS sales_order, so.transaction_date, so.grand_total, so.start_date, so.end_date, so.payment_status, so.order_type, so.status
         FROM `tabSales Order` so
-        WHERE so.customer = %s AND so.status = 'Active' AND so.docstatus = 1
+        WHERE so.customer = %s AND so.status IN ('Active', 'Approved' , 'Rental Device Assigned', 'Ready for Delivery', 'DISPATCHED','DELIVERED','Ready for Pickup','Picked Up', 'Partially Closed' ) AND so.docstatus = 1
     """
     sales_orders = frappe.db.sql(sales_orders_query, (customer,), as_dict=True)
     
