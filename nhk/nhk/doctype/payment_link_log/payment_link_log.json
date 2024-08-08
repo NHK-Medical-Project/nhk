@@ -13,6 +13,7 @@
   "contact_person",
   "mobile_number",
   "live_link",
+  "payment_ids",
   "column_break_yucj",
   "date_of_generation",
   "total_amount",
@@ -20,7 +21,12 @@
   "link_short_url",
   "link_id",
   "enabled",
-  "paid_amount"
+  "paid_amount",
+  "balance_amount",
+  "payment_entry_id",
+  "journal_entry_id",
+  "section_break_vejk",
+  "razorpay_payment_details"
  ],
  "fields": [
   {
@@ -91,10 +97,8 @@
    "in_filter": 1,
    "in_standard_filter": 1,
    "label": "Payment Status",
-
-   "options": "Created\nPaid\nPartially Paid\nCancelled\nExpired",
-
-   "read_only": 1
+   "options": "Created\npaid\npartially_paid\nCancelled\nExpired",
+   "permlevel": 2
   },
   {
    "fieldname": "link_short_url",
@@ -122,13 +126,45 @@
    "fieldtype": "Currency",
    "label": "Paid Amount",
    "read_only": 1
+  },
+  {
+   "fieldname": "section_break_vejk",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "razorpay_payment_details",
+   "fieldtype": "Table",
+   "label": "Razorpay Payment Details",
+   "options": "Payment Link Log Child",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_ids",
+   "fieldtype": "Small Text",
+   "label": "Payment Ids"
+  },
+  {
+   "fieldname": "payment_entry_id",
+   "fieldtype": "Data",
+   "label": "Payment Entry ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "journal_entry_id",
+   "fieldtype": "Data",
+   "label": "Journal Entry ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "balance_amount",
+   "fieldtype": "Currency",
+   "label": "Balance Amount",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
-
- "modified": "2024-07-23 16:18:16.332378",
-
+ "modified": "2024-08-08 15:42:01.065307",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Payment Link Log",
