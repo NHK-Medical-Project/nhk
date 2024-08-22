@@ -333,7 +333,7 @@ def is_journal_entry_exists(reference_id):
 def sync_all_payment_details():
     payment_link_list = frappe.get_all('Payment Link Log', 
                                        filters={
-                                                'payment_status':("in",["Created", "partially_paid"]),"enabled":1
+                                                'payment_status':("in",["created", "partially_paid"]),"enabled":1
                                                 },
                                        fields=["link_id", "name"])
     for payment_link in payment_link_list:

@@ -8,6 +8,7 @@
  "engine": "InnoDB",
  "field_order": [
   "sales_order",
+  "order_type",
   "customer_id",
   "customer_name",
   "contact_person",
@@ -91,13 +92,13 @@
    "read_only": 1
   },
   {
-   "default": "Created",
+   "default": "created",
    "fieldname": "payment_status",
    "fieldtype": "Select",
    "in_filter": 1,
    "in_standard_filter": 1,
    "label": "Payment Status",
-   "options": "Created\npaid\npartially_paid\nCancelled\nExpired",
+   "options": "created\npaid\npartially_paid\nCancelled\nexpired",
    "permlevel": 2
   },
   {
@@ -141,7 +142,8 @@
   {
    "fieldname": "payment_ids",
    "fieldtype": "Small Text",
-   "label": "Payment Ids"
+   "label": "Payment Ids",
+   "read_only": 1
   },
   {
    "fieldname": "payment_entry_id",
@@ -160,11 +162,18 @@
    "fieldtype": "Currency",
    "label": "Balance Amount",
    "read_only": 1
+  },
+  {
+   "fetch_from": "sales_order.order_type",
+   "fieldname": "order_type",
+   "fieldtype": "Data",
+   "label": "Order Type",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-08-08 15:42:01.065307",
+ "modified": "2024-08-13 15:05:09.507281",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Payment Link Log",
@@ -186,6 +195,11 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": [],
+ "states": [
+  {
+   "color": "Green",
+   "title": "paid"
+  }
+ ],
  "track_changes": 1
 }

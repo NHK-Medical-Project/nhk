@@ -19,6 +19,7 @@
   "column_break_wxgo",
   "status",
   "hospital_name",
+  "hospital",
   "speciality",
   "sales_commision",
   "rental_commision",
@@ -120,11 +121,17 @@
    "in_list_view": 1,
    "label": "Doctor Name",
    "reqd": 1
+  },
+  {
+   "fieldname": "hospital",
+   "fieldtype": "Link",
+   "label": "Hospital",
+   "options": "Hospital"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-05-31 11:47:35.486544",
+ "modified": "2024-08-20 12:38:00.726223",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Referrer",
