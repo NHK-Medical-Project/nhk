@@ -29,7 +29,7 @@ def execute(filters=None):
         {"label": "Security Deposit Status", "fieldname": "security_deposit_status", "fieldtype": "Select", "width": 100},
         {"label": "Payment Status", "fieldname": "payment_status", "fieldtype": "Select", "width": 100},
         {"label": "SO Type", "fieldname": "so_type", "fieldtype": "Data", "width": 50},
-        {"label": "Docstatus", "fieldname": "docstatus", "fieldtype": "Int", "width": 50},
+        # {"label": "Docstatus", "fieldname": "docstatus", "fieldtype": "Int", "width": 50},
     ]
 
 
