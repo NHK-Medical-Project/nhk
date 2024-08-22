@@ -27,6 +27,40 @@ frappe.query_reports["Sales order Report"] = {
             "fieldtype": "MultiSelect",
             "options": ["", "Pending", "Approved", "Rental Device Assigned", "Ready for Delivery", "DISPATCHED", "Active", "Ready for Pickup", "Picked Up", "Submitted to Office", "RENEWED"],
             "reqd": 0  // Optional field
+        },
+        {
+            "fieldname": "referrer",
+            "label": "Referrer",
+            "fieldtype": "Link",
+            "options": "Referrer",
+            "reqd": 0,
+        },
+        {
+            "fieldname": "custom_referrer_hospital",
+            "label": "Referrer Hospital",
+            "fieldtype": "Link",
+            "options": "Hospital",
+            "reqd": 0,
+        },
+        {
+            "fieldname": "referrer_commission_status",
+            "label": "Referrer Commission Status",
+            "fieldtype": "Select",
+            "options": "\nPending\nCleared",
+            "default": "Pending",
+            "reqd": 0,
+        },
+        {
+            "fieldname": "sales_person",
+            "label": __("Sales Person"),
+            "fieldtype": "Link",
+            "options": "Sales Person"
+        },
+        {
+            "fieldname": "sales_commission_status",
+            "label": __("Sales Commission Status"),
+            "fieldtype": "Select",
+            "options": "\nPending\nCleared"
         }
     ],
     "onload": function(report) {
