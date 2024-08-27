@@ -106,9 +106,9 @@ def sync_payment(link_id, p_id):
             frappe.db.set_value('Payment Link Log', p_id, 'payment_status', 'paid')
             frappe.db.set_value('Payment Link Log', p_id, 'paid_amount', paid_amount)
         elif payment_status == 'cancelled':
-            frappe.db.set_value('Payment Link Log', p_id, 'payment_status', 'Cancelled')
+            frappe.db.set_value('Payment Link Log', p_id, 'payment_status', 'cancelled')
         elif payment_status == 'expired':
-            frappe.db.set_value('Payment Link Log', p_id, 'payment_status', 'Expired')
+            frappe.db.set_value('Payment Link Log', p_id, 'payment_status', 'expired')
 
         # Commit the transaction to ensure changes are saved
         frappe.db.commit()

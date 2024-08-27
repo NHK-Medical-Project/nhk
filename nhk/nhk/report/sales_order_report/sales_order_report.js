@@ -47,7 +47,7 @@ frappe.query_reports["Sales order Report"] = {
             "label": "Referrer Commission Status",
             "fieldtype": "Select",
             "options": "\nPending\nCleared",
-            "default": "Pending",
+            // "default": "Pending",
             "reqd": 0,
         },
         {
