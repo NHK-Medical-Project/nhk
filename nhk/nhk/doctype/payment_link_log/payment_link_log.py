@@ -54,7 +54,6 @@ def cancel_link(p_id=None):
 
 
 
-
 @frappe.whitelist()
 def sync_payment(link_id, p_id):
     try:
@@ -68,21 +67,28 @@ def sync_payment(link_id, p_id):
         # Make a request to the Razorpay API to get the payment details
         response = requests.get(razorpay_api_url, auth=(razorpay_key_id, razorpay_key_secret))
         data = response.json()
-        # print('dataaaaaaaaaaaaaaaaaaaa',data)
+
         # Extract the relevant details from the response
         received_amount = data.get('amount_paid')
         payment_status = data.get('status')
-        paid_amount = float(received_amount) / 100
 
+        # Handle None case for received_amount
+        if received_amount is None:
+            received_amount = 0  # Set it to 0 or handle it as needed
+        paid_amount = float(received_amount) / 100
 
         # Clear existing child table entries and append new payments
         payment_ids = []
         doc = frappe.get_doc('Payment Link Log', p_id)
         doc.set("razorpay_payment_details", [])
         for payment in data.get('payments', []):
+            amount = payment.get('amount', 0)
+            if amount is None:
+                amount = 0  # Handle None case
+
             payment_ids.append(payment.get('payment_id'))
             doc.append('razorpay_payment_details', {
-                'amount': int(float(payment.get('amount', 0)) / 100),
+                'amount': int(float(amount) / 100),
                 'payment_id': payment.get('payment_id'),
                 'status': payment.get('status'),
                 'method': payment.get('method'),
@@ -102,7 +108,7 @@ def sync_payment(link_id, p_id):
         if payment_status == 'paid':
             sales_order_id = frappe.db.get_value('Payment Link Log', p_id, 'sales_order')
             customer_id = frappe.db.get_value('Payment Link Log', p_id, 'customer_id')
-            get_razorpay_payment_details(received_amount, sales_order_id, customer_id, link_id,razorpay_payment_ids,p_id)
+            get_razorpay_payment_details(received_amount, sales_order_id, customer_id, link_id, razorpay_payment_ids, p_id)
             frappe.db.set_value('Payment Link Log', p_id, 'payment_status', 'paid')
             frappe.db.set_value('Payment Link Log', p_id, 'paid_amount', paid_amount)
         elif payment_status == 'cancelled':
@@ -119,6 +125,73 @@ def sync_payment(link_id, p_id):
         error_message = f"Error syncing payment details: {str(e)}"
         frappe.log_error(error_message, 'Razorpay Payment Sync Error')
         return {"status": False, "msg": error_message}
+
+
+
+# @frappe.whitelist()
+# def sync_payment(link_id, p_id):
+#     try:
+#         # Fetch Razorpay API credentials from the Admin Settings doctype
+#         admin_settings = frappe.get_doc('Admin Settings')
+#         razorpay_base_url = admin_settings.razorpay_base_url
+#         razorpay_key_id = admin_settings.razorpay_api_key
+#         razorpay_key_secret = admin_settings.razorpay_secret
+#         razorpay_api_url = razorpay_base_url + "payment_links/" + link_id
+
+#         # Make a request to the Razorpay API to get the payment details
+#         response = requests.get(razorpay_api_url, auth=(razorpay_key_id, razorpay_key_secret))
+#         data = response.json()
+#         # print('dataaaaaaaaaaaaaaaaaaaa',data)
+#         # Extract the relevant details from the response
+#         received_amount = data.get('amount_paid')
+#         payment_status = data.get('status')
+#         paid_amount = float(received_amount) / 100
+
+
+#         # Clear existing child table entries and append new payments
+#         payment_ids = []
+#         doc = frappe.get_doc('Payment Link Log', p_id)
+#         doc.set("razorpay_payment_details", [])
+#         for payment in data.get('payments', []):
+#             payment_ids.append(payment.get('payment_id'))
+#             doc.append('razorpay_payment_details', {
+#                 'amount': int(float(payment.get('amount', 0)) / 100),
+#                 'payment_id': payment.get('payment_id'),
+#                 'status': payment.get('status'),
+#                 'method': payment.get('method'),
+#                 'description': payment.get('method'),  # Adjust field name if necessary
+#                 'created_at': frappe.utils.datetime.datetime.fromtimestamp(payment.get('created_at', 0))
+#             })
+#         doc.payment_status = payment_status
+#         doc.paid_amount = paid_amount
+#         doc.balance_amount = doc.total_amount - paid_amount
+#         # Update the payment_ids field with a comma-separated list of payment IDs
+#         razorpay_payment_ids = ','.join(payment_ids)
+#         doc.payment_ids = razorpay_payment_ids
+        
+#         doc.save()
+
+#         # Update the payment link document in Frappe
+#         if payment_status == 'paid':
+#             sales_order_id = frappe.db.get_value('Payment Link Log', p_id, 'sales_order')
+#             customer_id = frappe.db.get_value('Payment Link Log', p_id, 'customer_id')
+#             get_razorpay_payment_details(received_amount, sales_order_id, customer_id, link_id,razorpay_payment_ids,p_id)
+#             frappe.db.set_value('Payment Link Log', p_id, 'payment_status', 'paid')
+#             frappe.db.set_value('Payment Link Log', p_id, 'paid_amount', paid_amount)
+#         elif payment_status == 'cancelled':
+#             frappe.db.set_value('Payment Link Log', p_id, 'payment_status', 'cancelled')
+#         elif payment_status == 'expired':
+#             frappe.db.set_value('Payment Link Log', p_id, 'payment_status', 'expired')
+
+#         # Commit the transaction to ensure changes are saved
+#         frappe.db.commit()
+
+#         # Return the details to the client script
+#         return {"status": True, "msg": "Payment Link status synced successfully"}
+#     except Exception as e:
+#         error_message = f"Error syncing payment details: {str(e)}"
+#         frappe.log_error(error_message, 'Razorpay Payment Sync Error')
+#         return {"status": False, "msg": error_message}
 
 @frappe.whitelist(allow_guest=True)
 def get_razorpay_payment_details(received_amount, sales_order_id, customer_id, link_id,razorpay_payment_ids,p_id):

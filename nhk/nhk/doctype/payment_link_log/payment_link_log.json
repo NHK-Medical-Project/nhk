@@ -26,6 +26,7 @@
   "balance_amount",
   "payment_entry_id",
   "journal_entry_id",
+  "test_data_status",
   "section_break_vejk",
   "razorpay_payment_details"
  ],
@@ -170,11 +171,16 @@
    "fieldtype": "Data",
    "label": "Order Type",
    "read_only": 1
+  },
+  {
+   "fieldname": "test_data_status",
+   "fieldtype": "Text Editor",
+   "label": "Test data status"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-08-23 15:25:24.755166",
+ "modified": "2024-10-04 12:00:46.721786",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Payment Link Log",
