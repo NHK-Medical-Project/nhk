@@ -3,7 +3,7 @@ import frappe
 def execute(filters=None):
     columns = [
         {"label": "Name", "fieldname": "name", "fieldtype": "Link", "options": "Serial No", "width": 150},
-        {"label": "Duplicate Entry Found", "fieldname": "duplicate_entry_found", "fieldtype": "Data", "width": 150},
+        {"label": "Duplicate Entry Found", "fieldname": "duplicate_entry_found", "fieldtype": "Data", "width": 40},
         {"label": "Item Code", "fieldname": "item_code",  "fieldtype": "Link", "options": "Item", "width": 150},
         {"label": "Status", "fieldname": "status", "fieldtype": "Data", "width": 100},
         {"label": "Purchase Document No", "fieldname": "purchase_document_no", "fieldtype": "Link", "options": "Purchase Receipt", "width": 150},
