@@ -1,0 +1,156 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:TEC-{MM}-{YY}-{###}",
+ "creation": "2024-10-16 14:20:20.066422",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "technician_id",
+  "technician_name",
+  "technician_mobile_no",
+  "technician_user_id",
+  "column_break_quoq",
+  "status",
+  "sales_order_id",
+  "type",
+  "item_code",
+  "column_break_dgfr",
+  "kilometers",
+  "charges",
+  "payment_status",
+  "sales_order_details_section",
+  "sales_order_html",
+  "section_break_bymd",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "technician_id",
+   "fieldtype": "Link",
+   "label": "Technician Id",
+   "options": "Technician Details",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "technician_id.name1",
+   "fieldname": "technician_name",
+   "fieldtype": "Data",
+   "label": "Technician Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_quoq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "sales_order_id",
+   "fieldtype": "Link",
+   "label": "Sales Order Id",
+   "options": "Sales Order",
+   "read_only": 1
+  },
+  {
+   "default": "Service",
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "label": "Type",
+   "options": "Delivery\nPickup\nService",
+   "read_only": 1
+  },
+  {
+   "fieldname": "kilometers",
+   "fieldtype": "Float",
+   "label": "Kilometers"
+  },
+  {
+   "description": "Delivery or Pickup Charges",
+   "fieldname": "charges",
+   "fieldtype": "Currency",
+   "label": "Charges"
+  },
+  {
+   "fieldname": "sales_order_details_section",
+   "fieldtype": "Section Break",
+   "label": "Sales order Details"
+  },
+  {
+   "fieldname": "sales_order_html",
+   "fieldtype": "HTML",
+   "label": "Sales Order HTML"
+  },
+  {
+   "default": "Assigned",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Assigned\nDelivered\nPicked up\nAmount Settled\nClosed",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "technician_id.mobile_number",
+   "fieldname": "technician_mobile_no",
+   "fieldtype": "Data",
+   "label": "Technician Mobile No."
+  },
+  {
+   "fetch_from": "technician_id.user_mail_id",
+   "fieldname": "technician_user_id",
+   "fieldtype": "Data",
+   "label": "Technician User Id"
+  },
+  {
+   "default": "Pending",
+   "fieldname": "payment_status",
+   "fieldtype": "Select",
+   "label": "Payment Status",
+   "options": "Pending\nCleared",
+   "permlevel": 2
+  },
+  {
+   "fieldname": "section_break_bymd",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Data",
+   "label": "Item Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_dgfr",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-10-21 14:59:42.275648",
+ "modified_by": "Administrator",
+ "module": "nhk",
+ "name": "Technician Visit Entry",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

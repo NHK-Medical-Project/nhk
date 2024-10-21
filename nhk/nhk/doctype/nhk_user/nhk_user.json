@@ -155,7 +155,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-05-08 13:06:31.465938",
+ "modified": "2024-10-16 14:09:50.622413",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "NHK User",
@@ -179,6 +179,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 1,
- "track_seen": 1
+ "track_changes": 1
 }

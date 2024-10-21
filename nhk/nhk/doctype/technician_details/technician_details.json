@@ -1,7 +1,5 @@
 {
  "actions": [],
- "allow_rename": 1,
- "autoname": "field:name1",
  "creation": "2024-03-25 11:29:11.005404",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -30,17 +28,18 @@
   {
    "fieldname": "user_mail_id",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "User Mail Id",
-   "options": "User"
+   "options": "NHK User",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-05-06 10:50:38.874298",
+ "modified": "2024-10-17 16:19:05.587463",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Technician Details",
- "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
@@ -56,7 +55,9 @@
    "write": 1
   }
  ],
+ "search_fields": "name1,mobile_number,user_mail_id",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "title_field": "name1"
 }

@@ -342,3 +342,215 @@ def get_sales_order_info(customer):
         'refundable_sd': refundable_sd,
         'sales_orders': sales_orders
     }
+
+
+
+import frappe
+
+# @frappe.whitelist()
+# def get_sales_order_details(sales_order_id):
+#     """
+#     Fetch details of the specified sales order.
+    
+#     :param sales_order_id: The name or ID of the sales order to fetch.
+#     :return: A dictionary containing the sales order details.
+#     """
+#     sales_order = frappe.get_doc('Sales Order', sales_order_id)
+
+#     # Prepare the response dictionary with required fields
+#     response = {
+#         "sales_order_id": sales_order.name,
+#         "customer": sales_order.customer,
+#         "customer_mobile_no": sales_order.customer_mobile_no,
+#         "customer_email_id": sales_order.customer_email_id,
+#         "permanent_address": sales_order.permanent_address,
+#         "balance_amount": sales_order.balance_amount,
+#         "outstanding_security_deposit_amount": sales_order.outstanding_security_deposit_amount,
+#         "payment_status": sales_order.payment_status,
+#         "status": sales_order.status,
+#         "master_order_id":sales_order.master_order_id,
+#         "security_deposit_status":sales_order.security_deposit_status,
+#         "items": []
+#     }
+
+#     # Fetch the items from the sales order
+#     for item in sales_order.items:
+#         response["items"].append({
+#             "item_code": item.item_code,
+#             "item_name": item.item_name
+#         })
+
+#     return response
+
+
+
+import frappe
+
+@frappe.whitelist()
+def get_sales_order_details(sales_order_id):
+    # Fetch Sales Order details
+    sales_order = frappe.get_doc("Sales Order", sales_order_id)
+
+    # Fetch items from the Sales Order
+    items = [{"item_code": item.item_code, "item_name": item.item_name, "name":item.name,"child_status":item.child_status} for item in sales_order.items]
+    # Helper function to map docstatus to status text
+    def get_status_text(docstatus):
+        if docstatus == 0:
+            return "Draft"
+        elif docstatus == 1:
+            return "Submitted"
+        elif docstatus == 2:
+            return "Cancelled"
+        return "Unknown"
+    # Fetch Payment Entries related to this Sales Order
+    payment_entries = frappe.db.sql("""
+        SELECT 
+            name, posting_date, paid_amount AS amount,docstatus
+        FROM 
+            `tabPayment Entry`
+        WHERE 
+            sales_order_id = %s AND docstatus IN (0, 1)
+    """, (sales_order_id,), as_dict=True)
+
+
+    for payment in payment_entries:
+        payment["status"] = get_status_text(payment.get("docstatus"))
+
+    # Fetch Journal Entries related to this Sales Order
+    journal_entries = frappe.db.sql("""
+        SELECT 
+            name, posting_date, total_debit AS amount, docstatus
+        FROM 
+            `tabJournal Entry`
+        WHERE 
+            sales_order_id = %s AND docstatus IN (0, 1) AND security_deposite_type = 'SD Amount Received From Client'
+    """, (sales_order_id,), as_dict=True)
+
+    for journal in journal_entries:
+        journal["status"] = get_status_text(journal.get("docstatus"))
+
+     # Calculate total paid amount from Payment Entries (including draft and submitted)
+    total_paid_rental = sum(payment["amount"] for payment in payment_entries if payment.get("docstatus") in [0, 1])
+
+    # Calculate total security deposit paid (including draft and submitted)
+    total_paid_security_deposit = sum(journal["amount"] for journal in journal_entries if journal.get("docstatus") in [0, 1])
+    # Calculate unpaid amounts
+    unpaid_rental_amount = max(sales_order.rounded_total - total_paid_rental, 0)
+    unpaid_security_deposit_amount = max(float(sales_order.security_deposit) - total_paid_security_deposit, 0)
+
+    # Calculate Rental Payment Status
+    if total_paid_rental >= sales_order.rounded_total:
+        rental_payment_status = "Fully Paid"
+    elif total_paid_rental > 0:
+        rental_payment_status = "Partially Paid"
+    else:
+        rental_payment_status = "Unpaid"
+
+    # Calculate Security Deposit Payment Status
+    if total_paid_security_deposit >= float(sales_order.security_deposit):
+        security_deposit_payment_status = "Fully Paid"
+    elif total_paid_security_deposit > 0:
+        security_deposit_payment_status = "Partially Paid"
+    else:
+        security_deposit_payment_status = "Unpaid"
+    # Prepare response data
+    response = {
+         "sales_order_id": sales_order.name,
+        "customer": sales_order.customer,
+        "customer_mobile_no": sales_order.customer_mobile_no,
+        "customer_email_id": sales_order.customer_email_id,
+        "permanent_address": sales_order.permanent_address,
+        "balance_amount": sales_order.balance_amount,
+        "outstanding_security_deposit_amount": sales_order.outstanding_security_deposit_amount,
+        "payment_status": sales_order.payment_status,
+        "status": sales_order.status,
+        "master_order_id":sales_order.master_order_id,
+        "security_deposit_status":sales_order.security_deposit_status,
+        "items": items,
+        "payment_entries": payment_entries,
+        "journal_entries": journal_entries,
+        "rental_payment_status": rental_payment_status,
+        "security_deposit_payment_status": security_deposit_payment_status,
+        "paid_rental_amount": total_paid_rental,
+        "unpaid_rental_amount": unpaid_rental_amount,
+        "unpaid_security_deposit_amount":unpaid_security_deposit_amount,
+        "paid_security_deposit_amount":total_paid_security_deposit
+        
+    }
+
+    return response
+
+
+import frappe
+from frappe import _
+
+@frappe.whitelist()
+def submit_entry(entry_name, doctype):
+    """Submit a Payment Entry or Journal Entry."""
+    # Validate the doctype
+    if doctype not in ["Payment Entry", "Journal Entry"]:
+        frappe.throw(_("Invalid doctype"))
+
+    # Get the document by name
+    doc = frappe.get_doc(doctype, entry_name)
+
+    # Check if the document is in draft status
+    if doc.docstatus != 0:
+        frappe.throw(_("Only draft entries can be submitted"))
+
+    try:
+        # Submit the document
+        doc.submit()
+        return {
+            "status": "success",
+            "message": _("Entry submitted successfully!")
+        }
+    except Exception as e:
+        frappe.throw(_("Error submitting entry: {0}").format(str(e)))
+
+
+import frappe
+from frappe import _
+
+@frappe.whitelist()
+def change_status(docname, new_status):
+    """Change the status of a document to the new status provided."""
+    
+    # Replace 'Technician Portal' with the actual DocType name you are working with
+    doc = frappe.get_doc("Technician Visit Entry", docname)
+
+    # Check the current status and validate the transition
+    if doc.status == "Assigned" and new_status == "Delivered":
+        # Allow changing from Assigned to Delivered
+        pass
+    elif doc.status == "Assigned" and new_status == "Picked up":
+        # Allow changing from Assigned to Delivered
+        pass
+    elif doc.status == "Delivered" and new_status == "Amount Settled":
+        # Allow changing from Delivered to Amount Settled
+        # Add additional checks for kilometers and charges if necessary
+        if not doc.kilometers or not doc.charges:
+            frappe.throw(_("Please fill in kilometers and charges before settling the amount."))
+    elif doc.status == "Picked up" and new_status == "Amount Settled":
+        # Allow changing from Picked up to Amount Settled
+        if not doc.kilometers or not doc.charges:
+            frappe.throw(_("Please fill in kilometers and charges before settling the amount."))
+    elif doc.status == "Amount Settled" and new_status == "Closed":
+        # Allow changing from Picked up to Amount Settled
+        if not doc.kilometers or not doc.charges:
+            frappe.throw(_("Please fill in kilometers and charges before settling the amount."))
+    else:
+        frappe.throw(_("Invalid status change from '{0}' to '{1}'.".format(doc.status, new_status)))
+
+    # Change the status
+    doc.status = new_status
+
+    # Save the document
+    try:
+        doc.save()
+        frappe.db.commit()  # Commit the changes to the database
+    except Exception as e:
+        frappe.throw(_("Error while changing status: {0}").format(str(e)))
+
+    # Return success message
+    return _("Status changed to '{0}' successfully!".format(new_status))
