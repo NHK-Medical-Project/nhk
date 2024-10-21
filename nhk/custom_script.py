@@ -535,6 +535,7 @@ def change_status(docname, new_status):
         # Allow changing from Picked up to Amount Settled
         if not doc.kilometers or not doc.charges:
             frappe.throw(_("Please fill in kilometers and charges before settling the amount."))
+        doc.payment_status = 'Cleared'
     elif doc.status == "Amount Settled" and new_status == "Closed":
         # Allow changing from Picked up to Amount Settled
         if not doc.kilometers or not doc.charges:
