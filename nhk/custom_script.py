@@ -531,6 +531,8 @@ def change_status(docname, new_status):
         # Add additional checks for kilometers and charges if necessary
         if not doc.kilometers or not doc.charges:
             frappe.throw(_("Please fill in kilometers and charges before settling the amount."))
+        create_journal_entry_for_settlement(doc,doc.technician_id, doc.charges)
+        update_technician_amount(doc.technician_id, doc.charges)   
     elif doc.status == "Picked up" and new_status == "Amount Settled":
         # Allow changing from Picked up to Amount Settled
         if not doc.kilometers or not doc.charges:
@@ -555,3 +557,51 @@ def change_status(docname, new_status):
 
     # Return success message
     return _("Status changed to '{0}' successfully!".format(new_status))
+
+
+
+
+def update_technician_amount(technician_id, amount):
+    """Update the technician's total amount in Technician Details."""
+    try:
+        technician_doc = frappe.get_doc("Technician Details", technician_id)
+        
+        # Add the amount to the technician's balance (or another field)
+        technician_doc.total_amount_settled += amount
+        
+        # Save the technician document
+        technician_doc.save()
+        frappe.db.commit()
+    except Exception as e:
+        frappe.throw(_("Failed to update technician amount: {0}").format(str(e)))
+
+
+
+def create_journal_entry_for_settlement(doc,technician_id,charges):
+    """Create a journal entry for amount settlement."""
+    
+    journal_entry = frappe.new_doc("Journal Entry")
+    journal_entry.voucher_type = "Journal Entry"
+    journal_entry.posting_date = frappe.utils.nowdate()
+    journal_entry.user_remark = _("Amount Settled for Technician Visit {0}").format(doc.name)
+    journal_entry.custom_from_technician_protal = 1
+    journal_entry.custom_technician_id = technician_id
+    # Debit entry: Technician Expenses (replace with actual account)
+    journal_entry.append("accounts", {
+        "account": "Technician Expenses - Company",  # Replace with the correct expense account
+        "debit_in_account_currency": charges
+    })
+
+    # Credit entry: Cash or Customer Account (replace with actual account)
+    journal_entry.append("accounts", {
+        "account": "Cash - Company",  # Replace with the correct cash or bank account
+        "credit_in_account_currency": charges
+    })
+
+    # Save the journal entry
+    try:
+        journal_entry.insert(ignore_permissions=True)
+        journal_entry.submit()
+        frappe.msgprint(_("Journal Entry created for Amount Settlement."))
+    except Exception as e:
+        frappe.throw(_("Error creating Journal Entry: {0}").format(str(e)))

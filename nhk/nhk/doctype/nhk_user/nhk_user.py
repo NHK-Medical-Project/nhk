@@ -138,10 +138,12 @@ def create_employee_from_user(user):
     employee = frappe.get_doc({
         "doctype": "Employee",
         "first_name": user.first_name,
-        "middle_name": user.middle_name,
+        "middle_name": user.middle_name,    
         "last_name":user.last_name,
         "user_id": user.name,
-        "create_user_permission":0
+        "create_user_permission":0,
+        "expense_approver":"ashutosh.kumawat@nhkmedical.com",
+        "create_user_permission":1
         # Add other relevant fields from user or other sources
     })
     employee.insert()

@@ -7,7 +7,9 @@
   "name1",
   "mobile_number",
   "column_break_rqpa",
-  "user_mail_id"
+  "user_mail_id",
+  "transaction_details_section",
+  "total_amount_settled"
  ],
  "fields": [
   {
@@ -32,11 +34,22 @@
    "label": "User Mail Id",
    "options": "NHK User",
    "reqd": 1
+  },
+  {
+   "fieldname": "transaction_details_section",
+   "fieldtype": "Section Break",
+   "label": "Transaction Details"
+  },
+  {
+   "fieldname": "total_amount_settled",
+   "fieldtype": "Currency",
+   "label": "Total Amount Settled",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-10-17 16:19:05.587463",
+ "modified": "2024-10-22 12:02:00.988232",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Technician Details",
