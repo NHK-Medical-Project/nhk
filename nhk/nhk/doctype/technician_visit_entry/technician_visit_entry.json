@@ -84,8 +84,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Assigned\nDelivered\nPicked up\nAmount Settled\nClosed",
-   "read_only": 1
+   "options": "Assigned\nDelivered\nPicked up\nAmount Settled\nClosed"
   },
   {
    "fetch_from": "technician_id.mobile_number",
@@ -105,7 +104,8 @@
    "fieldtype": "Select",
    "label": "Payment Status",
    "options": "Pending\nCleared",
-   "permlevel": 2
+   "permlevel": 2,
+   "read_only": 1
   },
   {
    "fieldname": "section_break_bymd",
@@ -129,7 +129,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-10-21 14:59:42.275648",
+ "modified": "2024-10-23 10:03:27.065618",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Technician Visit Entry",

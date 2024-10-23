@@ -22,5 +22,5 @@ class TechnicianVisitEntry(Document):
                 # Log the action
                 frappe.log_error(f"Technician Amount Updated: Technician ID {technician_id}, Charges Subtracted {charges}", "Technician Amount Update")
 
-        else:
-            frappe.throw(("Technician ID or charges not found for the Technician Visit Entry."))
+        # else:
+        #     frappe.throw(("Technician ID or charges not found for the Technician Visit Entry."))

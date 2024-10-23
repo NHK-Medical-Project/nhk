@@ -513,7 +513,7 @@ import frappe
 from frappe import _
 
 @frappe.whitelist()
-def change_status(docname, new_status):
+def change_status(docname, new_status, mode_of_payment=None,account=None,reference_no=None,reference_date=None):
     """Change the status of a document to the new status provided."""
     
     # Replace 'Technician Portal' with the actual DocType name you are working with
@@ -531,12 +531,17 @@ def change_status(docname, new_status):
         # Add additional checks for kilometers and charges if necessary
         if not doc.kilometers or not doc.charges:
             frappe.throw(_("Please fill in kilometers and charges before settling the amount."))
-        create_journal_entry_for_settlement(doc,doc.technician_id, doc.charges)
+        create_payment_entry_for_settlement(doc,doc.technician_id,doc.technician_user_id, doc.charges,mode_of_payment,account,reference_no,reference_date)
+
         update_technician_amount(doc.technician_id, doc.charges)   
+        doc.payment_status = 'Cleared'
     elif doc.status == "Picked up" and new_status == "Amount Settled":
         # Allow changing from Picked up to Amount Settled
         if not doc.kilometers or not doc.charges:
             frappe.throw(_("Please fill in kilometers and charges before settling the amount."))
+        create_payment_entry_for_settlement(doc,doc.technician_id,doc.technician_user_id, doc.charges,mode_of_payment,account,reference_no,reference_date)
+
+        update_technician_amount(doc.technician_id, doc.charges)   
         doc.payment_status = 'Cleared'
     elif doc.status == "Amount Settled" and new_status == "Closed":
         # Allow changing from Picked up to Amount Settled
@@ -574,34 +579,60 @@ def update_technician_amount(technician_id, amount):
         frappe.db.commit()
     except Exception as e:
         frappe.throw(_("Failed to update technician amount: {0}").format(str(e)))
+def create_payment_entry_for_settlement(doc, technician_id, technician_user_id, charges,mode_of_payment,account,reference_no,reference_date):
+    """Create a payment entry for amount settlement."""
 
+    # Fetch the employee details based on the technician's user ID
+    employee = frappe.get_all("Employee", filters={"user_id": technician_user_id}, fields=["name", "employee"])
 
-
-def create_journal_entry_for_settlement(doc,technician_id,charges):
-    """Create a journal entry for amount settlement."""
+    if not employee:
+        frappe.throw(_("No Employee found for Technician User ID: {0}").format(technician_user_id))
     
-    journal_entry = frappe.new_doc("Journal Entry")
-    journal_entry.voucher_type = "Journal Entry"
-    journal_entry.posting_date = frappe.utils.nowdate()
-    journal_entry.user_remark = _("Amount Settled for Technician Visit {0}").format(doc.name)
-    journal_entry.custom_from_technician_protal = 1
-    journal_entry.custom_technician_id = technician_id
-    # Debit entry: Technician Expenses (replace with actual account)
-    journal_entry.append("accounts", {
-        "account": "Technician Expenses - Company",  # Replace with the correct expense account
-        "debit_in_account_currency": charges
-    })
+    employee_id = employee[0].employee  # Get the employee ID
 
-    # Credit entry: Cash or Customer Account (replace with actual account)
-    journal_entry.append("accounts", {
-        "account": "Cash - Company",  # Replace with the correct cash or bank account
-        "credit_in_account_currency": charges
-    })
+    # Fetch the company from the Technician Visit Entry document
 
-    # Save the journal entry
+    # Create a new Payment Entry document
+    payment_entry = frappe.new_doc("Payment Entry")
+    payment_entry.payment_type = "Pay"
+    payment_entry.posting_date = frappe.utils.nowdate()
+    payment_entry.party_type = "Employee"
+    payment_entry.party = employee_id  # Set to the employee ID
+    payment_entry.custom_from_technician_protal = 1  # Custom field for technician portal
+    payment_entry.custom_technician_id = technician_id  # Custom field for technician name
+    payment_entry.mode_of_payment = mode_of_payment  # Custom field for technician name
+
+    # Account paid from (typically an expense account or cash account)
+    payment_entry.paid_from = account  # Replace with the correct expense account
+    payment_entry.paid_amount = charges
+    payment_entry.received_amount = charges
+    payment_entry.paid_to = "Creditors - INR"  # Replace with the correct cash or bank account
+    payment_entry.reference_no = reference_no
+    payment_entry.reference_date = reference_date
+    # Set the exchange rate and account currency fields
+    payment_entry.source_exchange_rate = 1.0  
+    payment_entry.paid_from_account_currency = "INR"  
+    payment_entry.paid_to_account_currency = "INR"    
+
+    # Set the company for the payment entry
+    # payment_entry.company = company
+
+    # # Append the reference to the Payment Entry
+    # reference_entry = payment_entry.append("references")
+    # reference_entry.reference_doctype = doc.doctype
+    # reference_entry.reference_name = doc.name
+    # reference_entry.allocated_amount = charges
+    # reference_entry.total_amount = charges
+    # reference_entry.outstanding_amount = charges
+
+    # Debug: Print the payment entry details before inserting
+    # print("Payment Entry Details: ", payment_entry.as_dict())  # Use as_dict() to print the full object state
+
+    # Save the payment entry
     try:
-        journal_entry.insert(ignore_permissions=True)
-        journal_entry.submit()
-        frappe.msgprint(_("Journal Entry created for Amount Settlement."))
+        payment_entry.insert(ignore_permissions=True)  # Use ignore_permissions if necessary
+        payment_entry.submit()
+        frappe.msgprint(_("Payment Entry created for Amount Settlement."))
     except Exception as e:
-        frappe.throw(_("Error creating Journal Entry: {0}").format(str(e)))
+        error_message = _("Error creating Payment Entry: {0}. Payment Entry Details: {1}").format(str(e), str(payment_entry))
+        frappe.throw(error_message)
