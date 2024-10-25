@@ -16,6 +16,7 @@
   "type",
   "item_code",
   "column_break_dgfr",
+  "created_datetime",
   "kilometers",
   "charges",
   "payment_status",
@@ -28,9 +29,10 @@
   {
    "fieldname": "technician_id",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Technician Id",
    "options": "Technician Details",
-   "read_only": 1
+   "reqd": 1
   },
   {
    "fetch_from": "technician_id.name1",
@@ -84,7 +86,8 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Assigned\nDelivered\nPicked up\nAmount Settled\nClosed"
+   "options": "Assigned\nDelivered\nPicked up\nAmount Settled\nClosed",
+   "read_only": 1
   },
   {
    "fetch_from": "technician_id.mobile_number",
@@ -125,11 +128,18 @@
   {
    "fieldname": "column_break_dgfr",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "created_datetime",
+   "fieldtype": "Datetime",
+   "label": "Created DateTime",
+   "options": "Now",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-10-23 10:03:27.065618",
+ "modified": "2024-10-25 14:30:03.830822",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Technician Visit Entry",

@@ -15,8 +15,7 @@
   {
    "fieldname": "name1",
    "fieldtype": "Data",
-   "label": "Name",
-   "unique": 1
+   "label": "Name"
   },
   {
    "fieldname": "mobile_number",
@@ -49,7 +48,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-10-22 12:02:00.988232",
+ "modified": "2024-10-23 14:35:41.903407",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Technician Details",
