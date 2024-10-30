@@ -761,7 +761,7 @@ def create_payment_entry(technician_visit_payment_id, total_amount, technician_i
         technician_visit_payment_doc.save()
 
         technician_details = frappe.get_doc('Technician Details',technician_id)
-        # technician_details.total_amount_settled += total_amount
+        technician_details.total_amount_settled += total_amount
         technician_details.save()
         frappe.db.commit()
 
