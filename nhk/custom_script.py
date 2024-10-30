@@ -822,7 +822,7 @@ def delete_technician_visit_payment(docname):
             payment_entry = frappe.get_doc("Payment Entry", technician_visit_payment.payment_entry_id)
             if payment_entry.docstatus == 1:  # Ensure the Payment Entry is submitted
                 payment_entry.cancel()  # Cancel the payment entry
-            payment_entry.delete()  # Delete the payment entry after cancelling
+            # payment_entry.delete()  # Delete the payment entry after cancelling
             frappe.msgprint(_("Payment Entry {0} has been deleted.").format(payment_entry.name))
         technician_visit_payment.payment_entry_id = ''
         technician_visit_payment.payment_done = 0
