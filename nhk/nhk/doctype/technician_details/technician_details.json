@@ -43,12 +43,13 @@
    "fieldname": "total_amount_settled",
    "fieldtype": "Currency",
    "label": "Total Amount Settled",
+   "non_negative": 1,
    "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-10-23 14:35:41.903407",
+ "modified": "2024-10-30 12:01:25.382131",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Technician Details",
