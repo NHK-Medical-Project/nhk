@@ -93,7 +93,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Assigned\nDelivered\nPicked up\nIncentive Finalize\nAmount Settled\nClosed"
+   "options": "Assigned\nDelivered\nPicked up\nService Done\nIncentive Finalize\nAmount Settled\nClosed"
   },
   {
    "fetch_from": "technician_id.mobile_number",
@@ -183,7 +183,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-10-29 14:40:00.218523",
+ "modified": "2024-10-30 11:11:03.509264",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Technician Visit Entry",

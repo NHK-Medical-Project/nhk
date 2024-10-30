@@ -513,7 +513,7 @@ import frappe
 from frappe import _
 
 @frappe.whitelist()
-def change_status(docname, new_status, mode_of_payment=None,account=None,reference_no=None,reference_date=None):
+def change_status(docname, new_status):
     """Change the status of a document to the new status provided."""
     
     # Replace 'Technician Portal' with the actual DocType name you are working with
@@ -522,8 +522,12 @@ def change_status(docname, new_status, mode_of_payment=None,account=None,referen
     # Check the current status and validate the transition
     if doc.status == "Assigned" and new_status == "Delivered":
         # Allow changing from Assigned to Delivered
-        pass
+        doc.technician_update_datetime = frappe.utils.now()
     elif doc.status == "Assigned" and new_status == "Picked up":
+        # Allow changing from Assigned to Delivered
+
+        doc.technician_update_datetime = frappe.utils.now()
+    elif doc.status == "Assigned" and new_status == "Service Done":
         # Allow changing from Assigned to Delivered
 
         doc.technician_update_datetime = frappe.utils.now()
@@ -532,10 +536,10 @@ def change_status(docname, new_status, mode_of_payment=None,account=None,referen
         # Add additional checks for kilometers and charges if necessary
         if not doc.kilometers or not doc.charges:
             frappe.throw(_("Please fill in kilometers and charges before settling the amount."))
-        create_payment_entry_for_settlement(doc,doc.technician_id,doc.technician_user_id, doc.charges,mode_of_payment,account,reference_no,reference_date)
+        # create_payment_entry_for_settlement(doc,doc.technician_id,doc.technician_user_id, doc.charges,mode_of_payment,account,reference_no,reference_date)
 
-        update_technician_amount(doc.technician_id, doc.charges)   
-        doc.payment_status = 'Cleared'
+        # update_technician_amount(doc.technician_id, doc.charges)   
+        # doc.payment_status = 'Cleared'
     elif doc.status == "Picked up" and new_status == "Incentive Finalize":
         # Allow changing from Picked up to Amount Settled
         if not doc.kilometers or not doc.charges or not doc.incentive_amount_to_be_processed:
@@ -548,14 +552,18 @@ def change_status(docname, new_status, mode_of_payment=None,account=None,referen
 
         # update_technician_amount(doc.technician_id, doc.charges)   
         # doc.payment_status = 'Cleared'
+    elif doc.status == "Service Done" and new_status == "Incentive Finalize":
+        # Allow changing from Picked up to Amount Settled
+        if not doc.kilometers or not doc.charges or not doc.incentive_amount_to_be_processed:
+            frappe.throw(_("Please fill in kilometers and charges before settling the amount."))
     elif doc.status == "Picked up" and new_status == "Amount Settled":
         # Allow changing from Picked up to Amount Settled
         if not doc.kilometers or not doc.charges:
             frappe.throw(_("Please fill in kilometers and charges before settling the amount."))
-        create_payment_entry_for_settlement(doc,doc.technician_id,doc.technician_user_id, doc.charges,mode_of_payment,account,reference_no,reference_date)
+        # create_payment_entry_for_settlement(doc,doc.technician_id,doc.technician_user_id, doc.charges,mode_of_payment,account,reference_no,reference_date)
 
-        update_technician_amount(doc.technician_id, doc.charges)   
-        doc.payment_status = 'Cleared'
+        # update_technician_amount(doc.technician_id, doc.charges)   
+        # doc.payment_status = 'Cleared'
     elif doc.status == "Amount Settled" and new_status == "Closed":
         # Allow changing from Picked up to Amount Settled
         if not doc.kilometers or not doc.charges:
@@ -753,7 +761,7 @@ def create_payment_entry(technician_visit_payment_id, total_amount, technician_i
         technician_visit_payment_doc.save()
 
         technician_details = frappe.get_doc('Technician Details',technician_id)
-        technician_details.total_amount_settled += total_amount
+        # technician_details.total_amount_settled += total_amount
         technician_details.save()
         frappe.db.commit()
 
