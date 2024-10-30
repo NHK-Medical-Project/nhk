@@ -10,16 +10,23 @@
   "technician_name",
   "technician_mobile_no",
   "technician_user_id",
+  "patient_id",
+  "patient_name",
   "column_break_quoq",
-  "status",
-  "sales_order_id",
   "type",
+  "area",
+  "order",
+  "sales_order_id",
   "item_code",
-  "column_break_dgfr",
-  "created_datetime",
+  "column_break_ifcb",
   "kilometers",
   "charges",
+  "incentive_amount_to_be_processed",
   "payment_status",
+  "technician_update_datetime",
+  "column_break_dgfr",
+  "status",
+  "created_datetime",
   "sales_order_details_section",
   "sales_order_html",
   "section_break_bymd",
@@ -69,7 +76,7 @@
    "description": "Delivery or Pickup Charges",
    "fieldname": "charges",
    "fieldtype": "Currency",
-   "label": "Charges"
+   "label": "Incentive Amount"
   },
   {
    "fieldname": "sales_order_details_section",
@@ -86,8 +93,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Assigned\nDelivered\nPicked up\nAmount Settled\nClosed",
-   "read_only": 1
+   "options": "Assigned\nDelivered\nPicked up\nIncentive Finalize\nAmount Settled\nClosed"
   },
   {
    "fetch_from": "technician_id.mobile_number",
@@ -130,16 +136,54 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "Now",
    "fieldname": "created_datetime",
    "fieldtype": "Datetime",
    "label": "Created DateTime",
-   "options": "Now",
    "read_only": 1
+  },
+  {
+   "fieldname": "incentive_amount_to_be_processed",
+   "fieldtype": "Currency",
+   "label": "Incentive amount to be processed",
+   "permlevel": 2
+  },
+  {
+   "fieldname": "technician_update_datetime",
+   "fieldtype": "Datetime",
+   "label": "Technician Update DateTime",
+   "read_only": 1
+  },
+  {
+   "fieldname": "area",
+   "fieldtype": "Data",
+   "label": "Area"
+  },
+  {
+   "fetch_from": "patient_id.customer_name",
+   "fieldname": "patient_name",
+   "fieldtype": "Data",
+   "label": "Patient Name"
+  },
+  {
+   "fieldname": "patient_id",
+   "fieldtype": "Link",
+   "label": "Patient ID",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "order",
+   "fieldtype": "Data",
+   "label": "Order"
+  },
+  {
+   "fieldname": "column_break_ifcb",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-10-25 14:30:03.830822",
+ "modified": "2024-10-29 14:40:00.218523",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Technician Visit Entry",

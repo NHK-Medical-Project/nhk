@@ -1,0 +1,149 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:TEC-PAY-{MM}-{YYYY}-{###}",
+ "creation": "2024-10-25 18:14:11.704897",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "technician_details_section",
+  "technician_id",
+  "column_break_hota",
+  "technician_name",
+  "column_break_uwme",
+  "mobile_no",
+  "column_break_oitt",
+  "email_id",
+  "section_break_btvw",
+  "get_the_total_payment_amount",
+  "column_break_svqz",
+  "total_amount",
+  "make_payment",
+  "payment_done",
+  "cancel_payment_entry",
+  "payment_entry_id",
+  "section_break_vgie",
+  "payments"
+ ],
+ "fields": [
+  {
+   "fieldname": "technician_id",
+   "fieldtype": "Link",
+   "label": "ID",
+   "options": "Technician Details"
+  },
+  {
+   "fetch_from": "technician_id.name1",
+   "fieldname": "technician_name",
+   "fieldtype": "Data",
+   "label": "Name"
+  },
+  {
+   "fetch_from": "technician_id.mobile_number",
+   "fieldname": "mobile_no",
+   "fieldtype": "Data",
+   "label": "Mobile No"
+  },
+  {
+   "fieldname": "technician_details_section",
+   "fieldtype": "Section Break",
+   "label": "Technician Details"
+  },
+  {
+   "fieldname": "column_break_hota",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_uwme",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_vgie",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "payments",
+   "fieldtype": "Table",
+   "label": "Payments",
+   "options": "Technician Visit Payment Child"
+  },
+  {
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "label": "Total Amount"
+  },
+  {
+   "fieldname": "get_the_total_payment_amount",
+   "fieldtype": "Button",
+   "label": "Get the Total Payment Amount"
+  },
+  {
+   "fieldname": "section_break_btvw",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_svqz",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "total_amount",
+   "fieldname": "make_payment",
+   "fieldtype": "Button",
+   "label": "Make Payment"
+  },
+  {
+   "fetch_from": "technician_id.user_mail_id",
+   "fieldname": "email_id",
+   "fieldtype": "Data",
+   "label": "Email ID"
+  },
+  {
+   "fieldname": "column_break_oitt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "payment_done",
+   "fieldtype": "Check",
+   "label": "Payment Done",
+   "read_only": 1
+  },
+  {
+   "depends_on": "payment_done",
+   "fieldname": "payment_entry_id",
+   "fieldtype": "Data",
+   "label": "Payment Entry ID"
+  },
+  {
+   "depends_on": "payment_done",
+   "fieldname": "cancel_payment_entry",
+   "fieldtype": "Button",
+   "label": "Cancel Payment Entry"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-10-29 17:32:50.908217",
+ "modified_by": "Administrator",
+ "module": "nhk",
+ "name": "Technician Visit Payment",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -525,7 +525,8 @@ def change_status(docname, new_status, mode_of_payment=None,account=None,referen
         pass
     elif doc.status == "Assigned" and new_status == "Picked up":
         # Allow changing from Assigned to Delivered
-        pass
+
+        doc.technician_update_datetime = frappe.utils.now()
     elif doc.status == "Delivered" and new_status == "Amount Settled":
         # Allow changing from Delivered to Amount Settled
         # Add additional checks for kilometers and charges if necessary
@@ -535,6 +536,18 @@ def change_status(docname, new_status, mode_of_payment=None,account=None,referen
 
         update_technician_amount(doc.technician_id, doc.charges)   
         doc.payment_status = 'Cleared'
+    elif doc.status == "Picked up" and new_status == "Incentive Finalize":
+        # Allow changing from Picked up to Amount Settled
+        if not doc.kilometers or not doc.charges or not doc.incentive_amount_to_be_processed:
+            frappe.throw(_("Please fill in kilometers and charges before settling the amount."))
+    elif doc.status == "Delivered" and new_status == "Incentive Finalize":
+        # Allow changing from Picked up to Amount Settled
+        if not doc.kilometers or not doc.charges or not doc.incentive_amount_to_be_processed:
+            frappe.throw(_("Please fill in kilometers and charges before settling the amount."))
+        # create_payment_entry_for_settlement(doc,doc.technician_id,doc.technician_user_id, doc.charges,mode_of_payment,account,reference_no,reference_date)
+
+        # update_technician_amount(doc.technician_id, doc.charges)   
+        # doc.payment_status = 'Cleared'
     elif doc.status == "Picked up" and new_status == "Amount Settled":
         # Allow changing from Picked up to Amount Settled
         if not doc.kilometers or not doc.charges:
@@ -636,3 +649,183 @@ def create_payment_entry_for_settlement(doc, technician_id, technician_user_id, 
     except Exception as e:
         error_message = _("Error creating Payment Entry: {0}. Payment Entry Details: {1}").format(str(e), str(payment_entry))
         frappe.throw(error_message)
+
+
+
+@frappe.whitelist()
+def update_shares(doctype, docname, technician_user_id):
+    # Remove existing shares
+    shares = frappe.get_all('DocShare', filters={'share_doctype': doctype, 'share_name': docname}, fields=['name', 'user'])
+    for share in shares:
+        frappe.share.remove(doctype, docname, share.user)
+    
+    # Add new share for technician_user_id
+    frappe.share.add(doctype, docname, technician_user_id, read=1, write=1)
+
+    return True
+
+
+
+
+import frappe
+
+@frappe.whitelist()
+def get_uncleared_technician_records(technician_id, start_date=None, end_date=None):
+    # Validate technician_id
+    if not technician_id:
+        frappe.throw("Technician ID is required.")
+    
+    # Prepare filters
+    filters = {
+        'technician_id': technician_id,
+        'status': 'Incentive Finalize'
+    }
+
+    # If both start_date and end_date are provided, add them to the filters
+    if start_date and end_date:
+        filters.update({
+            'technician_update_datetime': ['between', [start_date, end_date]]  # Filter by datetime range
+        })
+
+    # Fetch technician visit entries based on filters
+    entries = frappe.get_all(
+        'Technician Visit Entry',
+        filters=filters,
+        fields=['name']  # Replace with actual fields needed
+    )
+
+    # print('Fetched Entriesssssssssssssssssssssssssssssssss:', entries)  # Debugging log
+    return entries
+
+@frappe.whitelist()
+def create_payment_entry(technician_visit_payment_id, total_amount, technician_id, technician_user_id, mode_of_payment, payment_account, reference_no=None, reference_date=None):
+    # Ensure valid input and convert total_amount to a float
+    try:
+        total_amount = float(total_amount)
+        if total_amount <= 0:
+            return {"success": False, "message": "Total amount must be greater than zero."}
+    except ValueError:
+        return {"success": False, "message": "Invalid total amount. Please ensure it is a valid number."}
+
+    if not technician_id:
+        return {"success": False, "message": "Technician ID is required."}
+
+    # Fetch the employee details based on the technician's user ID
+    employee = frappe.get_all("Employee", filters={"user_id": technician_user_id}, fields=["name", "employee"])
+    if not employee:
+        frappe.throw(_("No Employee found for Technician User ID: {0}").format(technician_user_id))
+    
+    employee_id = employee[0].employee  # Get the employee ID
+
+    # Create a new Payment Entry document
+    payment_entry = frappe.new_doc("Payment Entry")
+    payment_entry.payment_type = "Pay"
+    payment_entry.posting_date = frappe.utils.nowdate()
+    payment_entry.party_type = "Employee"
+    payment_entry.party = employee_id  # Set to the employee ID
+    payment_entry.custom_from_technician_protal = 1  # Custom field for technician portal
+    payment_entry.custom_technician_id = technician_id  # Custom field for technician name
+    payment_entry.mode_of_payment = mode_of_payment  # Set mode of payment
+    payment_entry.custom_technician_visit_payment_id = technician_visit_payment_id
+    payment_entry.paid_from = payment_account  # Set payment account
+    payment_entry.paid_amount = total_amount
+    payment_entry.received_amount = total_amount
+    payment_entry.paid_to = "Creditors - INR"
+    payment_entry.reference_no = reference_no
+    payment_entry.reference_date = reference_date
+
+    # Save the payment entry
+    try:
+        payment_entry.insert(ignore_permissions=True)  # Insert the payment entry
+        payment_entry.submit()
+
+        # Fetch all technician_visit_ids from the payments child table in Technician Visit Payment
+        technician_visit_payment_doc = frappe.get_doc("Technician Visit Payment", technician_visit_payment_id)
+        if technician_visit_payment_doc.payments:
+            for payment in technician_visit_payment_doc.payments:
+                visit_id = payment.technician_visit_id
+                # Update status and payment_status in Technician Visit entries
+                update_technician_visit_entry(visit_id, "Amount Settled", "Cleared")
+
+        # After successfully updating the technician visit entries, update payment_done in Technician Visit Payment
+        technician_visit_payment_doc.payment_done = 1
+        technician_visit_payment_doc.payment_entry_id = payment_entry.name
+        technician_visit_payment_doc.save()
+
+        technician_details = frappe.get_doc('Technician Details',technician_id)
+        technician_details.total_amount_settled += total_amount
+        technician_details.save()
+        frappe.db.commit()
+
+        frappe.msgprint(_("Payment Entry created, Technician Visit updated, and Payment marked as done successfully."))
+        return {"success": True, "message": "Payment Entry, Technician Visit, and Payment status updated successfully."}
+
+    except Exception as e:
+        frappe.db.rollback()
+        error_message = _("Error creating Payment Entry: {0}.").format(str(e))
+        frappe.throw(error_message)
+
+
+@frappe.whitelist()
+def update_technician_visit_entry(visit_id, status, payment_status):
+    # Ensure valid input
+    if not visit_id:
+        return {"success": False, "message": "Technician visit ID is required."}
+
+    try:
+        # Fetch the Technician Visit entry and update fields
+        technician_visit = frappe.get_doc("Technician Visit Entry", visit_id)
+        technician_visit.status = status
+        technician_visit.payment_status = payment_status
+        technician_visit.save()
+
+        frappe.db.commit()
+        return {"success": True, "message": "Technician visit entry updated successfully."}
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Update Technician Visit Error")
+        return {"success": False, "message": str(e)}
+
+
+@frappe.whitelist()
+def delete_technician_visit_payment(docname):
+    # Ensure valid input
+    if not docname:
+        return {"success": False, "message": "Technician Visit Payment ID is required."}
+
+    try:
+        # Fetch the Technician Visit Payment document
+        technician_visit_payment = frappe.get_doc("Technician Visit Payment", docname)
+        technician_id = technician_visit_payment.technician_id
+        total_amount = technician_visit_payment.total_amount
+        # 1. Get all the related Technician Visit entries and reset their statuses
+        if technician_visit_payment.payments:
+            for payment in technician_visit_payment.payments:
+                visit_id = payment.technician_visit_id
+                if visit_id:
+                    technician_visit = frappe.get_doc("Technician Visit Entry", visit_id)
+                    # Reset status and payment status
+                    technician_visit.status = "Incentive Finalize"  # Revert to the previous status
+                    technician_visit.payment_status = "Pending"  # Reset payment status
+                    technician_visit.save()
+                    frappe.msgprint(_("Technician Visit {0} status has been reset.").format(visit_id))
+
+        # 2. After resetting Technician Visit statuses, cancel and delete the related Payment Entry
+        if technician_visit_payment.payment_entry_id:  # Check if the Payment Entry ID exists
+            payment_entry = frappe.get_doc("Payment Entry", technician_visit_payment.payment_entry_id)
+            if payment_entry.docstatus == 1:  # Ensure the Payment Entry is submitted
+                payment_entry.cancel()  # Cancel the payment entry
+            payment_entry.delete()  # Delete the payment entry after cancelling
+            frappe.msgprint(_("Payment Entry {0} has been deleted.").format(payment_entry.name))
+        technician_visit_payment.payment_entry_id = ''
+        technician_visit_payment.payment_done = 0
+        technician_visit_payment.save()
+        # Commit the changes
+        technician_details = frappe.get_doc('Technician Details',technician_id)
+        technician_details.total_amount_settled -= total_amount
+        technician_details.save()
+        frappe.db.commit()
+        return {"success": True, "message": "Undo successful. All related records have been updated."}
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Undo Technician Visit Payment Error")
+        return {"success": False, "message": str(e)}
