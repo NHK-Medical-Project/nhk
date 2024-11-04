@@ -70,7 +70,8 @@
   {
    "fieldname": "total_amount",
    "fieldtype": "Currency",
-   "label": "Total Amount"
+   "label": "Total Amount",
+   "read_only": 1
   },
   {
    "fieldname": "get_the_total_payment_amount",
@@ -123,7 +124,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-10-29 17:32:50.908217",
+ "modified": "2024-11-04 10:34:56.040367",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Technician Visit Payment",

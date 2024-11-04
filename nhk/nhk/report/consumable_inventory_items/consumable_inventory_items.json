@@ -9,7 +9,7 @@
  "idx": 0,
  "is_standard": "Yes",
  "letterhead": null,
- "modified": "2024-10-30 12:49:20.337271",
+ "modified": "2024-10-30 16:58:08.838930",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Consumable Inventory Items",
@@ -18,5 +18,9 @@
  "ref_doctype": "Item",
  "report_name": "Consumable Inventory Items",
  "report_type": "Script Report",
- "roles": []
+ "roles": [
+  {
+   "role": "NHK Admin"
+  }
+ ]
 }
