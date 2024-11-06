@@ -385,6 +385,7 @@ import frappe
 
 
 import frappe
+import frappe
 
 @frappe.whitelist()
 def get_sales_order_details(sales_order_id):
@@ -392,7 +393,8 @@ def get_sales_order_details(sales_order_id):
     sales_order = frappe.get_doc("Sales Order", sales_order_id)
 
     # Fetch items from the Sales Order
-    items = [{"item_code": item.item_code, "item_name": item.item_name, "name":item.name,"child_status":item.child_status} for item in sales_order.items]
+    items = [{"item_code": item.item_code, "item_name": item.item_name, "name": item.name, "child_status": item.child_status} for item in sales_order.items]
+
     # Helper function to map docstatus to status text
     def get_status_text(docstatus):
         if docstatus == 0:
@@ -402,16 +404,16 @@ def get_sales_order_details(sales_order_id):
         elif docstatus == 2:
             return "Cancelled"
         return "Unknown"
+
     # Fetch Payment Entries related to this Sales Order
     payment_entries = frappe.db.sql("""
         SELECT 
-            name, posting_date, paid_amount AS amount,docstatus
+            name, posting_date, paid_amount AS amount, docstatus
         FROM 
             `tabPayment Entry`
         WHERE 
             sales_order_id = %s AND docstatus IN (0, 1)
     """, (sales_order_id,), as_dict=True)
-
 
     for payment in payment_entries:
         payment["status"] = get_status_text(payment.get("docstatus"))
@@ -429,14 +431,34 @@ def get_sales_order_details(sales_order_id):
     for journal in journal_entries:
         journal["status"] = get_status_text(journal.get("docstatus"))
 
-     # Calculate total paid amount from Payment Entries (including draft and submitted)
+    # Calculate total paid amount from Payment Entries (including draft and submitted)
     total_paid_rental = sum(payment["amount"] for payment in payment_entries if payment.get("docstatus") in [0, 1])
 
     # Calculate total security deposit paid (including draft and submitted)
     total_paid_security_deposit = sum(journal["amount"] for journal in journal_entries if journal.get("docstatus") in [0, 1])
-    # Calculate unpaid amounts
+
+    # Calculate unpaid rental amount
     unpaid_rental_amount = max(sales_order.rounded_total - total_paid_rental, 0)
-    unpaid_security_deposit_amount = max(float(sales_order.security_deposit) - total_paid_security_deposit, 0)
+
+    # Check if security deposit exists and is greater than 0
+    if sales_order.security_deposit and float(sales_order.security_deposit) > 0:
+        security_deposit = float(sales_order.security_deposit)
+
+        # Calculate unpaid security deposit amount
+        unpaid_security_deposit_amount = max(security_deposit - total_paid_security_deposit, 0)
+
+        # Calculate Security Deposit Payment Status
+        if total_paid_security_deposit >= security_deposit:
+            security_deposit_payment_status = "Fully Paid"
+        elif total_paid_security_deposit > 0:
+            security_deposit_payment_status = "Partially Paid"
+        else:
+            security_deposit_payment_status = "Unpaid"
+    else:
+        # If no security deposit or it is None or less than 0, set defaults
+        unpaid_security_deposit_amount = 0
+        security_deposit_payment_status = "Not Applicable"
+        total_paid_security_deposit = 0
 
     # Calculate Rental Payment Status
     if total_paid_rental >= sales_order.rounded_total:
@@ -446,16 +468,9 @@ def get_sales_order_details(sales_order_id):
     else:
         rental_payment_status = "Unpaid"
 
-    # Calculate Security Deposit Payment Status
-    if total_paid_security_deposit >= float(sales_order.security_deposit):
-        security_deposit_payment_status = "Fully Paid"
-    elif total_paid_security_deposit > 0:
-        security_deposit_payment_status = "Partially Paid"
-    else:
-        security_deposit_payment_status = "Unpaid"
     # Prepare response data
     response = {
-         "sales_order_id": sales_order.name,
+        "sales_order_id": sales_order.name,
         "customer": sales_order.customer,
         "customer_mobile_no": sales_order.customer_mobile_no,
         "customer_email_id": sales_order.customer_email_id,
@@ -464,8 +479,8 @@ def get_sales_order_details(sales_order_id):
         "outstanding_security_deposit_amount": sales_order.outstanding_security_deposit_amount,
         "payment_status": sales_order.payment_status,
         "status": sales_order.status,
-        "master_order_id":sales_order.master_order_id,
-        "security_deposit_status":sales_order.security_deposit_status,
+        "master_order_id": sales_order.master_order_id,
+        "security_deposit_status": sales_order.security_deposit_status,
         "items": items,
         "payment_entries": payment_entries,
         "journal_entries": journal_entries,
@@ -473,12 +488,105 @@ def get_sales_order_details(sales_order_id):
         "security_deposit_payment_status": security_deposit_payment_status,
         "paid_rental_amount": total_paid_rental,
         "unpaid_rental_amount": unpaid_rental_amount,
-        "unpaid_security_deposit_amount":unpaid_security_deposit_amount,
-        "paid_security_deposit_amount":total_paid_security_deposit
-        
+        "unpaid_security_deposit_amount": unpaid_security_deposit_amount,
+        "paid_security_deposit_amount": total_paid_security_deposit
     }
 
     return response
+
+# @frappe.whitelist()
+# def get_sales_order_details(sales_order_id):
+#     # Fetch Sales Order details
+#     sales_order = frappe.get_doc("Sales Order", sales_order_id)
+
+#     # Fetch items from the Sales Order
+#     items = [{"item_code": item.item_code, "item_name": item.item_name, "name":item.name,"child_status":item.child_status} for item in sales_order.items]
+#     # Helper function to map docstatus to status text
+#     def get_status_text(docstatus):
+#         if docstatus == 0:
+#             return "Draft"
+#         elif docstatus == 1:
+#             return "Submitted"
+#         elif docstatus == 2:
+#             return "Cancelled"
+#         return "Unknown"
+#     # Fetch Payment Entries related to this Sales Order
+#     payment_entries = frappe.db.sql("""
+#         SELECT 
+#             name, posting_date, paid_amount AS amount,docstatus
+#         FROM 
+#             `tabPayment Entry`
+#         WHERE 
+#             sales_order_id = %s AND docstatus IN (0, 1)
+#     """, (sales_order_id,), as_dict=True)
+
+
+#     for payment in payment_entries:
+#         payment["status"] = get_status_text(payment.get("docstatus"))
+
+#     # Fetch Journal Entries related to this Sales Order
+#     journal_entries = frappe.db.sql("""
+#         SELECT 
+#             name, posting_date, total_debit AS amount, docstatus
+#         FROM 
+#             `tabJournal Entry`
+#         WHERE 
+#             sales_order_id = %s AND docstatus IN (0, 1) AND security_deposite_type = 'SD Amount Received From Client'
+#     """, (sales_order_id,), as_dict=True)
+
+#     for journal in journal_entries:
+#         journal["status"] = get_status_text(journal.get("docstatus"))
+
+#      # Calculate total paid amount from Payment Entries (including draft and submitted)
+#     total_paid_rental = sum(payment["amount"] for payment in payment_entries if payment.get("docstatus") in [0, 1])
+
+#     # Calculate total security deposit paid (including draft and submitted)
+#     total_paid_security_deposit = sum(journal["amount"] for journal in journal_entries if journal.get("docstatus") in [0, 1])
+#     # Calculate unpaid amounts
+#     unpaid_rental_amount = max(sales_order.rounded_total - total_paid_rental, 0)
+#     unpaid_security_deposit_amount = max(float(sales_order.security_deposit) - total_paid_security_deposit, 0)
+
+#     # Calculate Rental Payment Status
+#     if total_paid_rental >= sales_order.rounded_total:
+#         rental_payment_status = "Fully Paid"
+#     elif total_paid_rental > 0:
+#         rental_payment_status = "Partially Paid"
+#     else:
+#         rental_payment_status = "Unpaid"
+
+#     # Calculate Security Deposit Payment Status
+#     if total_paid_security_deposit >= float(sales_order.security_deposit):
+#         security_deposit_payment_status = "Fully Paid"
+#     elif total_paid_security_deposit > 0:
+#         security_deposit_payment_status = "Partially Paid"
+#     else:
+#         security_deposit_payment_status = "Unpaid"
+#     # Prepare response data
+#     response = {
+#          "sales_order_id": sales_order.name,
+#         "customer": sales_order.customer,
+#         "customer_mobile_no": sales_order.customer_mobile_no,
+#         "customer_email_id": sales_order.customer_email_id,
+#         "permanent_address": sales_order.permanent_address,
+#         "balance_amount": sales_order.balance_amount,
+#         "outstanding_security_deposit_amount": sales_order.outstanding_security_deposit_amount,
+#         "payment_status": sales_order.payment_status,
+#         "status": sales_order.status,
+#         "master_order_id":sales_order.master_order_id,
+#         "security_deposit_status":sales_order.security_deposit_status,
+#         "items": items,
+#         "payment_entries": payment_entries,
+#         "journal_entries": journal_entries,
+#         "rental_payment_status": rental_payment_status,
+#         "security_deposit_payment_status": security_deposit_payment_status,
+#         "paid_rental_amount": total_paid_rental,
+#         "unpaid_rental_amount": unpaid_rental_amount,
+#         "unpaid_security_deposit_amount":unpaid_security_deposit_amount,
+#         "paid_security_deposit_amount":total_paid_security_deposit
+        
+#     }
+
+#     return response
 
 
 import frappe

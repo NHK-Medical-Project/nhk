@@ -27,6 +27,7 @@
   "column_break_dgfr",
   "status",
   "created_datetime",
+  "order_notes",
   "sales_order_details_section",
   "sales_order_html",
   "section_break_bymd",
@@ -56,8 +57,7 @@
    "fieldname": "sales_order_id",
    "fieldtype": "Link",
    "label": "Sales Order Id",
-   "options": "Sales Order",
-   "read_only": 1
+   "options": "Sales Order"
   },
   {
    "default": "Service",
@@ -124,7 +124,7 @@
   {
    "fieldname": "notes",
    "fieldtype": "Small Text",
-   "label": "Notes"
+   "label": "Technician Notes"
   },
   {
    "fieldname": "item_code",
@@ -167,6 +167,7 @@
    "label": "Patient Name"
   },
   {
+   "fetch_from": "sales_order_id.customer",
    "fieldname": "patient_id",
    "fieldtype": "Link",
    "label": "Patient ID",
@@ -180,11 +181,16 @@
   {
    "fieldname": "column_break_ifcb",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "order_notes",
+   "fieldtype": "Small Text",
+   "label": "Order Notes"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-10-30 12:17:09.177702",
+ "modified": "2024-11-06 18:26:16.085713",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Technician Visit Entry",
