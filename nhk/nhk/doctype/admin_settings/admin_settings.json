@@ -10,7 +10,9 @@
   "section_break_ctpr",
   "razorpay_base_url",
   "razorpay_api_key",
-  "razorpay_secret"
+  "razorpay_secret",
+  "whats_app_section",
+  "send_renewal_and_payment_message"
  ],
  "fields": [
   {
@@ -43,12 +45,23 @@
    "fieldname": "razorpay_secret",
    "fieldtype": "Data",
    "label": "Razorpay Secret"
+  },
+  {
+   "fieldname": "whats_app_section",
+   "fieldtype": "Section Break",
+   "label": "Whats App"
+  },
+  {
+   "default": "0",
+   "fieldname": "send_renewal_and_payment_message",
+   "fieldtype": "Check",
+   "label": "Send Renewal and Payment Message"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2024-07-22 13:55:13.713673",
+ "modified": "2025-03-27 21:53:10.220920",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Admin Settings",
