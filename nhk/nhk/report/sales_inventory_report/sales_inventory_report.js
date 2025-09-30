@@ -33,6 +33,19 @@ frappe.query_reports["Sales Inventory Report"] = {
                     }
                 };
             }
+        },
+        {
+            fieldname: "item_disabled",
+            label: __("Item Disabled"),
+            fieldtype: "Select",
+            options: [
+                { "label": "All", "value": "" },
+                { "label": "Enabled", "value": "0" },
+                { "label": "Disabled", "value": "1" }
+            ],
+            default: "0",  // Default to Disabled items
+            reqd: 0
         }
+
     ]
 };
