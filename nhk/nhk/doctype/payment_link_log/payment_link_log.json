@@ -33,7 +33,7 @@
  "fields": [
   {
    "fieldname": "sales_order",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Sales Order",
    "options": "Sales Order",
    "read_only": 1
@@ -180,7 +180,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-10-04 12:00:46.721786",
+ "modified": "2025-04-15 14:37:16.894842",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Payment Link Log",

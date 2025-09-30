@@ -59,6 +59,7 @@
    "fieldtype": "Check",
    "label": "Send Renewal and Payment Message",
    "permlevel": 2
+
   },
   {
    "fieldname": "column_break_vbuy",
@@ -69,12 +70,14 @@
    "fieldtype": "Link",
    "label": "Email Account",
    "options": "Email Account"
+
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
  "modified": "2025-09-29 15:55:21.498761",
+
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Admin Settings",
