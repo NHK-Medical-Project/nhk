@@ -55,13 +55,14 @@
    "default": "0",
    "fieldname": "send_renewal_and_payment_message",
    "fieldtype": "Check",
-   "label": "Send Renewal and Payment Message"
+   "label": "Send Renewal and Payment Message",
+   "permlevel": 2
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-03-27 21:53:10.220920",
+ "modified": "2025-05-02 14:38:03.111020",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Admin Settings",
