@@ -7,6 +7,8 @@
  "field_order": [
   "mail_section",
   "sales_order_email_notification_cc",
+  "column_break_vbuy",
+  "email_account",
   "section_break_ctpr",
   "razorpay_base_url",
   "razorpay_api_key",
@@ -55,13 +57,24 @@
    "default": "0",
    "fieldname": "send_renewal_and_payment_message",
    "fieldtype": "Check",
-   "label": "Send Renewal and Payment Message"
+   "label": "Send Renewal and Payment Message",
+   "permlevel": 2
+  },
+  {
+   "fieldname": "column_break_vbuy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "email_account",
+   "fieldtype": "Link",
+   "label": "Email Account",
+   "options": "Email Account"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-03-27 21:53:10.220920",
+ "modified": "2025-09-29 15:55:21.498761",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Admin Settings",
