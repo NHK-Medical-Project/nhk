@@ -41,7 +41,9 @@
   {
    "fieldname": "mobile_number",
    "fieldtype": "Data",
-   "label": "Mobile Number"
+   "label": "Mobile Number",
+   "reqd": 1,
+   "unique": 1
   },
   {
    "fieldname": "status",
@@ -131,7 +133,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-08-20 12:38:00.726223",
+ "modified": "2025-09-30 10:33:57.654835",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Referrer",
