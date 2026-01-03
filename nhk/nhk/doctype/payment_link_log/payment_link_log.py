@@ -56,6 +56,9 @@ def cancel_link(p_id=None):
 
 @frappe.whitelist()
 def sync_payment(link_id, p_id):
+    import requests
+    from datetime import datetime
+    from frappe.utils import now_datetime
     try:
         # Fetch Razorpay API credentials from the Admin Settings doctype
         admin_settings = frappe.get_doc('Admin Settings')
@@ -67,7 +70,7 @@ def sync_payment(link_id, p_id):
         # Make a request to the Razorpay API to get the payment details
         response = requests.get(razorpay_api_url, auth=(razorpay_key_id, razorpay_key_secret))
         data = response.json()
-
+        # frappe.log_error('data',data)
         # Extract the relevant details from the response
         received_amount = data.get('amount_paid')
         payment_status = data.get('status')
@@ -92,6 +95,7 @@ def sync_payment(link_id, p_id):
                 'payment_id': payment.get('payment_id'),
                 'status': payment.get('status'),
                 'method': payment.get('method'),
+                
                 'description': payment.get('method'),  # Adjust field name if necessary
                 'created_at': frappe.utils.datetime.datetime.fromtimestamp(payment.get('created_at', 0))
             })
@@ -101,7 +105,11 @@ def sync_payment(link_id, p_id):
         # Update the payment_ids field with a comma-separated list of payment IDs
         razorpay_payment_ids = ','.join(payment_ids)
         doc.payment_ids = razorpay_payment_ids
-        
+        expire_by = data.get("expire_by")
+        doc.expiry_datetime = (
+            datetime.fromtimestamp(expire_by)
+            if expire_by else None
+        )
         doc.save()
 
         # Update the payment link document in Frappe

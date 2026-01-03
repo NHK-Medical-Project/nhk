@@ -133,16 +133,17 @@ app_license = "mit"
 # Scheduled Tasks
 # ---------------
 scheduler_events = {
-   # "cron":{
-       # "0 */2 * * *":
-       #     [
-        #    "erpnext.selling.doctype.sales_order.sales_order.validate_and_update_payment_status_for_all",
-         #   "erpnext.selling.doctype.sales_order.sales_order.validate_and_update_payment_status_for_all_rental"
+   "cron":{
+      #  "0 */2 * * *":
+      #      [
+      #      "erpnext.selling.doctype.sales_order.sales_order.validate_and_update_payment_status_for_all",
+      #      "erpnext.selling.doctype.sales_order.sales_order.validate_and_update_payment_status_for_all_rental"
             
-         #   ],
-       
-            
-   # },
+      #      ],
+       "0 4 * * *": [
+           "nhk.nhk.doctype.payment_link_log.payment_link_log.sync_all_payment_details"
+       ]
+   },
 }
 # scheduler_events = {
 # 	"all": [
