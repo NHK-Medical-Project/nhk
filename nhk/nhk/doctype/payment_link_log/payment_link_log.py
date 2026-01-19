@@ -123,7 +123,11 @@ def sync_payment(link_id, p_id):
             frappe.db.set_value('Payment Link Log', p_id, 'payment_status', 'cancelled')
         elif payment_status == 'expired':
             frappe.db.set_value('Payment Link Log', p_id, 'payment_status', 'expired')
-
+            if sales_order_id:
+                frappe.db.set_value('Sales Order', sales_order_id, {
+                    'custom_razorpay_payment_url': None,
+                    'custom_razorpay_payment_link_log_id': None
+                })
         # Commit the transaction to ensure changes are saved
         frappe.db.commit()
 
