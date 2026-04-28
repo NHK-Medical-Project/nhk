@@ -472,6 +472,7 @@ def get_sales_order_details(sales_order_id):
     response = {
         "sales_order_id": sales_order.name,
         "customer": sales_order.customer,
+        "customer_name": sales_order.customer_name,
         "customer_mobile_no": sales_order.customer_mobile_no,
         "customer_email_id": sales_order.customer_email_id,
         "permanent_address": sales_order.permanent_address,
