@@ -115,7 +115,7 @@ def execute(filters=None):
     filters = frappe._dict(filters or {})
 
     columns = [
-        {"label": "Name", "fieldname": "name", "fieldtype": "Link", "options": "Serial No", "width": 150},
+        {"label": "Serial Number", "fieldname": "name", "fieldtype": "Link", "options": "Serial No", "width": 150},
         {"label": "Duplicate Entry Found", "fieldname": "duplicate_entry_found", "fieldtype": "Data", "width": 40},
         {"label": "Item Code", "fieldname": "item_code",  "fieldtype": "Link", "options": "Item", "width": 150},
         {"label": "Item Disabled", "fieldname": "item_disabled", "fieldtype": "Check", "width": 80},

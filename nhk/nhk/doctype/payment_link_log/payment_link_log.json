@@ -15,7 +15,7 @@
   "mobile_number",
   "live_link",
   "payment_ids",
-  "expired_on",
+  "expiry_datetime",
   "column_break_yucj",
   "date_of_generation",
   "total_amount",
@@ -179,14 +179,15 @@
    "label": "Test data status"
   },
   {
-   "fieldname": "expired_on",
+   "fieldname": "expiry_datetime",
    "fieldtype": "Datetime",
-   "label": "Expired On"
+   "label": "Expired On",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-03 15:58:49.809673",
+ "modified": "2026-01-05 11:19:35.557945",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Payment Link Log",
