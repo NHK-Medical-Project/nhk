@@ -3,6 +3,7 @@
  "allow_rename": 1,
  "autoname": "format:TEC-{MM}-{YY}-{###}",
  "creation": "2024-10-16 14:20:20.066422",
+ "default_view": "Report",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -46,6 +47,7 @@
    "fetch_from": "technician_id.name1",
    "fieldname": "technician_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Technician Name",
    "read_only": 1
   },
@@ -64,12 +66,13 @@
    "fieldname": "type",
    "fieldtype": "Select",
    "label": "Type",
-   "options": "Delivery\nPickup\nService",
+   "options": "Delivery\nPickup\nService\nTechnician Assignment For Sales\nTechnician Assignment For Service",
    "read_only": 1
   },
   {
    "fieldname": "kilometers",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Kilometers"
   },
   {
@@ -92,14 +95,16 @@
    "default": "Assigned",
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Status",
-   "options": "Assigned\nDelivered\nPicked up\nService Done\nIncentive Finalize\nAmount Settled\nClosed",
+   "options": "Assigned\nDelivered\nPicked up\nIncentive Finalize\nAmount Settled\nInstallation Done\nService Done\nClosed",
    "read_only": 1
   },
   {
    "fetch_from": "technician_id.mobile_number",
    "fieldname": "technician_mobile_no",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Technician Mobile No."
   },
   {
@@ -112,6 +117,7 @@
    "default": "Pending",
    "fieldname": "payment_status",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Payment Status",
    "options": "Pending\nCleared",
    "permlevel": 2,
@@ -170,6 +176,7 @@
    "fetch_from": "sales_order_id.customer",
    "fieldname": "patient_id",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Patient ID",
    "options": "Customer"
   },
@@ -190,7 +197,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-11-06 18:26:16.085713",
+ "modified": "2026-05-26 11:01:48.250555",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Technician Visit Entry",

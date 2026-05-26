@@ -636,6 +636,10 @@ def change_status(docname, new_status):
         # Allow changing from Assigned to Delivered
 
         doc.technician_update_datetime = frappe.utils.now()
+    elif doc.status == "Assigned" and new_status == "Installation Done":
+        # Allow changing from Assigned to Delivered
+
+        doc.technician_update_datetime = frappe.utils.now()
     elif doc.status == "Assigned" and new_status == "Service Done":
         # Allow changing from Assigned to Delivered
 
@@ -662,6 +666,10 @@ def change_status(docname, new_status):
         # update_technician_amount(doc.technician_id, doc.charges)   
         # doc.payment_status = 'Cleared'
     elif doc.status == "Service Done" and new_status == "Incentive Finalize":
+        # Allow changing from Picked up to Amount Settled
+        if not doc.kilometers or not doc.charges or not doc.incentive_amount_to_be_processed:
+            frappe.throw(_("Please fill in kilometers and charges before settling the amount."))
+    elif doc.status == "Installation Done" and new_status == "Incentive Finalize":
         # Allow changing from Picked up to Amount Settled
         if not doc.kilometers or not doc.charges or not doc.incentive_amount_to_be_processed:
             frappe.throw(_("Please fill in kilometers and charges before settling the amount."))
@@ -692,6 +700,46 @@ def change_status(docname, new_status):
 
     # Return success message
     return _("Status changed to '{0}' successfully!".format(new_status))
+
+
+
+
+@frappe.whitelist()
+def change_status_sales(docname, new_status):
+    """
+    Called when Technician Visit Entry status is updated.
+    Updates linked Sales Order to 'Technician Work Done' if currently 'Technician Assigned'.
+    """
+    try:
+        frappe.db.begin()
+        
+        # 1. Update Technician Visit Entry Status
+        frappe.db.set_value('Technician Visit Entry', docname, 'status', new_status)
+        
+        # 2. Check for linked Sales Order
+        tech_visit = frappe.get_doc('Technician Visit Entry', docname)
+        sales_order_id = tech_visit.get('sales_order_id') or tech_visit.get('sales_order')
+        
+        if sales_order_id and frappe.db.exists('Sales Order', sales_order_id):
+            current_so_status = frappe.db.get_value('Sales Order', sales_order_id, 'status')
+            
+            # If Sales Order is 'Technician Assigned', change it to 'Technician Work Done'
+            if current_so_status == 'Technician Assigned':
+                # Force update Sales Order status directly in DB to bypass standard ERPNext hooks
+                frappe.db.set_value('Sales Order', sales_order_id, 'status', 'Technician Work Done')
+                
+                # Force update child items directly in DB
+                sales_order_items = frappe.get_all("Sales Order Item", filters={"parent": sales_order_id}, fields=["name"])
+                for item in sales_order_items:
+                    frappe.db.set_value("Sales Order Item", item.name, "child_status", "Technician Work Done")
+        
+        frappe.db.commit()
+        return f"Status updated to {new_status} successfully."
+
+    except Exception as e:
+        frappe.db.rollback()
+        frappe.log_error(message=frappe.get_traceback(), title="Technician Status Change Error")
+        frappe.throw(f"An error occurred while changing status: {str(e)}")
 
 
 
