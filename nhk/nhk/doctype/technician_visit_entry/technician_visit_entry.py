@@ -24,3 +24,41 @@ class TechnicianVisitEntry(Document):
 
         # else:
         #     frappe.throw(("Technician ID or charges not found for the Technician Visit Entry."))
+
+
+    def validate(self):
+        update_technician_charge(self)
+
+
+
+
+
+
+from frappe.utils import flt
+import frappe
+
+def update_technician_charge(doc):
+    if not doc.technician_category or not doc.kilometers:
+        return
+
+    settings = frappe.get_single("Admin Settings")
+
+    for row in settings.technician_charges_table:
+        if (
+            row.category == doc.technician_category
+            and flt(row.from_distance) <= flt(doc.kilometers) <= flt(row.to_distance)
+        ):
+
+            # Type = Pickup
+            if doc.type == "Pickup":
+                doc.charges = row.pickup
+
+            # Type = Delivery
+            elif doc.type == "Delivery":
+                doc.charges = row.delivery
+
+            # Any other type defaults to Delivery charge
+            else:
+                doc.charges = row.delivery
+
+            break

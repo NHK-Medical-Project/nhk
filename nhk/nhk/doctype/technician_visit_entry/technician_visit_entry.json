@@ -19,6 +19,7 @@
   "order",
   "sales_order_id",
   "item_code",
+  "technician_category",
   "column_break_ifcb",
   "kilometers",
   "charges",
@@ -193,11 +194,17 @@
    "fieldname": "order_notes",
    "fieldtype": "Small Text",
    "label": "Order Notes"
+  },
+  {
+   "fieldname": "technician_category",
+   "fieldtype": "Link",
+   "label": "Technician Category",
+   "options": "Technician Category"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-26 11:01:48.250555",
+ "modified": "2026-06-11 15:35:12.446614",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Technician Visit Entry",

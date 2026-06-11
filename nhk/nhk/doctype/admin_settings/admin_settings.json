@@ -14,7 +14,9 @@
   "razorpay_api_key",
   "razorpay_secret",
   "whats_app_section",
-  "send_renewal_and_payment_message"
+  "send_renewal_and_payment_message",
+  "technician_charges_tab",
+  "technician_charges_table"
  ],
  "fields": [
   {
@@ -59,7 +61,6 @@
    "fieldtype": "Check",
    "label": "Send Renewal and Payment Message",
    "permlevel": 2
-
   },
   {
    "fieldname": "column_break_vbuy",
@@ -70,14 +71,23 @@
    "fieldtype": "Link",
    "label": "Email Account",
    "options": "Email Account"
-
+  },
+  {
+   "fieldname": "technician_charges_tab",
+   "fieldtype": "Tab Break",
+   "label": "Technician Charges"
+  },
+  {
+   "fieldname": "technician_charges_table",
+   "fieldtype": "Table",
+   "label": "Technician Charges Table",
+   "options": "Technician Charges"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-09-29 15:55:21.498761",
-
+ "modified": "2026-06-11 10:45:43.900686",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Admin Settings",
