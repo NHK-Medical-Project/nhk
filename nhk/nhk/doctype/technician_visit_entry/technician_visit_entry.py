@@ -27,6 +27,8 @@ class TechnicianVisitEntry(Document):
 
 
     def validate(self):
+        if not self.kilometers:
+            self.kilometers = 1.0
         update_technician_charge(self)
 
 
@@ -38,6 +40,14 @@ from frappe.utils import flt
 import frappe
 
 def update_technician_charge(doc):
+    # If the user has manually changed/edited 'charges', we should not overwrite it
+    if not doc.is_new() and doc.has_value_changed('charges'):
+        return
+
+    # If charges is already set and kilometers has NOT changed, do not overwrite it
+    if not doc.is_new() and doc.charges and not doc.has_value_changed('kilometers'):
+        return
+
     if not doc.technician_category or not doc.kilometers:
         return
 

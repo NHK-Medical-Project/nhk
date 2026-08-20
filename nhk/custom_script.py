@@ -622,11 +622,21 @@ import frappe
 from frappe import _
 
 @frappe.whitelist()
-def change_status(docname, new_status):
+def change_status(docname, new_status, charges=None, incentive_amount=None):
     """Change the status of a document to the new status provided."""
     
     # Replace 'Technician Portal' with the actual DocType name you are working with
     doc = frappe.get_doc("Technician Visit Entry", docname)
+
+    # Set kilometers to 1.0 if it is 0 or not set
+    if not doc.kilometers:
+        doc.kilometers = 1.0
+
+    from frappe.utils import flt
+    if charges is not None:
+        doc.charges = flt(charges)
+    if incentive_amount is not None:
+        doc.incentive_amount_to_be_processed = flt(incentive_amount)
 
     # Check the current status and validate the transition
     if doc.status == "Assigned" and new_status == "Delivered":
@@ -647,44 +657,44 @@ def change_status(docname, new_status):
     elif doc.status == "Delivered" and new_status == "Amount Settled":
         # Allow changing from Delivered to Amount Settled
         # Add additional checks for kilometers and charges if necessary
-        if not doc.kilometers or not doc.charges:
-            frappe.throw(_("Please fill in kilometers and charges before settling the amount."))
+        if not doc.charges:
+            frappe.throw(_("Please fill in charges before settling the amount."))
         # create_payment_entry_for_settlement(doc,doc.technician_id,doc.technician_user_id, doc.charges,mode_of_payment,account,reference_no,reference_date)
 
         # update_technician_amount(doc.technician_id, doc.charges)   
         # doc.payment_status = 'Cleared'
     elif doc.status == "Picked up" and new_status == "Incentive Finalize":
         # Allow changing from Picked up to Amount Settled
-        if not doc.kilometers or not doc.charges or not doc.incentive_amount_to_be_processed:
-            frappe.throw(_("Please fill in kilometers and charges before settling the amount."))
+        if not doc.charges or not doc.incentive_amount_to_be_processed:
+            frappe.throw(_("Please fill in charges and incentive amount before finalizing the incentive."))
     elif doc.status == "Delivered" and new_status == "Incentive Finalize":
         # Allow changing from Picked up to Amount Settled
-        if not doc.kilometers or not doc.charges or not doc.incentive_amount_to_be_processed:
-            frappe.throw(_("Please fill in kilometers and charges before settling the amount."))
+        if not doc.charges or not doc.incentive_amount_to_be_processed:
+            frappe.throw(_("Please fill in charges and incentive amount before finalizing the incentive."))
         # create_payment_entry_for_settlement(doc,doc.technician_id,doc.technician_user_id, doc.charges,mode_of_payment,account,reference_no,reference_date)
 
         # update_technician_amount(doc.technician_id, doc.charges)   
         # doc.payment_status = 'Cleared'
     elif doc.status == "Service Done" and new_status == "Incentive Finalize":
         # Allow changing from Picked up to Amount Settled
-        if not doc.kilometers or not doc.charges or not doc.incentive_amount_to_be_processed:
-            frappe.throw(_("Please fill in kilometers and charges before settling the amount."))
+        if not doc.charges or not doc.incentive_amount_to_be_processed:
+            frappe.throw(_("Please fill in charges and incentive amount before finalizing the incentive."))
     elif doc.status == "Installation Done" and new_status == "Incentive Finalize":
         # Allow changing from Picked up to Amount Settled
-        if not doc.kilometers or not doc.charges or not doc.incentive_amount_to_be_processed:
-            frappe.throw(_("Please fill in kilometers and charges before settling the amount."))
+        if not doc.charges or not doc.incentive_amount_to_be_processed:
+            frappe.throw(_("Please fill in charges and incentive amount before finalizing the incentive."))
     elif doc.status == "Picked up" and new_status == "Amount Settled":
         # Allow changing from Picked up to Amount Settled
-        if not doc.kilometers or not doc.charges:
-            frappe.throw(_("Please fill in kilometers and charges before settling the amount."))
+        if not doc.charges:
+            frappe.throw(_("Please fill in charges before settling the amount."))
         # create_payment_entry_for_settlement(doc,doc.technician_id,doc.technician_user_id, doc.charges,mode_of_payment,account,reference_no,reference_date)
 
         # update_technician_amount(doc.technician_id, doc.charges)   
         # doc.payment_status = 'Cleared'
     elif doc.status == "Amount Settled" and new_status == "Closed":
         # Allow changing from Picked up to Amount Settled
-        if not doc.kilometers or not doc.charges:
-            frappe.throw(_("Please fill in kilometers and charges before settling the amount."))
+        if not doc.charges:
+            frappe.throw(_("Please fill in charges before settling the amount."))
     else:
         frappe.throw(_("Invalid status change from '{0}' to '{1}'.".format(doc.status, new_status)))
 
