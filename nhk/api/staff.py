@@ -209,6 +209,10 @@ def job(visit_id):
 		# offer the undo, and it would have to guess at the window.
 		"checkin": checkin,
 		"undo_window_minutes": UNDO_WINDOW_MINUTES,
+		# In the same round trip as the rest: the attachment list is one more
+		# thing the doorstep screen renders, and a second call would show it
+		# arriving late on a slow connection.
+		"attachments": _attachments_of(visit.name),
 		"on_duty": True,
 	}
 
@@ -631,4 +635,170 @@ def _advance_sales_order(visit, new_status):
 		frappe.throw(
 			_("The job could not be closed on order {0}: {1}. Call the office before you leave.")
 			.format(visit.sales_order_id, str(exc))
+		)
+
+
+# ---------------------------------------------------------------------------
+# attachments
+# ---------------------------------------------------------------------------
+
+#: What the technician may attach from the doorstep. Photos are what this is
+#: actually for -- a delivered device, a meter reading, a signed handover slip --
+#: but the office also asks for the odd PDF, so documents are allowed too.
+#: Anything executable or unopenable at the desk is refused here rather than
+#: leaving the office with a file nobody can read.
+ATTACHMENT_EXTENSIONS = (
+	".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif",
+	".pdf", ".doc", ".docx", ".xls", ".xlsx", ".txt", ".csv",
+)
+
+#: Phone cameras write 3-8 MB a frame, so this is roughly two untouched photos.
+#: Large enough that a technician never has to think about it, small enough that
+#: a bad upload on 3G fails in seconds rather than minutes.
+MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024
+
+#: Attachments are private files. A delivery photo has a patient's doorway in it
+#: and `/files/` is served to anyone with the URL.
+ATTACHMENT_IS_PRIVATE = 1
+
+
+def _attachments_of(visit_name):
+	"""Files hanging off one visit, oldest first.
+
+	`ignore_permissions`: the `NHK Technician` role has read-on-own-record and
+	nothing else, so the File rows are invisible to the technician who just
+	uploaded them. Ownership was already proved by `owned_visit` before this is
+	reached.
+	"""
+	return frappe.get_all(
+		"File",
+		filters={
+			"attached_to_doctype": "Technician Visit Entry",
+			"attached_to_name": visit_name,
+		},
+		fields=["name", "file_name", "file_url", "file_size", "is_private", "owner", "creation"],
+		order_by="creation asc",
+		ignore_permissions=True,
+	)
+
+
+@frappe.whitelist()
+def job_attachments(visit_id):
+	"""Everything attached to one job. Same gates as reading the job itself."""
+	technician = current_technician()
+	assert_on_duty(technician)
+	visit = owned_visit(visit_id, technician=technician)
+
+	return _attachments_of(visit.name)
+
+
+@frappe.whitelist()
+def attach_to_job(visit_id=None):
+	"""Attach one file the phone posted to a job.
+
+	Multipart, not JSON: the file arrives as the `file` part and `visit_id` as an
+	ordinary form field, so `frappe.form_dict` is the fallback for callers that
+	cannot set a query string on a multipart POST.
+
+	Deliberately not `frappe.handler.upload_file`: that one checks *write*
+	permission on the target document, and the `NHK Technician` role has read
+	only. Ownership here is the same test every other write in this module makes
+	-- the visit is the caller's, they accepted it, and it is still open -- and
+	the File is then saved with permissions ignored.
+	"""
+	visit_id = visit_id or frappe.form_dict.get("visit_id")
+	if not visit_id:
+		frappe.throw(_("No job was named for this attachment."))
+
+	technician = current_technician()
+	assert_on_duty(technician)
+	visit = owned_visit(visit_id, technician=technician)
+	# An attachment is field work like any other: the office owns the job once it
+	# is closed, and a photo arriving after that has no one watching for it.
+	assert_open(visit)
+	assert_accepted(visit)
+
+	uploaded = (frappe.request.files or {}).get("file") if frappe.request else None
+	if uploaded is None:
+		frappe.throw(_("No file was received. Pick the file again."))
+
+	filename = (uploaded.filename or "").strip()
+	content = uploaded.stream.read()
+
+	_validated_attachment(filename, content)
+
+	doc = frappe.get_doc({
+		"doctype": "File",
+		"attached_to_doctype": "Technician Visit Entry",
+		"attached_to_name": visit.name,
+		"folder": "Home/Attachments",
+		"file_name": filename,
+		"is_private": ATTACHMENT_IS_PRIVATE,
+		"content": content,
+	}).insert(ignore_permissions=True)
+
+	return {
+		"name": doc.name,
+		"file_name": doc.file_name,
+		"file_url": doc.file_url,
+		"file_size": doc.file_size,
+		"is_private": doc.is_private,
+		"owner": doc.owner,
+		"creation": doc.creation,
+		"visit_id": visit.name,
+	}
+
+
+@frappe.whitelist()
+def remove_job_attachment(visit_id, file_id):
+	"""Drop an attachment the caller uploaded to their own open job.
+
+	Only their own: a file the office put on the visit is not the technician's
+	to delete, and a closed job is nobody's to change from the app. This exists
+	so a mis-picked photo costs a tap rather than a phone call.
+	"""
+	technician = current_technician()
+	assert_on_duty(technician)
+	visit = owned_visit(visit_id, technician=technician)
+	assert_open(visit)
+
+	attachment = frappe.db.get_value(
+		"File", file_id,
+		["name", "owner", "attached_to_doctype", "attached_to_name"],
+		as_dict=True,
+	)
+	# Same message for "not there" and "not yours" -- see `owned_visit`.
+	missing = (
+		not attachment
+		or attachment.attached_to_doctype != "Technician Visit Entry"
+		or attachment.attached_to_name != visit.name
+	)
+	if missing:
+		frappe.throw(_("Attachment {0} not found.").format(file_id), frappe.DoesNotExistError)
+
+	if attachment.owner != frappe.session.user:
+		frappe.throw(_("That file was not uploaded from this app. Ask the office to remove it."))
+
+	frappe.delete_doc("File", attachment.name, ignore_permissions=True, delete_permanently=True)
+	return {"name": file_id, "removed": True}
+
+
+def _validated_attachment(filename, content):
+	"""Reject what the office cannot open, and what the phone should not send."""
+	if not filename:
+		frappe.throw(_("That file has no name. Pick it again."))
+
+	if not content:
+		frappe.throw(_("That file is empty."))
+
+	if len(content) > MAX_ATTACHMENT_BYTES:
+		frappe.throw(
+			_("{0} is too large. Attachments are limited to {1} MB.")
+			.format(filename, MAX_ATTACHMENT_BYTES // (1024 * 1024))
+		)
+
+	if not filename.lower().endswith(ATTACHMENT_EXTENSIONS):
+		frappe.throw(
+			_("{0} cannot be attached. Allowed: {1}.")
+			.format(filename, ", ".join(e.lstrip(".") for e in ATTACHMENT_EXTENSIONS))
 		)

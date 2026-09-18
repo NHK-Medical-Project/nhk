@@ -3,6 +3,7 @@
 Run:  cd ~/bench-nhk/sites && ../env/bin/python ../apps/nhk/nhk/tests/test_staff_api.py
 """
 
+import io
 import sys
 from datetime import datetime, timedelta
 
@@ -553,6 +554,161 @@ def test_duty_is_idempotent(cleanup):
 
 	assert second["name"] == first["name"], "a second start_duty should not open a new day"
 	assert second["already_on_duty"] is True
+
+
+# --------------------------------------------------------------------------
+# attachments
+# --------------------------------------------------------------------------
+
+class _MultipartPost:
+	"""Binds `frappe.request` to the multipart POST the phone makes.
+
+	A real `werkzeug` request rather than a stub with a `files` attribute: the
+	File doctype reads other things off `frappe.request` while it saves (the
+	host, to build the URL), so a stub fails somewhere unrelated to what the
+	test is about.
+	"""
+
+	def __init__(self, visit_id, filename, content):
+		from werkzeug.test import EnvironBuilder
+		from werkzeug.wrappers import Request
+
+		builder = EnvironBuilder(
+			method="POST",
+			data={"visit_id": visit_id, "file": (io.BytesIO(content), filename)},
+		)
+		self.request = Request(builder.get_environ())
+
+	def __enter__(self):
+		self._previous = getattr(frappe.local, "request", None)
+		frappe.local.request = self.request
+		return self.request
+
+	def __exit__(self, *exc):
+		frappe.local.request = self._previous
+
+
+# A one-pixel PNG: real bytes, so the File doctype's own handling is exercised.
+_PNG = bytes.fromhex(
+	"89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c489"
+	"0000000d49444154789c63f8cfc0f01f00050001ff89993d1d"
+	"0000000049454e44ae426082"
+)
+
+
+def _attach(cleanup, visit, filename="doorstep.png", content=_PNG):
+	from nhk.api import staff
+
+	with _MultipartPost(visit, filename, content):
+		res = staff.attach_to_job(visit)
+	cleanup.add("File", res["name"])
+	return res
+
+
+def test_attach_to_job_stores_a_private_file_on_the_visit(cleanup):
+	from nhk.api import staff
+
+	visit = _visit(cleanup)
+	_on_duty(cleanup)
+
+	res = _attach(cleanup, visit)
+
+	doc = frappe.get_doc("File", res["name"])
+	assert doc.attached_to_doctype == "Technician Visit Entry"
+	assert doc.attached_to_name == visit, "file landed on the wrong visit"
+	assert doc.is_private == 1, "a doorstep photo must not be served from /files/"
+
+	listed = {f["name"] for f in staff.job_attachments(visit)}
+	assert res["name"] in listed, "the upload is missing from job_attachments"
+
+	in_job = {f["name"] for f in staff.job(visit)["attachments"]}
+	assert res["name"] in in_job, "job() should carry the attachments in the same round trip"
+
+
+def test_attach_to_job_refuses_a_foreign_visit(cleanup):
+	theirs = _visit(cleanup, technician=OTHER_TECH, user=OTHER_USER)
+	_on_duty(cleanup)
+
+	try:
+		_attach(cleanup, theirs)
+	except frappe.DoesNotExistError:
+		return
+	raise AssertionError("attach_to_job wrote a file onto another technician's visit")
+
+
+def test_attach_to_job_refuses_a_file_the_office_cannot_open(cleanup):
+	visit = _visit(cleanup)
+	_on_duty(cleanup)
+
+	try:
+		_attach(cleanup, visit, filename="payload.apk", content=b"not a photo")
+	except frappe.ValidationError:
+		return
+	raise AssertionError("attach_to_job accepted an .apk")
+
+
+def test_attach_to_job_refuses_an_oversize_file(cleanup):
+	from nhk.api import staff
+
+	visit = _visit(cleanup)
+	_on_duty(cleanup)
+
+	oversize = b"x" * (staff.MAX_ATTACHMENT_BYTES + 1)
+	try:
+		_attach(cleanup, visit, filename="huge.jpg", content=oversize)
+	except frappe.ValidationError:
+		return
+	raise AssertionError("attach_to_job accepted a file over the size limit")
+
+
+def test_attach_to_job_refuses_a_job_that_was_never_accepted(cleanup):
+	"""Same gate as check-in: nothing in the field starts before acceptance."""
+	visit = _visit(cleanup, response="Pending")
+	_on_duty(cleanup)
+
+	try:
+		_attach(cleanup, visit)
+	except frappe.ValidationError:
+		return
+	raise AssertionError("attach_to_job ran on a job the technician had not accepted")
+
+
+def test_remove_job_attachment_drops_the_callers_own_file(cleanup):
+	from nhk.api import staff
+
+	visit = _visit(cleanup)
+	_on_duty(cleanup)
+	res = _attach(cleanup, visit)
+
+	assert staff.remove_job_attachment(visit, res["name"])["removed"] is True
+	assert not frappe.db.exists("File", res["name"]), "the file survived removal"
+	assert staff.job_attachments(visit) == [], "removed file still listed on the job"
+
+
+def test_remove_job_attachment_leaves_the_offices_own_file_alone(cleanup):
+	"""A file the desk put on the visit is not the technician's to delete."""
+	from nhk.api import staff
+
+	visit = _visit(cleanup)
+
+	frappe.set_user("Administrator")
+	theirs = frappe.get_doc({
+		"doctype": "File",
+		"attached_to_doctype": "Technician Visit Entry",
+		"attached_to_name": visit,
+		"file_name": "office-note.txt",
+		"is_private": 1,
+		"content": b"from the desk",
+	}).insert(ignore_permissions=True)
+	cleanup.add("File", theirs.name)
+
+	_on_duty(cleanup)
+	try:
+		staff.remove_job_attachment(visit, theirs.name)
+	except frappe.ValidationError:
+		assert frappe.db.exists("File", theirs.name), "the office's file was deleted anyway"
+		return
+	raise AssertionError("a technician removed a file the office had attached")
 
 
 if __name__ == "__main__":
