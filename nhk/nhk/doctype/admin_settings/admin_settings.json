@@ -1,0 +1,110 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-07-16 17:20:10.525020",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "mail_section",
+  "sales_order_email_notification_cc",
+  "column_break_vbuy",
+  "email_account",
+  "section_break_ctpr",
+  "razorpay_base_url",
+  "razorpay_api_key",
+  "razorpay_secret",
+  "whats_app_section",
+  "send_renewal_and_payment_message",
+  "technician_charges_tab",
+  "technician_charges_table"
+ ],
+ "fields": [
+  {
+   "fieldname": "sales_order_email_notification_cc",
+   "fieldtype": "Table MultiSelect",
+   "label": "Sales Order Email Notification CC",
+   "options": "Multiselect User"
+  },
+  {
+   "fieldname": "mail_section",
+   "fieldtype": "Section Break",
+   "label": "Mail"
+  },
+  {
+   "fieldname": "section_break_ctpr",
+   "fieldtype": "Section Break",
+   "label": "Razorpay settings"
+  },
+  {
+   "fieldname": "razorpay_base_url",
+   "fieldtype": "Data",
+   "label": "Razorpay Base URL"
+  },
+  {
+   "fieldname": "razorpay_api_key",
+   "fieldtype": "Data",
+   "label": "Razorpay Api Key"
+  },
+  {
+   "fieldname": "razorpay_secret",
+   "fieldtype": "Data",
+   "label": "Razorpay Secret"
+  },
+  {
+   "fieldname": "whats_app_section",
+   "fieldtype": "Section Break",
+   "label": "Whats App"
+  },
+  {
+   "default": "0",
+   "fieldname": "send_renewal_and_payment_message",
+   "fieldtype": "Check",
+   "label": "Send Renewal and Payment Message",
+   "permlevel": 2
+  },
+  {
+   "fieldname": "column_break_vbuy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "email_account",
+   "fieldtype": "Link",
+   "label": "Email Account",
+   "options": "Email Account"
+  },
+  {
+   "fieldname": "technician_charges_tab",
+   "fieldtype": "Tab Break",
+   "label": "Technician Charges"
+  },
+  {
+   "fieldname": "technician_charges_table",
+   "fieldtype": "Table",
+   "label": "Technician Charges Table",
+   "options": "Technician Charges"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-06-11 10:45:43.900686",
+ "modified_by": "Administrator",
+ "module": "nhk",
+ "name": "Admin Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

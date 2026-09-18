@@ -1,0 +1,588 @@
+
+{% extends "templates/web_base.html" %}
+  {% block content %}
+  
+  <!-- ============ HEROAREA START ========== -->
+
+  <section class="heroarea clearfix">
+    <div class="container">
+      <div class="slider hero-slide">
+        <div class="slide1">
+          <div class="row">
+            <div class="col-lg-6 col-md-6 col-12">
+              <h1>Are you struggling with snoring and a lack of refreshing sleep?</h1>
+              <p>Find out if you're at risk of sleep apnea through our comprehensive sleep study</p>
+              <p><a href="#" data-bs-toggle="modal" data-bs-target="#ModalForm">Book your Sleep Study now</a></p>
+            </div>
+          </div>
+          <img src="assets/nhk/assets/images/slide1.png" class="m-hide" alt="" /> <img src="assets/nhk/assets/images/slide1-m.png" class="d-hide" alt="" />
+        </div>
+        <div class="slide2">
+          <div class="row">
+            <div class="col-lg-6 col-md-6 col-12">
+              <h1>Are you looking for a solution to your sleep apnea? </h1>
+              <p>We will help you to get a better night's sleep and
+                improve your quality of life. Consult our expert</p>
+              <p><a href="#" data-bs-toggle="modal" data-bs-target="#ModalForm">Book your Sleep Study now</a></p>
+            </div>
+          </div>
+          <img src="assets/nhk/assets/images/slide2.png" alt="" />
+        </div>
+        <div class="slide3">
+          <div class="row">
+            <div class="col-lg-6 col-md-6 col-12">
+              <h1>Your Path to Restful Sleep <br>
+                Starts Here</h1>
+              <p>Diagnose, Treat, and Transform Your Sleep<br>
+                Health at your home.  </p>
+              <p><a href="#" data-bs-toggle="modal" data-bs-target="#ModalForm">Book your Sleep Study now</a></p>
+            </div>
+          </div>
+          <img src="assets/nhk/assets/images/slide3.png" class="m-hide" alt="" /> <img src="assets/nhk/assets/images/slide3-m.png" class="d-hide" alt="" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FORM SECTION: CTA ============ -->
+  <section class="custom-section" id="ctaform">
+    <h1 class="custom-heading">Unlock peaceful sleep with our apnea solutions</h1>
+    <div class="custom-container">
+        <div class="custom-image">
+            <img class="img-fluid custom-image-inner" alt="hero" src="assets/nhk/assets/images/form--image.png">
+        </div>
+        <div class="custom-content">
+            <h2 class="custom-subheading">
+                Fill the form and one of our experts will get in touch with you shortly.
+            </h2>
+            <!-- Modified form with new button -->
+            <form class="custom-form" id="myForm" action="home.php" method="post">
+                <input type="text" class="custom-input" name="name" placeholder="Name" required />
+                <input type="tel" class="custom-input" name="phone" placeholder="Mobile No." required />
+                <input type="email" class="custom-input" name="email" placeholder="Email" required />
+                <input type="text" class="custom-input" name="city" placeholder="Your City" required />
+
+
+
+                <!-- New button for form submission -->
+                <button type="submit" name="send" class="custom-button">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M23.9471 1.02871C24.0017 0.892413 24.015 0.743103 23.9855 0.599288C23.956 0.455474 23.885 0.32348 23.7812 0.21967C23.6774 0.11586 23.5454 0.0448002 23.4015 0.015299C23.2577 -0.0142021 23.1084 -0.000846891 22.9721 0.0537091L1.15162 8.78221H1.15012L0.472125 9.05221C0.34371 9.10343 0.231953 9.18915 0.149198 9.2999C0.0664433 9.41066 0.0159116 9.54213 0.00318483 9.67979C-0.00954198 9.81746 0.0160314 9.95597 0.0770801 10.08C0.138129 10.2041 0.232277 10.3088 0.349125 10.3827L0.964125 10.7727L0.965625 10.7757L8.45812 15.5427L13.2251 23.0352L13.2281 23.0382L13.6181 23.6532C13.6923 23.7696 13.7971 23.8633 13.921 23.924C14.045 23.9846 14.1833 24.0099 14.3207 23.997C14.4581 23.9842 14.5892 23.9336 14.6998 23.851C14.8103 23.7684 14.8959 23.6569 14.9471 23.5287L23.9471 1.02871ZM21.1976 3.86371L9.95662 15.1047L9.63412 14.5977C9.57503 14.5047 9.49616 14.4258 9.40312 14.3667L8.89612 14.0442L20.1371 2.80321L21.9041 2.09671L21.1991 3.86371H21.1976Z" fill="white"/>
+                    </svg>
+                    Send Message
+                </button>
+            </form>
+        </div>
+    </div>
+</section>
+
+
+  <!-- ============ What is Sleep Apnea START ========== -->
+  <section class="SleepApnea clearfix">
+    <div class="container">
+      <div class="card clearfix">
+        <div class="row">
+          <div class="col-lg-6 col-md-6 col-12 m-hide"> <img src="assets/nhk/assets/images/man-snore-bed.png" class="img-fluid" alt="" />
+          </div>
+          <div class="col-lg-6 col-md-6 col-12">
+            <h2>What is <span>Sleep Apnea?</span></h2>
+            <p>Sleep apnea is a sleep disorder characterized by breathing pauses during sleep due to relaxed throat
+              muscles. These pauses can disrupt sleep patterns and lead to various symptoms, like fragmented sleep, loud
+              snoring, and daytime fatigue.</p>
+            <h3>Why do you need a <span>Sleep Study Test?  </span></h3>
+            <div class="d-hide">
+              <center>
+                <img src="assets/nhk/assets/images/man-snore-bed.png" class="img-fluid" alt="" />
+              </center>
+            </div>
+            <ul class="m-hide">
+              <li>Excessive Daytime Sleepiness</li>
+              <li>Difficulty Falling or Staying Asleep</li>
+              <li>Experiencing loud snoring</li>
+              <li>Irregular Work Schedules</li>
+              <li>Fatigue and Lack of Energy</li>
+              <li>Difficulty in Concentrating</li>
+              <li>Pauses in Breathing During Sleep</li>
+            </ul>
+            <p class="d-hide">Excessive Daytime Sleepiness, Difficulty Falling or Staying Asleep, Experiencing loud
+              snoring, Irregular Work Schedules, Fatigue and Lack of Energy, Difficulty in Concentrating, Pauses in
+              Breathing During Sleep</p>
+            <p>If these issues resonate with you, seeking a sleep study test can offer essential insights into your
+              sleep health.</p>
+            <p>
+              <a href="#" class="btn btn-call" data-bs-toggle="modal" data-bs-target="#ModalForm">Submit Now</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Trusted by the Experts and Medical Community START ========== -->
+  <section class="w-100 exportmedical clearfix">
+    <div class="container">
+      <div class="card">
+        <h2>Trusted by the <span>Experts and Medical Community </span></h2>
+        <div class="slider trust-slider">
+          <div><img src="assets/nhk/assets/images/trust-logo.png" alt="" /></div>
+          <div><img src="assets/nhk/assets/images/trust-logo1.png" alt="" /></div>
+          <div><img src="assets/nhk/assets/images/trust-logo2.png" alt="" /></div>
+          <div><img src="assets/nhk/assets/images/trust-logo3.png" alt="" /></div>
+          <div><img src="assets/nhk/assets/images/trust-logo4.png" alt="" /></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ The Client Journey to Refreshing Sleep  START ========== -->
+  <section class="OurImpact clearfix">
+    <div class="container">
+      <h2>Our <span>Impact and Reach </span></h2>
+      <div class="reachwrap clearfix">
+        <div class="row">
+          <div class="col-lg-4 col-md-4 col-12">
+            <div class="impactbox text-center">
+              <center>
+                <img src="assets/nhk/assets/images/sr-following.svg" alt="" />
+              </center>
+              <h3>4000+</h3>
+              <p>Diagnosed Individuals</p>
+            </div>
+          </div>
+          <div class="col-lg-8 col-md-8 col-12">
+            <div class="row">
+              <div class="col-lg-6 col-md-6 col-6">
+                <div class="ImpactIndent clearfix">
+                  <center>
+                    <img src="assets/nhk/assets/images/connected-doctors.svg" alt="" />
+                  </center>
+                  <h3>100+</h3>
+                  <p>Connected Doctors</p>
+                </div>
+              </div>
+              <div class="col-lg-6 col-md-6 col-6">
+                <div class="ImpactIndent clearfix">
+                  <center>
+                    <img src="assets/nhk/assets/images/hospital-icon.svg" alt="" />
+                  </center>
+                  <h3>8+</h3>
+                  <p>Hospital Collaborations</p>
+                </div>
+              </div>
+              <div class="col-lg-6 col-md-6 col-6">
+                <div class="ImpactIndent clearfix">
+                  <center>
+                    <img src="assets/nhk/assets/images/service-icon.svg" alt="" />
+                  </center>
+                  <h3>KA &amp; TN</h3>
+                  <p>Service Locations</p>
+                </div>
+              </div>
+              <div class="col-lg-6 col-md-6 col-6">
+                <div class="ImpactIndent clearfix">
+                  <center>
+                    <img src="assets/nhk/assets/images/pan-devices.svg" alt="" />
+                  </center>
+                  <h3>PAP Devices</h3>
+                  <p>Pan India Delivery</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ The Client Journey to Refreshing Sleep  START ========== -->
+  <section class="ClientJourney clearfix">
+    <div class="container">
+      <h2>The Client <span>Journey to Refreshing Sleep </span></h2>
+    </div>
+    <div class="journeymap clearfix">
+      <div class="container"> <img src="assets/nhk/assets/images/client-journey.svg" class="img-fluid" alt="Client Journey" /> </div>
+    </div>
+  </section>
+
+  <!-- ============ Hear from Our Valued Clients  START ========== -->
+  <!-- <section class="valueclient clearfix">
+  <div class="container">
+    <h2>Hear from Our <span>Valued Clients </span></h2>
+    <div class="slider client-slider">
+      <div>
+        <div class="card">
+          <div class="profile"> <img src="assets/nhk/assets/images/profile-client.png" alt=""/>
+            <h4>Hemavathi M</h4>
+            <div class="star-test"> <span class="fa fa-star"></span> <span class="fa fa-star"></span> <span class="fa fa-star"></span> <span class="fa fa-star"></span> <span class="fa fa-star-half-full"></span> </div>
+          </div>
+          <h3>It was a very good experience</h3>
+          <p>Absolutely satisfied with the timely arrival of the product and the clear, easy-to
+            follow equipment demonstration. I would gladly recommend your service to others. Overall, very impressed with the experience</p>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="profile"> <img src="assets/nhk/assets/images/profile-client.png" alt=""/>
+            <h4>Hemavathi M</h4>
+            <div class="star-test"> <span class="fa fa-star"></span> <span class="fa fa-star"></span> <span class="fa fa-star"></span> <span class="fa fa-star"></span> <span class="fa fa-star-half-full"></span> </div>
+          </div>
+          <h3>It was a very good experience</h3>
+          <p>Absolutely satisfied with the timely arrival of the product and the clear, easy-to
+            follow equipment demonstration. I would gladly recommend your service to others. Overall, very impressed with the experience</p>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="profile"> <img src="assets/nhk/assets/images/profile-client.png" alt=""/>
+            <h4>Hemavathi M</h4>
+            <div class="star-test"> <span class="fa fa-star"></span> <span class="fa fa-star"></span> <span class="fa fa-star"></span> <span class="fa fa-star"></span> <span class="fa fa-star-half-full"></span> </div>
+          </div>
+          <h3>It was a very good experience</h3>
+          <p>Absolutely satisfied with the timely arrival of the product and the clear, easy-to
+            follow equipment demonstration. I would gladly recommend your service to others. Overall, very impressed with the experience</p>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="profile"> <img src="assets/nhk/assets/images/profile-client.png" alt=""/>
+            <h4>Hemavathi M</h4>
+            <div class="star-test"> <span class="fa fa-star"></span> <span class="fa fa-star"></span> <span class="fa fa-star"></span> <span class="fa fa-star"></span> <span class="fa fa-star-half-full"></span> </div>
+          </div>
+          <h3>It was a very good experience</h3>
+          <p>Absolutely satisfied with the timely arrival of the product and the clear, easy-to
+            follow equipment demonstration. I would gladly recommend your service to others. Overall, very impressed with the experience</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section> -->
+
+
+
+  <!-- ============ Google Reviews ========== -->
+  <section class="valueclient clearfix">
+    <div class="container">
+      <h2>Hear from Our <span>Valued Clients </span></h2>
+      <div class="reviews">
+        <script src="https://static.elfsight.com/platform/platform.js" data-use-service-core defer></script>
+        <div class="elfsight-app-78e84835-995e-4dca-80b6-0b08464d55c4" data-elfsight-app-lazy></div>
+      </div>
+    </div>
+  </section>
+
+
+
+
+  <!-- ============ Sleep Apnea Diagnosis Plans START ========== -->
+  <section class="homeplan clearfix">
+    <div class="container">
+      <h2>Sleep Apnea <span>Diagnosis Plans</span></h2>
+      <div class="price-slider slider">
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <h3>Level 1 Sleep Study </h3>
+              <div class="pricetag">₹12,500</div>
+            </div>
+            <div class="card-body">
+              <ul>
+                <li>Detailed analysis in a sleep lab</li>
+                <li>Monitored by registered polysomnographic technologists (RPSGTs)</li>
+                <li>Includes 8 testing parameters</li>
+                <li>Diagnoses: obstructive sleep apnea, periodic limb movement disorder (PLMD), Narcolepsy, REM Sleep
+                  Behavior Disorder</li>
+              </ul>
+              <button type="submit" class="btn btn-more">Know more</button>
+            </div>
+          </div>
+        </div>
+        <div class="SlickActive">
+          <div class="card select text-white">
+            <div class="card-header">
+              <div class="title-reco">Recomended</div>
+              <h3>Level 2 Sleep Study </h3>
+              <div class="pricetag">₹10,000</div>
+            </div>
+            <div class="card-body">
+              <ul>
+                <li>Monitoring at home or sleep lab</li>
+                <li>Includes 8 testing parameters</li>
+                <li>Diagnoses: Obstructive Sleep Apnea, Periodic limb movement disorder (PLMD), Narcolepsy</li>
+              </ul>
+              <button type="submit" class="btn btn-more">Know more</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <h3>Level 3 Sleep Study </h3>
+              <div class="pricetag">₹5,000</div>
+            </div>
+            <div class="card-body">
+              <ul>
+                <li>Convenience of testing at home</li>
+                <li>Includes 5 testing parameters</li>
+                <li>Diagnoses: Obstructive Sleep Apnea</li>
+              </ul>
+              <button type="submit" class="btn btn-more">Know more</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="w-100 text-center">
+        <h4>Which plan is the right choice for me? <span>Consult our expert</span></h4>
+        <button type="submit" class="btn btn-call" data-bs-toggle="modal" data-bs-target="#ModalForm">Schedule a
+          call</button>
+      </div>
+    </div>
+  </section>
+
+
+  
+
+  <!-- ============ Sleep Apnaea Health Solution START ========== -->
+  <section class="healthsolutioin clearfix">
+    <div class="container">
+      <h2>Explore Our <span>Sleep Apnea Health Solution</span></h2>
+      <div class="slider blog-slider">
+        <div class="slick-slideshow__slide">
+          <div class="card">
+            <div class="card-thumb">
+              <center>
+                <img src="assets/nhk/assets/images/product/sefam-s-box.png" class="img-fluid" alt="" />
+              </center>
+            </div>
+            <div class="card-body">
+              <h3>Sefam S Box</h3>
+              <p class="start"> <span class="rate__col">4.3 <i class="fa fa-star"></i></span> <span
+                  class="black-txt">₹6500.00</span></p>
+              <div class="w-100 mt-2 mb-2"> <span class="mrp-txt">M.R.P.: ₹8,500</span> <span class="off-txt">(24%
+                  off)</span></div>
+              <p><a href="pap-devices.html">Buy now</a> <a href="pap-rentals.html">Rent Now</a></p>
+            </div>
+          </div>
+        </div>
+        <div class="slick-slideshow__slide">
+          <div class="card">
+            <div class="card-thumb">
+              <center>
+                <img src="assets/nhk/assets/images/product/sefam-s-box.png" class="img-fluid" alt="" />
+              </center>
+            </div>
+            <div class="card-body">
+              <h3>Sefam S Box</h3>
+              <p class="start"> <span class="rate__col">4.3 <i class="fa fa-star"></i></span> <span
+                  class="black-txt">₹6500.00</span></p>
+              <div class="w-100 mt-2 mb-2"> <span class="mrp-txt">M.R.P.: ₹8,500</span> <span class="off-txt">(24%
+                  off)</span></div>
+              <p><a href="pap-devices.html">Buy now</a> <a href="pap-rentals.html">Rent Now</a></p>
+            </div>
+          </div>
+        </div>
+        <div class="slick-slideshow__slide">
+          <div class="card">
+            <div class="card-thumb">
+              <center>
+                <img src="assets/nhk/assets/images/product/sefam-s-box.png" class="img-fluid" alt="" />
+              </center>
+            </div>
+            <div class="card-body">
+              <h3>Sefam S Box</h3>
+              <p class="start"> <span class="rate__col">4.3 <i class="fa fa-star"></i></span> <span
+                  class="black-txt">₹6500.00</span></p>
+              <div class="w-100 mt-2 mb-2"> <span class="mrp-txt">M.R.P.: ₹8,500</span> <span class="off-txt">(24%
+                  off)</span></div>
+              <p><a href="pap-devices.html">Buy now</a> <a href="pap-rentals.html">Rent Now</a></p>
+            </div>
+          </div>
+        </div>
+        <div class="slick-slideshow__slide">
+          <div class="card">
+            <div class="card-thumb">
+              <center>
+                <img src="assets/nhk/assets/images/product/sefam-s-box.png" class="img-fluid" alt="" />
+              </center>
+            </div>
+            <div class="card-body">
+              <h3>Sefam S Box</h3>
+              <p class="start"> <span class="rate__col">4.3 <i class="fa fa-star"></i></span> <span
+                  class="black-txt">₹6500.00</span></p>
+              <div class="w-100 mt-2 mb-2"> <span class="mrp-txt">M.R.P.: ₹8,500</span> <span class="off-txt">(24%
+                  off)</span></div>
+              <p><a href="pap-devices.html">Buy now</a> <a href="pap-rentals.html">Rent Now</a></p>
+            </div>
+          </div>
+        </div>
+        <div class="slick-slideshow__slide">
+          <div class="card">
+            <div class="card-thumb">
+              <center>
+                <img src="assets/nhk/assets/images/product/sefam-s-box.png" class="img-fluid" alt="" />
+              </center>
+            </div>
+            <div class="card-body">
+              <h3>Sefam S Box</h3>
+              <p class="start"> <span class="rate__col">4.3 <i class="fa fa-star"></i></span> <span
+                  class="black-txt">₹6500.00</span></p>
+              <div class="w-100 mt-2 mb-2"> <span class="mrp-txt">M.R.P.: ₹8,500</span> <span class="off-txt">(24%
+                  off)</span></div>
+              <p><a href="pap-devices.html">Buy now</a> <a href="pap-rentals.html">Rent Now</a></p>
+            </div>
+          </div>
+        </div>
+        <div class="slick-slideshow__slide">
+          <div class="card">
+            <div class="card-thumb">
+              <center>
+                <img src="assets/nhk/assets/images/product/sefam-s-box.png" class="img-fluid" alt="" />
+              </center>
+            </div>
+            <div class="card-body">
+              <h3>Sefam S Box</h3>
+              <p class="start"> <span class="rate__col">4.3 <i class="fa fa-star"></i></span> <span
+                  class="black-txt">₹6500.00</span></p>
+              <div class="w-100 mt-2 mb-2"> <span class="mrp-txt">M.R.P.: ₹8,500</span> <span class="off-txt">(24%
+                  off)</span></div>
+              <p><a href="pap-devices.html">Buy now</a> <a href="pap-rentals.html">Rent Now</a></p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Blog Page START ========== -->
+  <section class="moreblog clearfix">
+    <div class="container">
+      <h2>Discover More Insights: <span>Explore Our Blogs</span></h2>
+      <div class="slider blog-slider">
+        <div class="slick-slideshow__slide">
+          <div class="card">
+            <div class="card-thumb"><img src="assets/nhk/assets/images/blog-home.png" class="img-fluid" alt="" /></div>
+            <div class="card-body">
+              <h3>Choosing the Right PAP Device: A Comprehensive Guide</h3>
+              <p>It is a long established fact that a reader will be distracted by the readable content of a page when
+                looking at its layout. The point of using Lorem Ipsum is It is a long established fact that a reader
+                will be distracted by the readable content of a page when looking at its layout.that....</p>
+              <p><span>25th Aug</span> <a href="#">Read more</a></p>
+            </div>
+          </div>
+        </div>
+        <div class="slick-slideshow__slide">
+          <div class="card">
+            <div class="card-thumb"><img src="assets/nhk/assets/images/blog-home1.png" class="img-fluid" alt="" /></div>
+            <div class="card-body">
+              <h3>The Impact of Untreated Sleep Apnea on Your Health </h3>
+              <p>It is a long established fact that a reader will be distracted by the readable content of a page when
+                looking at its layout. The point of using Lorem Ipsum is It is a long established fact that a reader
+                will be distracted by the readable content of a page when looking at its layout.that....</p>
+              <p><span>25th Aug</span> <a href="#">Read more</a></p>
+            </div>
+          </div>
+        </div>
+        <div class="slick-slideshow__slide">
+          <div class="card">
+            <div class="card-thumb"><img src="assets/nhk/assets/images/blog-home2.png" class="img-fluid" alt="" /></div>
+            <div class="card-body">
+              <h3>Sleep Apnea in Children: What Parents Need to Know </h3>
+              <p>It is a long established fact that a reader will be distracted by the readable content of a page when
+                looking at its layout. The point of using Lorem Ipsum is It is a long established fact that a reader
+                will be distracted by the readable content of a page when looking at its layout.that....</p>
+              <p><span>25th Aug</span> <a href="#">Read more</a></p>
+            </div>
+          </div>
+        </div>
+        <div class="slick-slideshow__slide">
+          <div class="card">
+            <div class="card-thumb"><img src="assets/nhk/assets/images/blog-home1.png" class="img-fluid" alt="" /></div>
+            <div class="card-body">
+              <h3>The Impact of Untreated Sleep Apnea on Your Health </h3>
+              <p>It is a long established fact that a reader will be distracted by the readable content of a page when
+                looking at its layout. The point of using Lorem Ipsum is It is a long established fact that a reader
+                will be distracted by the readable content of a page when looking at its layout.that....</p>
+              <p><span>25th Aug</span> <a href="#">Read more</a></p>
+            </div>
+          </div>
+        </div>
+        <div class="slick-slideshow__slide">
+          <div class="card">
+            <div class="card-thumb"><img src="assets/nhk/assets/images/blog-home2.png" class="img-fluid" alt="" /></div>
+            <div class="card-body">
+              <h3>Choosing the Right PAP Device: A Comprehensive Guide</h3>
+              <p>It is a long established fact that a reader will be distracted by the readable content of a page when
+                looking at its layout. The point of using Lorem Ipsum is It is a long established fact that a reader
+                will be distracted by the readable content of a page when looking at its layout.that....</p>
+              <p><span>25th Aug</span> <a href="#">Read more</a></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div class="assistenceFixed"> <a href="tel:+91 8884880089" target="_blank">
+      <svg viewBox="0 0 82 82" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path fill-rule="evenodd" clip-rule="evenodd"
+          d="M40.729 81.7129C18.4192 81.7129 0.333496 63.6272 0.333496 41.3174C0.333496 19.0076 18.4192 0.921898 40.729 0.921898C63.0388 0.921898 81.1245 19.0076 81.1245 41.3174C81.1245 63.6272 63.0388 81.7129 40.729 81.7129Z"
+          fill="#1EC29D" />
+        <path
+          d="M25.7071 23.0038C26.8423 23.0038 27.9748 22.9953 29.1101 23.0038C31.0182 23.0208 32.3347 24.2464 32.3913 26.1401C32.4649 28.5575 32.8329 30.9155 33.5351 33.2281C33.8521 34.2755 33.5917 35.2209 32.9292 36.0815C31.8562 37.4741 30.8087 38.8895 29.7386 40.285C29.5828 40.4888 29.5744 40.6303 29.6961 40.8624C32.0912 45.4198 35.5735 48.8789 40.1202 51.2821C40.3467 51.401 40.4882 51.4152 40.6977 51.2538C42.1076 50.1725 43.5345 49.1167 44.9416 48.0325C45.7484 47.4126 46.6657 47.1635 47.6169 47.4409C50.0177 48.1401 52.4525 48.542 54.9552 48.6241C56.7727 48.6836 57.9731 50.0196 57.9873 51.8483C58.0042 54.1496 58.0042 56.4509 57.9873 58.7522C57.9731 60.6997 56.6085 62.0415 54.6607 61.999C43.2316 61.7443 33.8861 57.1812 26.7036 48.2986C22.7939 43.4638 20.4044 37.9101 19.4503 31.7703C19.1701 29.9729 19.0766 28.1358 19.003 26.3157C18.9266 24.3767 20.3053 23.0293 22.2588 23.0066C23.4082 22.9953 24.5605 23.0066 25.7127 23.0066L25.7071 23.0038Z"
+          fill="white" />
+      </svg>
+    </a> <a href="https://wa.link/x9o8n3" target="_blank">
+      <svg viewBox="0 0 82 82" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path fill-rule="evenodd" clip-rule="evenodd"
+          d="M40.729 81.1787C18.4192 81.1787 0.333496 63.093 0.333496 40.7832C0.333496 18.4734 18.4192 0.387718 40.729 0.387718C63.0388 0.387718 81.1245 18.4734 81.1245 40.7832C81.1245 63.093 63.0388 81.1787 40.729 81.1787Z"
+          fill="#1EC29D" />
+        <path
+          d="M60.4471 30.9713C53.7595 18.4272 37.5096 15.1143 26.4313 24.0349C18.077 30.762 15.7486 42.5737 20.8921 52.0244C21.0427 52.2964 21.0742 52.7149 20.9937 53.0183C20.3214 55.578 19.6071 58.1238 18.9069 60.6766C18.6127 61.7507 18.3221 62.8283 18 64C18.3326 63.9337 18.5532 63.9024 18.7668 63.8466C22.2857 62.9294 25.801 61.9983 29.3269 61.0985C29.6315 61.0218 30.0307 61.0671 30.3143 61.2031C36.7358 64.3139 43.2379 64.5475 49.7819 61.6739C61.4835 56.5371 66.4379 42.211 60.4471 30.9713ZM51.9563 47.313C51.8792 49.8309 50.5137 51.2607 47.7406 51.9303C45.6993 52.422 43.8226 51.6513 41.9599 50.9364C37.5306 49.2345 34.2884 46.1029 31.6308 42.3121C30.815 41.1474 30.1848 39.8361 29.6 38.5353C29.2919 37.8518 29.2674 37.0462 29.1168 36.293C29.1764 34.4307 29.9187 32.9172 31.2177 31.6478C31.8339 31.048 33.5601 30.7306 34.2849 31.1421C34.565 31.3026 34.8031 31.6304 34.9396 31.9373C35.5629 33.3461 36.1756 34.7655 36.7183 36.2058C36.8374 36.5196 36.7743 37.0114 36.5993 37.3078C36.2246 37.9529 35.7379 38.5388 35.2652 39.1177C34.9571 39.4944 34.9186 39.8361 35.1672 40.2546C36.9879 43.32 39.5439 45.5345 42.8737 46.8562C43.3219 47.034 43.686 46.9643 43.9907 46.5876C44.5404 45.9041 45.1181 45.2415 45.6398 44.5406C45.9969 44.0628 46.3961 43.9163 46.9388 44.1744C48.4479 44.8928 49.957 45.6112 51.4696 46.3226C51.9037 46.5284 51.9703 46.891 51.9563 47.313Z"
+          fill="white" />
+      </svg>
+    </a> <a
+      href="mailto:Sales@nhkmedical.com?cc=Support@nhkmedical.com, Pannalal@nhkmedical.com, vishnu2022nirmalhealthcare@gmail.com, rahulnandi03nirmalhealthcare@gmail.com. sanskarsharma0624@gmail.com"
+      target="_blank">
+      <svg viewBox="0 0 81 81" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path fill-rule="evenodd" clip-rule="evenodd"
+          d="M40.3955 80.791C18.0857 80.791 0 62.7053 0 40.3955C0 18.0857 18.0857 2.28882e-05 40.3955 2.28882e-05C62.7053 2.28882e-05 80.791 18.0857 80.791 40.3955C80.791 62.7053 62.7053 80.791 40.3955 80.791Z"
+          fill="#1EC29D" />
+        <path
+          d="M40.9881 20.791C47.4829 20.9377 53.3464 23.2567 57.8657 28.4691C60.9718 32.0491 62.495 36.2502 62.2563 40.9912C61.9957 46.1786 59.7564 50.4796 55.8589 53.8723C50.6141 58.4354 44.4428 60.0896 37.5617 59.2875C35.7056 59.0721 33.9186 58.6102 32.1724 57.9548C31.9777 57.883 31.6824 57.9111 31.4972 58.0078C27.92 59.8774 24.0853 60.9324 20.125 61.5784C19.8235 61.6284 19.4121 61.5098 19.1765 61.3163C18.8782 61.0728 18.9975 60.6889 19.2425 60.4142C20.9824 58.4573 21.5665 56.0321 22.0565 53.5664C22.0847 53.4197 22.1099 53.273 22.1413 53.1263C22.4522 51.6781 22.3391 50.4203 21.5037 49.0282C17.1508 41.7746 18.6206 32.8824 24.8171 26.9897C29.2359 22.7886 34.5875 20.8784 40.9912 20.791H40.9881ZM27.6782 40.136C27.6719 41.6966 28.9627 43.0012 30.5236 43.0137C32.1127 43.0293 33.4318 41.7184 33.4255 40.136C33.4192 38.5629 32.141 37.302 30.5518 37.302C28.9658 37.302 27.6844 38.5692 27.6782 40.136ZM50.7366 37.302C49.1505 37.3082 47.8755 38.5754 47.8755 40.1485C47.8755 41.7091 49.1662 43.0075 50.7334 43.0169C52.3194 43.0262 53.6353 41.7122 53.6228 40.1266C53.6134 38.5598 52.3226 37.2989 50.7366 37.302ZM40.6332 37.302C39.0472 37.3114 37.7721 38.5848 37.7752 40.1547C37.7784 41.7122 39.0786 43.0106 40.6395 43.0137C42.2255 43.02 43.5445 41.6935 43.5226 40.1173C43.5006 38.538 42.2192 37.2926 40.6301 37.302H40.6332Z"
+          fill="white" />
+      </svg>
+    </a> </div>
+
+
+  <!-- ============ FORM SECTION: CTA ============ -->
+  <section class="custom-section" id="ctaform">
+    <h1 class="custom-heading">Unlock peaceful sleep with our apnea solutions</h1>
+    <div class="custom-container">
+        <div class="custom-image">
+            <img class="img-fluid custom-image-inner" alt="hero" src="assets/nhk/assets/images/form--image.png">
+        </div>
+        <div class="custom-content">
+            <h2 class="custom-subheading">
+                Fill the form and one of our experts will get in touch with you shortly.
+            </h2>
+            <!-- Modified form with new button -->
+            <form class="custom-form" id="myForm" action="home.php" method="post">
+                <input type="text" class="custom-input" name="name" placeholder="Name" required />
+                <input type="tel" class="custom-input" name="phone" placeholder="Mobile No." required />
+                <input type="email" class="custom-input" name="email" placeholder="Email" required />
+                <input type="text" class="custom-input" name="city" placeholder="Your City" required />
+
+                <!-- New button for form submission -->
+                <button type="submit" name="send"  class="custom-button">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M23.9471 1.02871C24.0017 0.892413 24.015 0.743103 23.9855 0.599288C23.956 0.455474 23.885 0.32348 23.7812 0.21967C23.6774 0.11586 23.5454 0.0448002 23.4015 0.015299C23.2577 -0.0142021 23.1084 -0.000846891 22.9721 0.0537091L1.15162 8.78221H1.15012L0.472125 9.05221C0.34371 9.10343 0.231953 9.18915 0.149198 9.2999C0.0664433 9.41066 0.0159116 9.54213 0.00318483 9.67979C-0.00954198 9.81746 0.0160314 9.95597 0.0770801 10.08C0.138129 10.2041 0.232277 10.3088 0.349125 10.3827L0.964125 10.7727L0.965625 10.7757L8.45812 15.5427L13.2251 23.0352L13.2281 23.0382L13.6181 23.6532C13.6923 23.7696 13.7971 23.8633 13.921 23.924C14.045 23.9846 14.1833 24.0099 14.3207 23.997C14.4581 23.9842 14.5892 23.9336 14.6998 23.851C14.8103 23.7684 14.8959 23.6569 14.9471 23.5287L23.9471 1.02871ZM21.1976 3.86371L9.95662 15.1047L9.63412 14.5977C9.57503 14.5047 9.49616 14.4258 9.40312 14.3667L8.89612 14.0442L20.1371 2.80321L21.9041 2.09671L21.1991 3.86371H21.1976Z" fill="white"/>
+                    </svg>
+                    Send Message
+                </button>
+            </form>
+        </div>
+    </div>
+</section>
+
+
+
+  {% endblock %}

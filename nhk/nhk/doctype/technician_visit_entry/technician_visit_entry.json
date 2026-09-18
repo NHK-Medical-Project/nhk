@@ -1,0 +1,366 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:TEC-{MM}-{YY}-{###}",
+ "creation": "2024-10-16 14:20:20.066422",
+ "default_view": "Report",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "technician_id",
+  "technician_name",
+  "technician_mobile_no",
+  "technician_user_id",
+  "patient_id",
+  "patient_name",
+  "column_break_quoq",
+  "type",
+  "area",
+  "order",
+  "sales_order_id",
+  "item_code",
+  "technician_category",
+  "column_break_ifcb",
+  "kilometers",
+  "charges",
+  "incentive_amount_to_be_processed",
+  "payment_status",
+  "technician_update_datetime",
+  "column_break_dgfr",
+  "status",
+  "created_datetime",
+  "order_notes",
+  "sales_order_details_section",
+  "sales_order_html",
+  "section_break_bymd",
+  "notes",
+  "section_break_field_app",
+  "scheduled_datetime",
+  "slot",
+  "column_break_field_app",
+  "started_at",
+  "completed_at",
+  "section_break_response",
+  "technician_response",
+  "technician_response_at",
+  "column_break_response",
+  "rejection_reason",
+  "section_break_field_geo",
+  "start_latitude",
+  "start_longitude",
+  "column_break_field_geo",
+  "complete_latitude",
+  "complete_longitude",
+  "section_break_field_proof",
+  "patient_signature"
+ ],
+ "fields": [
+  {
+   "fieldname": "technician_id",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Technician Id",
+   "options": "Technician Details",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "technician_id.name1",
+   "fieldname": "technician_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Technician Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_quoq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "sales_order_id",
+   "fieldtype": "Link",
+   "label": "Sales Order Id",
+   "options": "Sales Order"
+  },
+  {
+   "default": "Service",
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "label": "Type",
+   "options": "Delivery\nPickup\nService\nTechnician Assignment For Sales\nTechnician Assignment For Service",
+   "read_only": 1
+  },
+  {
+   "fieldname": "kilometers",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Kilometers"
+  },
+  {
+   "description": "Delivery or Pickup Charges",
+   "fieldname": "charges",
+   "fieldtype": "Currency",
+   "label": "Incentive Amount"
+  },
+  {
+   "fieldname": "sales_order_details_section",
+   "fieldtype": "Section Break",
+   "label": "Sales order Details"
+  },
+  {
+   "fieldname": "sales_order_html",
+   "fieldtype": "HTML",
+   "label": "Sales Order HTML"
+  },
+  {
+   "default": "Assigned",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Assigned\nDelivered\nPicked up\nIncentive Finalize\nAmount Settled\nInstallation Done\nService Done\nClosed",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "technician_id.mobile_number",
+   "fieldname": "technician_mobile_no",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Technician Mobile No."
+  },
+  {
+   "fetch_from": "technician_id.user_mail_id",
+   "fieldname": "technician_user_id",
+   "fieldtype": "Data",
+   "label": "Technician User Id"
+  },
+  {
+   "default": "Pending",
+   "fieldname": "payment_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Payment Status",
+   "options": "Pending\nCleared",
+   "permlevel": 2,
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_bymd",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Technician Notes"
+  },
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Data",
+   "label": "Item Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_dgfr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Now",
+   "fieldname": "created_datetime",
+   "fieldtype": "Datetime",
+   "label": "Created DateTime",
+   "read_only": 1
+  },
+  {
+   "fieldname": "incentive_amount_to_be_processed",
+   "fieldtype": "Currency",
+   "label": "Incentive amount to be processed",
+   "permlevel": 2
+  },
+  {
+   "fieldname": "technician_update_datetime",
+   "fieldtype": "Datetime",
+   "label": "Technician Update DateTime",
+   "read_only": 1
+  },
+  {
+   "fieldname": "area",
+   "fieldtype": "Data",
+   "label": "Area"
+  },
+  {
+   "fetch_from": "patient_id.customer_name",
+   "fieldname": "patient_name",
+   "fieldtype": "Data",
+   "label": "Patient Name"
+  },
+  {
+   "fetch_from": "sales_order_id.customer",
+   "fieldname": "patient_id",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Patient ID",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "order",
+   "fieldtype": "Data",
+   "label": "Order"
+  },
+  {
+   "fieldname": "column_break_ifcb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "order_notes",
+   "fieldtype": "Small Text",
+   "label": "Order Notes"
+  },
+  {
+   "fieldname": "technician_category",
+   "fieldtype": "Link",
+   "label": "Technician Category",
+   "options": "Technician Category"
+  },
+  {
+   "fieldname": "section_break_field_app",
+   "fieldtype": "Section Break",
+   "label": "Scheduling & Field Capture"
+  },
+  {
+   "fieldname": "scheduled_datetime",
+   "fieldtype": "Datetime",
+   "label": "Scheduled",
+   "description": "Defaults from the Sales Order's delivery or pickup date. The day list sorts on this."
+  },
+  {
+   "fieldname": "slot",
+   "fieldtype": "Select",
+   "label": "Slot",
+   "options": "\nMorning\nAfternoon\nEvening"
+  },
+  {
+   "fieldname": "column_break_field_app",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "started_at",
+   "fieldtype": "Datetime",
+   "label": "Arrived At",
+   "read_only": 1,
+   "description": "Stamped by the technician's visit check-in."
+  },
+  {
+   "fieldname": "completed_at",
+   "fieldtype": "Datetime",
+   "label": "Completed At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_field_geo",
+   "fieldtype": "Section Break",
+   "label": "Location Trail",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "start_latitude",
+   "fieldtype": "Float",
+   "label": "Arrival Latitude",
+   "precision": "6",
+   "read_only": 1
+  },
+  {
+   "fieldname": "start_longitude",
+   "fieldtype": "Float",
+   "label": "Arrival Longitude",
+   "precision": "6",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_field_geo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "complete_latitude",
+   "fieldtype": "Float",
+   "label": "Completion Latitude",
+   "precision": "6",
+   "read_only": 1
+  },
+  {
+   "fieldname": "complete_longitude",
+   "fieldtype": "Float",
+   "label": "Completion Longitude",
+   "precision": "6",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_field_proof",
+   "fieldtype": "Section Break",
+   "label": "Proof",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "patient_signature",
+   "fieldtype": "Attach Image",
+   "label": "Patient Signature",
+   "description": "Optional. Device photos are ordinary attachments on this document."
+  },
+  {
+   "fieldname": "section_break_response",
+   "fieldtype": "Section Break",
+   "label": "Technician Response"
+  },
+  {
+   "description": "The technician accepts or rejects a job from the app before starting it. Rejected jobs stay assigned so the office can reassign them; they just drop out of the technician's list.",
+   "fieldname": "technician_response",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Technician Response",
+   "options": "Pending\nAccepted\nRejected",
+   "default": "Pending",
+   "read_only": 1
+  },
+  {
+   "fieldname": "technician_response_at",
+   "fieldtype": "Datetime",
+   "label": "Responded At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_response",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.technician_response==\"Rejected\"",
+   "fieldname": "rejection_reason",
+   "fieldtype": "Small Text",
+   "label": "Rejection Reason",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-06-11 15:35:12.446614",
+ "modified_by": "Administrator",
+ "module": "nhk",
+ "name": "Technician Visit Entry",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

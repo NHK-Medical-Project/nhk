@@ -1,0 +1,110 @@
+{
+ "actions": [],
+ "autoname": "autoincrement",
+ "creation": "2024-03-12 10:43:06.128880",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "image",
+  "title",
+  "content",
+  "column_break_zysq",
+  "date",
+  "description",
+  "author_image",
+  "author",
+  "content_image1",
+  "content_image2"
+ ],
+ "fields": [
+  {
+   "fieldname": "image",
+   "fieldtype": "Attach Image",
+   "label": "image"
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "date ",
+   "mandatory_depends_on": "'%d-%m-%Y'"
+  },
+  {
+   "fieldname": "column_break_zysq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "title"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "description"
+  },
+  {
+   "fieldname": "author",
+   "fieldtype": "Data",
+   "label": "author"
+  },
+  {
+   "fieldname": "content",
+   "fieldtype": "Long Text",
+   "label": "content"
+  },
+  {
+   "fieldname": "content_image1",
+   "fieldtype": "Attach Image",
+   "label": "content_image1"
+  },
+  {
+   "fieldname": "content_image2",
+   "fieldtype": "Attach Image",
+   "label": "content_image2"
+  },
+  {
+   "fieldname": "author_image",
+   "fieldtype": "Attach Image",
+   "label": "Author_Image"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-03-15 16:49:27.944741",
+ "modified_by": "Administrator",
+ "module": "NHK",
+ "name": "Blog",
+ "naming_rule": "Autoincrement",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Guest",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
