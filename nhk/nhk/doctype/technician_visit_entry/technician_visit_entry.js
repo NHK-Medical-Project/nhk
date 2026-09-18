@@ -1432,6 +1432,7 @@ function change_sales_order_status_dispatched(salesOrderDetails, salesOrderId) {
 
 
 // JavaScript function to handle the payment entry creation
+<<<<<<< HEAD
 function reassign_technician_prompt(frm) {
     const current = frm.doc.technician_name || frm.doc.technician_id || __('nobody');
 
@@ -1500,6 +1501,8 @@ function reassign_technician_prompt(frm) {
 }
 
 
+=======
+>>>>>>> origin/360ithub_master
 function create_payment_entry(sales_order_details, sales_order_id,technician_id,technician_visit_id) {
     // Open prompt to get customer payment details
     frappe.prompt([ {
