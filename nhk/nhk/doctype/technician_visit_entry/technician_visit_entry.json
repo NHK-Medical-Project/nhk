@@ -80,7 +80,8 @@
    "description": "Delivery or Pickup Charges",
    "fieldname": "charges",
    "fieldtype": "Currency",
-   "label": "Incentive Amount"
+   "label": "Incentive Amount",
+   "read_only": 1
   },
   {
    "fieldname": "sales_order_details_section",
@@ -199,12 +200,13 @@
    "fieldname": "technician_category",
    "fieldtype": "Link",
    "label": "Technician Category",
-   "options": "Technician Category"
+   "options": "Technician Category",
+   "permlevel": 2
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-06-11 15:35:12.446614",
+ "modified": "2026-06-12 12:05:46.303779",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Technician Visit Entry",
