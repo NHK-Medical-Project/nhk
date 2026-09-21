@@ -134,26 +134,11 @@ frappe.ui.form.on('Technician Visit Entry', {
             }
         }, __('Enter Incentive Details'), __('Submit'));
     },
-    after_save(frm) {
-        if (frm.doc.type === 'Service' && frm.doc.technician_user_id && frappe.user.has_role("NHK Admin")) {
-            // Call the custom server-side method to update shares
-            frappe.call({
-                method: 'nhk.custom_script.update_shares',
-                args: {
-                    doctype: frm.doc.doctype,  // Document type
-                    docname: frm.doc.name,     // Document name
-                    technician_user_id: frm.doc.technician_user_id  // New technician_user_id
-                },
-                callback: function(response) {
-                    if (response.message) {
-                        frappe.show_alert(__('Document shared with read and write access to the technician.'));
-                    } else {
-                        frappe.msgprint(__('Failed to share the document.'));
-                    }
-                }
-            });
-        }
-    },
+    // The share used to be moved here, from the client, only for visits of type
+    // 'Service' -- which nothing creates: a service order produces a visit of type
+    // 'Technician Assignment For Service'. So it never ran, and a reassigned visit
+    // stayed shared with the previous technician. It now moves server-side on every
+    // save, for every visit type, in nhk.api.assignment.sync_assignment.
     refresh(frm) {
         if (frm.doc.type === 'Service'){
             frm.set_df_property('sales_order_id', 'read_only', 0);
@@ -163,6 +148,25 @@ frappe.ui.form.on('Technician Visit Entry', {
         }
         if (frm.doc.status !== 'Assigned') {
             frm.set_df_property('technician_id', 'read_only', 1);
+        }
+
+        // Reassignment. The office's supported way to move a visit to another
+        // technician. It calls nhk.api.assignment.reassign_visit, which carries the
+        // DocShare, the technician's answer and the Sales Order's own technician
+        // fields across in one transaction.
+        //
+        // Editing technician_id in the form directly does the same thing -- the same
+        // server hook runs either way -- but this asks the questions in the right
+        // order and gives the arrival guard somewhere to be answered.
+        //
+        // Gated on `share` permission rather than a role name, because that is what
+        // the server checks. NHK Admin and System Manager hold it; NHK Technician
+        // does not, and the DocShares we hand out grant read/write only -- so a
+        // technician cannot hand their own job to someone else.
+        if (!frm.is_new() && frm.doc.status === 'Assigned' && frm.perm[0] && frm.perm[0].share) {
+            frm.add_custom_button(__('Reassign Technician'), function() {
+                reassign_technician_prompt(frm);
+            }, __('Action'));
         }
         if (frm.doc.status === 'Closed') {
             frm.set_df_property('charges', 'read_only', 1);
@@ -1428,6 +1432,74 @@ function change_sales_order_status_dispatched(salesOrderDetails, salesOrderId) {
 
 
 // JavaScript function to handle the payment entry creation
+function reassign_technician_prompt(frm) {
+    const current = frm.doc.technician_name || frm.doc.technician_id || __('nobody');
+
+    const dialog = new frappe.ui.Dialog({
+        title: __('Reassign Technician'),
+        fields: [
+            {
+                fieldtype: 'HTML',
+                fieldname: 'current_technician',
+                options: '<p class="text-muted">' +
+                    __('Currently with {0}.', [frappe.utils.escape_html(current)]) +
+                    '</p>'
+            },
+            {
+                fieldname: 'technician_id',
+                fieldtype: 'Link',
+                options: 'Technician Details',
+                label: __('Reassign To'),
+                reqd: 1,
+                get_query: function() {
+                    // Reassigning to whoever already has it is not a reassignment.
+                    return { filters: { name: ['!=', frm.doc.technician_id] } };
+                }
+            },
+            {
+                fieldname: 'force',
+                fieldtype: 'Check',
+                label: __('Reassign even though the technician has arrived'),
+                default: 0,
+                description: __('Leave this off unless the server refuses the reassignment. It closes the current technician\'s check-in and clears the arrival time and location from the visit.')
+            }
+        ],
+        primary_action_label: __('Reassign'),
+        primary_action(values) {
+            frappe.call({
+                method: 'nhk.api.assignment.reassign_visit',
+                args: {
+                    visit_id: frm.doc.name,
+                    technician_id: values.technician_id,
+                    force: values.force ? 1 : 0
+                },
+                freeze: true,
+                freeze_message: __('Reassigning...'),
+                callback: function(r) {
+                    if (!r.message) {
+                        return;
+                    }
+                    dialog.hide();
+                    frappe.show_alert({
+                        message: r.message.moved
+                            ? __('Reassigned to {0}.', [values.technician_id])
+                            : __('Already assigned to {0}.', [values.technician_id]),
+                        indicator: 'green'
+                    });
+                    frm.reload_doc();
+                }
+                // No error handler on purpose: a refusal (the visit has moved on, or
+                // the technician has already arrived) shows the server's own message
+                // and leaves this dialog open, so the office can tick the box above
+                // and try again without retyping anything.
+            });
+        }
+    });
+
+    dialog.show();
+}
+
+
 function create_payment_entry(sales_order_details, sales_order_id,technician_id,technician_visit_id) {
     // Open prompt to get customer payment details
     frappe.prompt([ {
