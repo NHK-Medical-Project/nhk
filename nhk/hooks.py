@@ -122,22 +122,13 @@ app_license = "mit"
 # ---------------
 # Hook on document methods and events
 
-# Reassignment. Changing `technician_id` on a Technician Visit Entry has to carry
-# the DocShare, the technician's answer and the Sales Order's own technician
-# fields with it. None of that used to happen: the only re-share lived in an
-# `after_save` in the form script, gated on a visit type that nothing creates.
-#
-# It hangs off `doc_events` rather than the form so a plain desk edit behaves the
-# same as `nhk.api.assignment.reassign_visit`. `validate` is where the guard can
-# still refuse a write; `on_update` is where the side effects go.
-#
-# No other app registers doc_events on this doctype, so nothing else fires on it.
-doc_events = {
-	"Technician Visit Entry": {
-		"validate": "nhk.api.assignment.guard_reassignment",
-		"on_update": "nhk.api.assignment.sync_assignment",
-	},
-}
+# doc_events = {
+# 	"*": {
+# 		"on_update": "method",
+# 		"on_cancel": "method",
+# 		"on_trash": "method"
+# 	}
+# }
 
 # Scheduled Tasks
 # ---------------
@@ -247,38 +238,4 @@ scheduler_events = {
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
-
-# Fixtures
-# ---------
-# The technician flow's permissions and master data lived only in the database
-# until now, which meant a fresh `bench new-site` + `install-app nhk` produced a
-# system with no technician permissions and no payout slabs. Exporting them here
-# makes a dev site match production.
-#
-# Admin Settings is a Single and cannot be exported as a fixture; its charge slab
-# table is seeded by patches/v1_0/seed_technician_charges.py instead.
-
-fixtures = [
-	{
-		"dt": "Custom DocPerm",
-		"filters": [
-			[
-				"parent",
-				"in",
-				[
-					"Technician Visit Entry",
-					"Technician Details",
-					"Technician Category",
-					"Technician Visit Payment",
-				],
-			]
-		],
-	},
-	{
-		"dt": "Role",
-		"filters": [["name", "in", ["NHK Technician", "NHK Admin", "NHK Super admin", "NHK Sales Person"]]],
-	},
-	{"dt": "Technician Category"},
-]
-
 

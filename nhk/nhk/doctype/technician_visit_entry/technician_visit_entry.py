@@ -44,17 +44,8 @@ def update_technician_charge(doc):
     if not doc.is_new() and doc.has_value_changed('charges'):
         return
 
-    # If charges is already set and neither input to the slab has changed, do not
-    # overwrite it. Category counts as an input: it selects which slab table the
-    # distance is read against, and it is an office choice made per assignment --
-    # Technician Details has no category field to derive it from. Before this,
-    # changing the category on a priced visit left the old category's rate behind.
-    if (
-        not doc.is_new()
-        and doc.charges
-        and not doc.has_value_changed('kilometers')
-        and not doc.has_value_changed('technician_category')
-    ):
+    # If charges is already set and kilometers has NOT changed, do not overwrite it
+    if not doc.is_new() and doc.charges and not doc.has_value_changed('kilometers'):
         return
 
     if not doc.technician_category or not doc.kilometers:

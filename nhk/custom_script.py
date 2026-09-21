@@ -829,27 +829,15 @@ def create_payment_entry_for_settlement(doc, technician_id, technician_user_id, 
 
 @frappe.whitelist()
 def update_shares(doctype, docname, technician_user_id):
-    """Deprecated. Reassignment moves shares through `nhk.api.assignment`.
+    # Remove existing shares
+    shares = frappe.get_all('DocShare', filters={'share_doctype': doctype, 'share_name': docname}, fields=['name', 'user'])
+    for share in shares:
+        frappe.share.remove(doctype, docname, share.user)
+    
+    # Add new share for technician_user_id
+    frappe.share.add(doctype, docname, technician_user_id, read=1, write=1)
 
-    This used to take any doctype and docname, delete every share on the document
-    and grant read+write to whatever user it was handed, with no permission check
-    of any kind -- the only `NHK Admin` test lived in the form script, which a
-    direct call to `/api/method` never reaches. Any logged-in session, including a
-    technician's phone, could rewrite the sharing on any document in the system.
-
-    Its one caller was an `after_save` on Technician Visit Entry gated on a visit
-    type nothing creates, so it was dead in practice as well as unsafe. The share
-    now moves server-side in `nhk.api.assignment.sync_assignment`, on every save.
-
-    Kept, refusing, rather than deleted: it is whitelisted, so something outside
-    this repository may still be calling it, and a clear refusal is easier to
-    trace than a missing method.
-    """
-    frappe.throw(
-        _("update_shares has been withdrawn. Reassign the visit instead -- the share "
-          "moves with it. See nhk.api.assignment.reassign_visit."),
-        frappe.PermissionError,
-    )
+    return True
 
 
 
