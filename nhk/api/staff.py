@@ -53,10 +53,21 @@ DAY_LIST_WINDOW_DAYS = 7
 UNDO_WINDOW_MINUTES = 15
 
 #: `change_status` transitions, keyed by visit type.
+#:
+#: The last three are the Sales and Service order flow: the Sales Order form's
+#: Assign Technician creates the two `Technician Assignment` types, and the desk
+#: closes all three through `change_status_sales`.
 COMPLETION_STATUS = {
 	"Delivery": "Delivered",
 	"Pickup": "Picked up",
+	"Service": "Service Done",
+	"Technician Assignment For Sales": "Installation Done",
+	"Technician Assignment For Service": "Service Done",
 }
+
+#: Completion statuses that close work on a Sales or Service order rather than
+#: moving stock -- see `_advance_sales_order`.
+WORK_DONE_STATUSES = ("Installation Done", "Service Done")
 
 
 # ---------------------------------------------------------------------------
@@ -462,11 +473,13 @@ def check_in(visit_id, latitude=None, longitude=None, accuracy=None, is_mocked=0
 	doc = _record_checkin(technician, "Visit", visit_entry=visit.name, latitude=latitude,
 						  longitude=longitude, accuracy=accuracy, is_mocked=is_mocked)
 
-	frappe.db.set_value("Technician Visit Entry", visit.name, {
-		"started_at": doc.checked_in_at,
-		"start_latitude": doc.latitude,
-		"start_longitude": doc.longitude,
-	})
+	arrival = {"started_at": doc.checked_in_at}
+	# Float columns are NOT NULL -- see `_close_checkin`. A phone with no fix
+	# arrives without coordinates, and writing its nulls here threw an
+	# IntegrityError that stopped the technician checking in at all.
+	if doc.latitude is not None and doc.longitude is not None:
+		arrival.update(start_latitude=doc.latitude, start_longitude=doc.longitude)
+	frappe.db.set_value("Technician Visit Entry", visit.name, arrival)
 
 	return {"name": doc.name, "kind": doc.kind, "visit_entry": visit.name,
 			"checked_in_at": doc.checked_in_at}
@@ -600,6 +613,10 @@ def _validated_distance(kilometers):
 def _advance_sales_order(visit, new_status):
 	"""Drive the Sales Order forward, translating the fork's errors.
 
+	Delivery and Pickup move stock through the fork. Installation and service
+	close the technician's part of a Sales or Service order, which is a status
+	change only.
+
 	`make_delivered` throws a bare 'Item Is Not Reserved' when stock state does
 	not line up. That is unfixable in the field, so it is re-raised as something
 	the app can show on a blocking screen with a call-the-office action.
@@ -615,8 +632,12 @@ def _advance_sales_order(visit, new_status):
 	from erpnext.selling.doctype.sales_order.sales_order import make_delivered, make_pickedup
 
 	if not visit.sales_order_id:
-		# Nothing to advance. Only Delivery and Pickup reach here and both carry
-		# an order, but a visit created by hand may not.
+		# Nothing to advance. Every type that reaches here normally carries an
+		# order, but a visit created by hand may not.
+		return
+
+	if new_status in WORK_DONE_STATUSES:
+		_mark_technician_work_done(visit.sales_order_id)
 		return
 
 	stamp = frappe.utils.nowdate()
@@ -636,6 +657,22 @@ def _advance_sales_order(visit, new_status):
 			_("The job could not be closed on order {0}: {1}. Call the office before you leave.")
 			.format(visit.sales_order_id, str(exc))
 		)
+
+
+def _mark_technician_work_done(sales_order):
+	"""The Sales Order half of `change_status_sales`, without its commit.
+
+	Same rule as the desk: an order still `Technician Assigned` moves to
+	`Technician Work Done`, items too. One the office has already taken further
+	is left where it is. Written with `db.set_value`, as the desk does, because
+	the status is a custom one the ERPNext status machinery does not know.
+	"""
+	if frappe.db.get_value("Sales Order", sales_order, "status") != "Technician Assigned":
+		return
+
+	frappe.db.set_value("Sales Order", sales_order, "status", "Technician Work Done")
+	for item in frappe.get_all("Sales Order Item", filters={"parent": sales_order}, pluck="name"):
+		frappe.db.set_value("Sales Order Item", item, "child_status", "Technician Work Done")
 
 
 # ---------------------------------------------------------------------------
