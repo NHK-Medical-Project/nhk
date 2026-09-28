@@ -23,6 +23,10 @@
     "column_break_ifcb",
     "kilometers",
     "charges",
+    "extra_payment",
+    "extra_payment_reason",
+    "extra_payment_note",
+    "payout_month",
     "incentive_amount_to_be_processed",
     "payment_status",
     "technician_update_datetime",
@@ -100,6 +104,37 @@
       "fieldname": "charges",
       "fieldtype": "Currency",
       "label": "Incentive Amount"
+    },
+    {
+      "description": "What the technician spent or waited beyond the visit itself. Paid with the month's payout, next to the slab charge.",
+      "fieldname": "extra_payment",
+      "fieldtype": "Currency",
+      "label": "Extra Payment",
+      "non_negative": 1
+    },
+    {
+      "depends_on": "eval:doc.extra_payment",
+      "fieldname": "extra_payment_reason",
+      "fieldtype": "Select",
+      "label": "Extra Payment Reason",
+      "mandatory_depends_on": "eval:doc.extra_payment",
+      "options": "\nOut of Station\nWaiting\nOther"
+    },
+    {
+      "depends_on": "eval:doc.extra_payment",
+      "fieldname": "extra_payment_note",
+      "fieldtype": "Small Text",
+      "label": "Extra Payment Note",
+      "mandatory_depends_on": "eval:doc.extra_payment_reason=='Other'"
+    },
+    {
+      "description": "Set when the month's technician payout is processed. The visit's pay can no longer change.",
+      "fieldname": "payout_month",
+      "fieldtype": "Link",
+      "label": "Payout Month",
+      "options": "Technician Payout Month",
+      "read_only": 1,
+      "search_index": 1
     },
     {
       "fieldname": "sales_order_details_section",
@@ -339,7 +374,7 @@
   ],
   "index_web_pages_for_search": 1,
   "links": [],
-  "modified": "2026-06-11 15:35:12.446614",
+  "modified": "2026-09-28 12:13:55.408593",
   "modified_by": "Administrator",
   "module": "nhk",
   "name": "Technician Visit Entry",

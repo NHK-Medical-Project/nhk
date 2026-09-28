@@ -1,0 +1,156 @@
+{
+ "actions": [],
+ "autoname": "field:month",
+ "creation": "2026-09-28 12:14:26.962710",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "month",
+  "status",
+  "column_break_status",
+  "processed_on",
+  "processed_by",
+  "section_rows",
+  "rows",
+  "section_totals",
+  "total_visit_charges",
+  "total_extra_payments",
+  "column_break_totals",
+  "total_sales_incentive",
+  "total_fixed_incentive",
+  "column_break_grand",
+  "grand_total"
+ ],
+ "fields": [
+  {
+   "description": "The month paid, as YYYY-MM.",
+   "fieldname": "month",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Month",
+   "reqd": 1,
+   "unique": 1,
+   "set_only_once": 1
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nProcessed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "processed_on",
+   "fieldtype": "Datetime",
+   "label": "Processed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "processed_by",
+   "fieldtype": "Link",
+   "label": "Processed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_rows",
+   "fieldtype": "Section Break",
+   "label": "Technicians"
+  },
+  {
+   "fieldname": "rows",
+   "fieldtype": "Table",
+   "label": "Rows",
+   "options": "Technician Payout Row"
+  },
+  {
+   "fieldname": "section_totals",
+   "fieldtype": "Section Break",
+   "label": "Totals"
+  },
+  {
+   "fieldname": "total_visit_charges",
+   "fieldtype": "Currency",
+   "label": "Visit Charges",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_extra_payments",
+   "fieldtype": "Currency",
+   "label": "Extra Payments",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_totals",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_sales_incentive",
+   "fieldtype": "Currency",
+   "label": "Sales Incentive",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_fixed_incentive",
+   "fieldtype": "Currency",
+   "label": "Fixed Incentive",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_grand",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "grand_total",
+   "fieldtype": "Currency",
+   "label": "Total",
+   "read_only": 1,
+   "in_list_view": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-28 12:14:26.962710",
+ "modified_by": "Administrator",
+ "module": "nhk",
+ "name": "Technician Payout Month",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "NHK Admin",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "month",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "month",
+ "track_changes": 1
+}

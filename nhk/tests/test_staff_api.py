@@ -39,6 +39,11 @@ def _visit(cleanup, technician=PILOT_TECH, user=PILOT_USER, age_days=0, status="
 		"technician_response": response,
 	}).insert(ignore_permissions=True)
 	cleanup.add("Technician Visit Entry", doc.name)
+	# Deleting the visit subtracts its charge from the technician's settled total
+	# (`TechnicianVisitEntry.on_trash`) -- see `Cleanup.restore_after_delete`.
+	# Reassignment tests elsewhere move visits; restore both pilot technicians.
+	for tech in {technician, PILOT_TECH, OTHER_TECH}:
+		cleanup.restore_after_delete("Technician Details", tech, "total_amount_settled")
 
 	if age_days:
 		old = datetime.now() - timedelta(days=age_days)
@@ -425,10 +430,10 @@ def test_complete_job_reports_an_office_completion(cleanup):
 
 
 def test_a_failed_sales_order_leaves_the_visit_untouched(cleanup):
-	"""The bug this ordering exists to prevent.
+	"""The bug the no-commit rule in `nhk.api.visits` exists to prevent.
 
-	`nhk.custom_script.change_status` commits. When it ran before the Sales
-	Order was advanced, a `make_delivered` failure -- "Item Is Not Reserved",
+	`nhk.custom_script.change_status` commits. When the app closed visits with
+	it, before the Sales Order was advanced, a `make_delivered` failure -- "Item Is Not Reserved",
 	which happens routinely -- left the visit `Delivered` in the database while
 	the request rolled back and the app was told the job had failed. The office
 	saw a completed job; the technician saw an error and a job still open.
@@ -444,8 +449,10 @@ def test_a_failed_sales_order_leaves_the_visit_untouched(cleanup):
 	# failure being tested.
 	frappe.db.commit()
 
-	original = staff._advance_sales_order
-	staff._advance_sales_order = lambda *a, **kw: frappe.throw("Item Is Not Reserved")
+	from nhk.api import visits
+
+	original = visits._advance_sales_order
+	visits._advance_sales_order = lambda *a, **kw: frappe.throw("Item Is Not Reserved")
 	try:
 		staff.complete_job(visit, kilometers=12)
 	except frappe.ValidationError:
@@ -453,7 +460,7 @@ def test_a_failed_sales_order_leaves_the_visit_untouched(cleanup):
 	else:
 		raise AssertionError("complete_job should have surfaced the Sales Order failure")
 	finally:
-		staff._advance_sales_order = original
+		visits._advance_sales_order = original
 		# What the request handler does when an endpoint throws.
 		frappe.db.rollback()
 
@@ -477,7 +484,7 @@ def test_delivery_hands_the_sales_order_a_customer_it_can_link(cleanup):
 	`make_delivered` gets far enough to validate the link depends on the order's
 	stock state, and the contract being pinned here does not.
 	"""
-	from nhk.api import staff
+	from nhk.api import visits
 	from erpnext.selling.doctype.sales_order import sales_order as so_module
 
 	visit = _visit(cleanup)
@@ -495,7 +502,7 @@ def test_delivery_hands_the_sales_order_a_customer_it_can_link(cleanup):
 		docname=docname, customer_name=customer_name
 	)
 	try:
-		staff._advance_sales_order(doc, "Delivered")
+		visits._advance_sales_order(doc, "Delivered")
 	finally:
 		so_module.make_delivered = original
 		frappe.db.rollback()
@@ -508,6 +515,48 @@ def test_delivery_hands_the_sales_order_a_customer_it_can_link(cleanup):
 	assert passed == frappe.db.get_value("Sales Order", doc.sales_order_id, "customer"), (
 		"the delivery should name the order's own customer, got %r" % passed
 	)
+
+
+def test_delivery_completes_on_a_dispatched_order(cleanup):
+	"""The normal case, which used to fail.
+
+	A rental order is `DISPATCHED` while the technician is on the road. Moving
+	it to `Active` fires the core `validate_technician_visit`, which sets every
+	open Delivery visit on the order to `Delivered` itself. When the visit was
+	still `Assigned` at that point, the `Assigned -> Delivered` change that
+	followed found it already `Delivered` and threw "Invalid status change",
+	rolling the whole completion back.
+
+	`make_delivered` is replaced by the part of it that matters here -- the
+	order's status change, through the real core validation -- because the real
+	one also needs the device to be in reserved stock.
+	"""
+	from nhk.api import staff
+	from erpnext.selling.doctype.sales_order import sales_order as so_module
+
+	so = frappe.db.get_value("Sales Order", {"order_type": "Rental", "docstatus": 1}, "name")
+	cleanup.restore("Sales Order", so, "status")
+	frappe.db.set_value("Sales Order", so, "status", "DISPATCHED", update_modified=False)
+
+	visit = _visit(cleanup, sales_order=so)
+	_on_duty(cleanup)
+	cleanup.add("Technician Check In", staff.check_in(visit, latitude=12.9, longitude=77.5)["name"])
+
+	def goes_active(docname, *a, **kw):
+		order = frappe.get_doc("Sales Order", docname)
+		order.status = "Active"
+		order.validate_technician_visit()
+		frappe.db.set_value("Sales Order", docname, "status", "Active", update_modified=False)
+
+	original = so_module.make_delivered
+	so_module.make_delivered = goes_active
+	try:
+		result = staff.complete_job(visit, kilometers=12)
+	finally:
+		so_module.make_delivered = original
+
+	assert result["status"] == "Delivered", "delivery closed at %r" % result["status"]
+	assert result["charges"], "the delivery was closed without a charge"
 
 
 def test_distance_drives_the_slab_charge(cleanup):

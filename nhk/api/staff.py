@@ -42,6 +42,7 @@ from nhk.api.guards import (
 	owned_visit,
 	response_of,
 )
+from nhk.api import visits
 
 #: Jobs older than this drop out of the day list into the backlog. The open queue
 #: is full of jobs nobody intends to do -- 366 of 437 are over a month old -- and
@@ -52,22 +53,9 @@ DAY_LIST_WINDOW_DAYS = 7
 #: mis-tap, short enough that an arrival time stays meaningful.
 UNDO_WINDOW_MINUTES = 15
 
-#: `change_status` transitions, keyed by visit type.
-#:
-#: The last three are the Sales and Service order flow: the Sales Order form's
-#: Assign Technician creates the two `Technician Assignment` types, and the desk
-#: closes all three through `change_status_sales`.
-COMPLETION_STATUS = {
-	"Delivery": "Delivered",
-	"Pickup": "Picked up",
-	"Service": "Service Done",
-	"Technician Assignment For Sales": "Installation Done",
-	"Technician Assignment For Service": "Service Done",
-}
-
-#: Completion statuses that close work on a Sales or Service order rather than
-#: moving stock -- see `_advance_sales_order`.
-WORK_DONE_STATUSES = ("Installation Done", "Service Done")
+#: Re-exported: `my_stats` and `job` read it, and callers have imported it
+#: from here since before the completion routine moved to `visits`.
+COMPLETION_STATUS = visits.COMPLETION_STATUS
 
 
 # ---------------------------------------------------------------------------
@@ -205,6 +193,9 @@ def job(visit_id):
 			"created_datetime": visit.created_datetime,
 			"kilometers": visit.kilometers,
 			"charges": visit.charges,
+			"extra_payment": visit.extra_payment,
+			"extra_payment_reason": visit.extra_payment_reason,
+			"extra_payment_note": visit.extra_payment_note,
 			"notes": visit.notes,
 			"order_notes": visit.order_notes,
 			"technician_response": response_of(visit),
@@ -525,20 +516,21 @@ def undo_check_in(checkin_id):
 
 @frappe.whitelist()
 def complete_job(visit_id, kilometers, notes=None, latitude=None, longitude=None,
-				 payment_pending_reason=None):
-	"""Finish a job: move the Sales Order, then move the visit.
+				 payment_pending_reason=None, extra_payment=None, extra_payment_reason=None,
+				 extra_payment_note=None):
+	"""Finish a job: the visit and its Sales Order, together or not at all.
 
 	Note the absent `charges` argument -- see the module docstring.
 
-	**The order of those two is load-bearing.** `nhk.custom_script.change_status`
-	ends with its own `frappe.db.commit()`. Anything that raised after it -- and
-	`make_delivered` raises routinely, with a bare "Item Is Not Reserved" -- left
-	the visit `Delivered` in the database while the request rolled back and the
-	app was told the job had failed. The technician saw an error, the office saw
-	a completed job, and the check-in and `completed_at` that come after were
-	never written: the visit was half closed, with no arrival closed out and no
-	completion time. Everything that can fail now runs *before* that commit, so
-	the call is all-or-nothing again.
+	The closing itself is `nhk.api.visits.complete_visit`, shared with the
+	desk. What is the app's own is the gates in front of it: duty, ownership,
+	acceptance, and a check-in -- the office closes visits nobody arrived at,
+	the app does not.
+
+	`extra_payment` is what the technician is owed beyond the visit's charge --
+	out of station, waiting -- with a reason, and a note for "Other". It is paid
+	with the month's payout (`nhk.api.payouts`); the office can correct it
+	until then.
 	"""
 	technician = current_technician()
 	assert_on_duty(technician)
@@ -554,125 +546,20 @@ def complete_job(visit_id, kilometers, notes=None, latitude=None, longitude=None
 
 	assert_accepted(visit)
 
-	checkin = _open_visit_checkin(technician, visit.name)
-	if not checkin:
+	if not _open_visit_checkin(technician, visit.name):
 		frappe.throw(_("Check in at the job before completing it."))
 
-	distance = _validated_distance(kilometers)
-
-	new_status = COMPLETION_STATUS.get(visit.type)
-	if not new_status:
+	if not COMPLETION_STATUS.get(visit.type):
 		frappe.throw(_("The app cannot complete a {0} visit.").format(visit.type))
 
-	completed_at = now_datetime()
+	completed_at = visits.complete_visit(
+		visit, kilometers, notes=notes, latitude=latitude, longitude=longitude,
+		extra={"amount": extra_payment, "reason": extra_payment_reason, "note": extra_payment_note},
+	)
 
-	# Distance first: the slab lookup runs in validate(), so it must see the real
-	# number before anything reads `charges`.
-	visit.kilometers = distance
-	if notes:
-		visit.notes = notes
-	visit.completed_at = completed_at
-	visit.complete_latitude = flt(latitude)
-	visit.complete_longitude = flt(longitude)
-	visit.save()
-
-	# Then the Sales Order, while a raise can still be taken back. This is the
-	# step that fails in the field.
-	_advance_sales_order(visit, new_status)
-
-	_close_checkin(checkin.name, "Completed")
-
-	# Last, because it commits: after this line nothing can be undone.
-	from nhk.custom_script import change_status
-
-	change_status(visit.name, new_status)
-
-	visit.reload()
 	return {"name": visit.name, "status": visit.status, "kilometers": visit.kilometers,
-			"charges": visit.charges, "completed_at": completed_at}
-
-
-def _validated_distance(kilometers):
-	"""Distance must be a whole number of at least 1 km.
-
-	The slab boundaries are integers, so a fractional distance can land between
-	two rows and silently leave the payout unchanged.
-	"""
-	if kilometers in (None, ""):
-		frappe.throw(_("Enter the distance travelled."))
-
-	distance = flt(kilometers)
-	if distance != int(distance):
-		frappe.throw(_("Distance must be a whole number of kilometres."))
-	if distance < 1:
-		frappe.throw(_("Distance must be at least 1 km."))
-
-	return int(distance)
-
-
-def _advance_sales_order(visit, new_status):
-	"""Drive the Sales Order forward, translating the fork's errors.
-
-	Delivery and Pickup move stock through the fork. Installation and service
-	close the technician's part of a Sales or Service order, which is a status
-	change only.
-
-	`make_delivered` throws a bare 'Item Is Not Reserved' when stock state does
-	not line up. That is unfixable in the field, so it is re-raised as something
-	the app can show on a blocking screen with a call-the-office action.
-
-	Note what `make_delivered` wants for `customer_name`: despite the name it
-	writes the value into `Item.customer_n`, which is a **Link to Customer**, so
-	it has to be the Customer docname (`NHK-CUS-0105`) and not the display name.
-	Both desk callers pass the Sales Order's own `customer` field; passing
-	`visit.patient_name` here threw `Could not find Customer: <person's name>`
-	on every delivery, because customers are named by series and the docname is
-	never the display name.
-	"""
-	from erpnext.selling.doctype.sales_order.sales_order import make_delivered, make_pickedup
-
-	if not visit.sales_order_id:
-		# Nothing to advance. Every type that reaches here normally carries an
-		# order, but a visit created by hand may not.
-		return
-
-	if new_status in WORK_DONE_STATUSES:
-		_mark_technician_work_done(visit.sales_order_id)
-		return
-
-	stamp = frappe.utils.nowdate()
-	try:
-		if new_status == "Delivered":
-			# Read it off the order being advanced rather than off the visit: the
-			# order is what `make_delivered` acts on, and the visit's own
-			# `patient_id` is a copy that can drift.
-			customer = frappe.db.get_value(
-				"Sales Order", visit.sales_order_id, "customer"
-			) or visit.patient_id
-			make_delivered(visit.sales_order_id, customer, stamp)
-		else:
-			make_pickedup(visit.sales_order_id, stamp)
-	except Exception as exc:
-		frappe.throw(
-			_("The job could not be closed on order {0}: {1}. Call the office before you leave.")
-			.format(visit.sales_order_id, str(exc))
-		)
-
-
-def _mark_technician_work_done(sales_order):
-	"""The Sales Order half of `change_status_sales`, without its commit.
-
-	Same rule as the desk: an order still `Technician Assigned` moves to
-	`Technician Work Done`, items too. One the office has already taken further
-	is left where it is. Written with `db.set_value`, as the desk does, because
-	the status is a custom one the ERPNext status machinery does not know.
-	"""
-	if frappe.db.get_value("Sales Order", sales_order, "status") != "Technician Assigned":
-		return
-
-	frappe.db.set_value("Sales Order", sales_order, "status", "Technician Work Done")
-	for item in frappe.get_all("Sales Order Item", filters={"parent": sales_order}, pluck="name"):
-		frappe.db.set_value("Sales Order Item", item, "child_status", "Technician Work Done")
+			"charges": visit.charges, "completed_at": completed_at,
+			"extra_payment": visit.extra_payment, "extra_payment_reason": visit.extra_payment_reason}
 
 
 # ---------------------------------------------------------------------------

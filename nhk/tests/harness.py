@@ -17,6 +17,7 @@ class Cleanup:
 	def __init__(self):
 		self._records: list[tuple[str, str]] = []
 		self._values: list[tuple[str, str, str, object]] = []
+		self._values_after: list[tuple[str, str, str, object]] = []
 
 	def add(self, doctype: str, name: str) -> str:
 		self._records.append((doctype, name))
@@ -32,6 +33,22 @@ class Cleanup:
 		it back afterwards.
 		"""
 		self._values.append((doctype, name, fieldname, frappe.db.get_value(doctype, name, fieldname)))
+
+	def restore_after_delete(self, doctype: str, name: str, fieldname: str) -> None:
+		"""Snapshot a field that *deleting* this test's records changes, and put it
+		back after the deletes.
+
+		`TechnicianVisitEntry.on_trash` subtracts a visit's charge from its
+		technician's `Technician Details.total_amount_settled`. Every fixture visit
+		is priced when it is created, so every clean-up quietly lowered a real
+		technician's total: by 2026-09-28 the pilot technician stood at -227,040
+		from 2,483 deleted fixtures. A snapshot restored *before* the deletes
+		cannot undo that; this one runs after them.
+		"""
+		key = (doctype, name, fieldname)
+		if any(v[:3] == key for v in self._values_after):
+			return
+		self._values_after.append((*key, frappe.db.get_value(doctype, name, fieldname)))
 
 	def run(self) -> list[str]:
 		"""Put edited fields back, delete created records, report what would not go.
@@ -52,6 +69,12 @@ class Cleanup:
 				frappe.delete_doc(doctype, name, force=True, ignore_permissions=True, delete_permanently=True)
 			except Exception as exc:
 				leaked.append("%s %s (%s)" % (doctype, name, type(exc).__name__))
+
+		for doctype, name, fieldname, value in self._values_after:
+			try:
+				frappe.db.set_value(doctype, name, fieldname, value, update_modified=False)
+			except Exception as exc:
+				leaked.append("%s %s.%s (%s)" % (doctype, name, fieldname, type(exc).__name__))
 		frappe.db.commit()
 		return leaked
 

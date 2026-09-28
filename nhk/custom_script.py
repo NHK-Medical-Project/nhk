@@ -715,41 +715,44 @@ def change_status(docname, new_status, charges=None, incentive_amount=None):
 
 
 @frappe.whitelist()
-def change_status_sales(docname, new_status):
-    """
-    Called when Technician Visit Entry status is updated.
-    Updates linked Sales Order to 'Technician Work Done' if currently 'Technician Assigned'.
-    """
-    try:
-        frappe.db.begin()
-        
-        # 1. Update Technician Visit Entry Status
-        frappe.db.set_value('Technician Visit Entry', docname, 'status', new_status)
-        
-        # 2. Check for linked Sales Order
-        tech_visit = frappe.get_doc('Technician Visit Entry', docname)
-        sales_order_id = tech_visit.get('sales_order_id') or tech_visit.get('sales_order')
-        
-        if sales_order_id and frappe.db.exists('Sales Order', sales_order_id):
-            current_so_status = frappe.db.get_value('Sales Order', sales_order_id, 'status')
-            
-            # If Sales Order is 'Technician Assigned', change it to 'Technician Work Done'
-            if current_so_status == 'Technician Assigned':
-                # Force update Sales Order status directly in DB to bypass standard ERPNext hooks
-                frappe.db.set_value('Sales Order', sales_order_id, 'status', 'Technician Work Done')
-                
-                # Force update child items directly in DB
-                sales_order_items = frappe.get_all("Sales Order Item", filters={"parent": sales_order_id}, fields=["name"])
-                for item in sales_order_items:
-                    frappe.db.set_value("Sales Order Item", item.name, "child_status", "Technician Work Done")
-        
-        frappe.db.commit()
-        return f"Status updated to {new_status} successfully."
+def change_status_sales(docname, new_status, kilometers=None):
+    """The visit form's `Service Done` / `Installation Done` buttons.
 
-    except Exception as e:
-        frappe.db.rollback()
-        frappe.log_error(message=frappe.get_traceback(), title="Technician Status Change Error")
-        frappe.throw(f"An error occurred while changing status: {str(e)}")
+    Superseded by `nhk.api.visits.complete_from_sales_order`, which this now
+    is. Kept under this name because both copies of the visit form script
+    call it -- the app's `technician_visit_entry.js` and the enabled Client
+    Script `technician Portal Sales order Details 2` (see
+    `.scratch/technician-assignment/issues/09`) -- and routing here fixes
+    both at once.
+
+    It used to write whatever status it was handed with `db.set_value`: no
+    charge, no completion time, no permission check, its own
+    `begin()`/`commit()`, and the order moved regardless. Now:
+
+    * `new_status` must be the one the visit's type closes at, so a service
+      visit cannot be marked `Delivered`;
+    * the distance comes with the call, from the form's prompt, so a refusal
+      takes it back with everything else. Without one (an older caller, such
+      as the database copy of the form script), the saved distance is used.
+      Either way it must be a real one -- see
+      `nhk.api.visits._validated_distance`;
+    * write on the order and the visit is required, which keeps technicians
+      to the app and its check-in;
+    * nothing commits until the request does.
+    """
+    from nhk.api.visits import COMPLETION_STATUS, complete_from_sales_order
+
+    visit_type, saved_kilometers = frappe.db.get_value(
+        "Technician Visit Entry", docname, ["type", "kilometers"]
+    ) or (None, None)
+    expected = COMPLETION_STATUS.get(visit_type)
+    if new_status != expected:
+        frappe.throw(
+            _("A {0} visit closes at {1}, not {2}.").format(visit_type, expected, new_status)
+        )
+
+    complete_from_sales_order(docname, kilometers if kilometers not in (None, "") else saved_kilometers)
+    return _("Status updated to {0} successfully.").format(new_status)
 
 
 

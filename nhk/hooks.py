@@ -28,7 +28,9 @@ app_license = "mit"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+# Sales Order: the order's Technician Visit Entries, shown on the order. Loaded
+# after ERPNext's own sales_order.js. See .scratch/sales-order-controls-visits.
+doctype_js = {"Sales Order": "public/js/sales_order.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -136,6 +138,11 @@ doc_events = {
 	"Technician Visit Entry": {
 		"validate": "nhk.api.assignment.guard_reassignment",
 		"on_update": "nhk.api.assignment.sync_assignment",
+	},
+	# The order's DELIVERED / Submitted To Office close their visits in the
+	# core with `db.set_value`; this records the completion time on them.
+	"Sales Order": {
+		"on_update_after_submit": "nhk.api.visits.stamp_visits_closed_by_the_order",
 	},
 }
 

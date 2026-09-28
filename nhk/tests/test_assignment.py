@@ -45,6 +45,11 @@ def _visit(cleanup, technician=PILOT_TECH, user=PILOT_USER, type_="Delivery",
 		"rejection_reason": reason,
 	}).insert(ignore_permissions=True)
 	cleanup.add("Technician Visit Entry", doc.name)
+	# Deleting the visit subtracts its charge from whichever technician holds it
+	# by then (`TechnicianVisitEntry.on_trash`); these tests move visits between
+	# the two, so both totals are put back -- see `Cleanup.restore_after_delete`.
+	for tech in (PILOT_TECH, OTHER_TECH):
+		cleanup.restore_after_delete("Technician Details", tech, "total_amount_settled")
 
 	frappe.share.add_docshare("Technician Visit Entry", doc.name, user, read=1, write=1,
 							  flags={"ignore_share_permission": True})

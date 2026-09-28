@@ -29,6 +29,8 @@ class TechnicianVisitEntry(Document):
     def validate(self):
         if not self.kilometers:
             self.kilometers = 1.0
+        guard_payout_lock(self)
+        validate_extra_payment(self)
         update_technician_charge(self)
 
 
@@ -38,6 +40,43 @@ class TechnicianVisitEntry(Document):
 
 from frappe.utils import flt
 import frappe
+from frappe import _
+
+#: What a processed month fixes on a visit. Set by
+#: `nhk.api.payouts.process_month`; after that the pay is final.
+PAYOUT_LOCKED_FIELDS = (
+    "charges", "kilometers", "incentive_amount_to_be_processed",
+    "extra_payment", "extra_payment_reason", "extra_payment_note",
+    "status", "payment_status", "payout_month", "technician_id",
+)
+
+
+def guard_payout_lock(doc):
+    """Refuse changes to a visit's pay once its month has been processed."""
+    before = doc.get_doc_before_save()
+    if not before or not before.payout_month:
+        return
+    changed = [f for f in PAYOUT_LOCKED_FIELDS if doc.has_value_changed(f)]
+    if changed:
+        frappe.throw(
+            _("{0} was paid in the {1} technician payout, so {2} can no longer change.").format(
+                doc.name, before.payout_month, ", ".join(changed)
+            )
+        )
+
+
+def validate_extra_payment(doc):
+    """An extra payment needs a reason, and "Other" needs a note saying what it was for."""
+    amount = flt(doc.extra_payment)
+    if amount < 0:
+        frappe.throw(_("Extra payment cannot be negative."))
+    if not amount:
+        return
+    if not doc.extra_payment_reason:
+        frappe.throw(_("Say why the extra payment is due: out of station, waiting, or other."))
+    if doc.extra_payment_reason == "Other" and not (doc.extra_payment_note or "").strip():
+        frappe.throw(_("Add a note saying what the extra payment is for."))
+
 
 def update_technician_charge(doc):
     # If the user has manually changed/edited 'charges', we should not overwrite it
