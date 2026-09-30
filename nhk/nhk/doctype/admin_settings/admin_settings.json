@@ -16,7 +16,16 @@
   "whats_app_section",
   "send_renewal_and_payment_message",
   "technician_charges_tab",
-  "technician_charges_table"
+  "technician_charges_table",
+  "office_location_section",
+  "office_latitude",
+  "column_break_office_location",
+  "office_longitude",
+  "road_distance_section",
+  "google_maps_server_key",
+  "road_travel_mode",
+  "column_break_road_distance",
+  "road_distance_factor"
  ],
  "fields": [
   {
@@ -82,12 +91,66 @@
    "fieldtype": "Table",
    "label": "Technician Charges Table",
    "options": "Technician Charges"
+  },
+  {
+   "description": "Technician distances are measured from here, in a straight line, to where they arrive.",
+   "fieldname": "office_location_section",
+   "fieldtype": "Section Break",
+   "label": "Office Location"
+  },
+  {
+   "fieldname": "office_latitude",
+   "fieldtype": "Data",
+   "label": "Office Latitude",
+   "precision": "9"
+  },
+  {
+   "fieldname": "column_break_office_location",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "office_longitude",
+   "fieldtype": "Data",
+   "label": "Office Longitude",
+   "precision": "9"
+  },
+  {
+   "description": "Distances are measured by road from the office to where the technician checks in. Needs a server-side Google Maps key with the Routes API enabled, restricted to this server's IP. Without it, or when Google cannot be reached, the straight line times the factor below is used.",
+   "fieldname": "road_distance_section",
+   "fieldtype": "Section Break",
+   "label": "Road Distance (Google Routes API)"
+  },
+  {
+   "fieldname": "google_maps_server_key",
+   "fieldtype": "Password",
+   "label": "Google Maps Server Key",
+   "length": 255
+  },
+  {
+   "default": "DRIVE",
+   "description": "TWO_WHEELER routes are available in India.",
+   "fieldname": "road_travel_mode",
+   "fieldtype": "Select",
+   "label": "Travel Mode",
+   "options": "DRIVE\nTWO_WHEELER"
+  },
+  {
+   "fieldname": "column_break_road_distance",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1.3",
+   "description": "Straight-line distance is multiplied by this when a road distance cannot be had. 1.3 is typical for a city.",
+   "fieldname": "road_distance_factor",
+   "fieldtype": "Float",
+   "label": "Fallback Road Factor",
+   "precision": "2"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-06-11 10:45:43.900686",
+ "modified": "2026-09-29 16:08:50.174430",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Admin Settings",

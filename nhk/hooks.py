@@ -11,7 +11,9 @@ app_license = "mit"
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/nhk/css/nhk.css"
-# app_include_js = "/assets/nhk/js/nhk.js"
+# Desk-wide: the pop-up when a technician accepts or rejects a job the user
+# assigned (nhk.api.notify.tell_office). Served from nhk/public, no build step.
+app_include_js = "/assets/nhk/js/nhk_desk.js"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/nhk/css/nhk.css"
@@ -28,7 +30,9 @@ app_license = "mit"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+# Sales Order: the order's Technician Visit Entries, shown on the order. Loaded
+# after ERPNext's own sales_order.js. See .scratch/sales-order-controls-visits.
+doctype_js = {"Sales Order": "public/js/sales_order.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -135,7 +139,16 @@ app_license = "mit"
 doc_events = {
 	"Technician Visit Entry": {
 		"validate": "nhk.api.assignment.guard_reassignment",
-		"on_update": "nhk.api.assignment.sync_assignment",
+		"on_update": [
+			"nhk.api.assignment.sync_assignment",
+			# Push the technician's phone when a visit becomes theirs.
+			"nhk.api.notify.on_visit_update",
+		],
+	},
+	# The order's DELIVERED / Submitted To Office close their visits in the
+	# core with `db.set_value`; this records the completion time on them.
+	"Sales Order": {
+		"on_update_after_submit": "nhk.api.visits.stamp_visits_closed_by_the_order",
 	},
 }
 

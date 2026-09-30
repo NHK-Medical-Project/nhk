@@ -1,0 +1,26 @@
+{
+ "content": null,
+ "creation": "2026-09-28 12:14:40.570049",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2026-09-28 12:14:40.570049",
+ "modified_by": "Administrator",
+ "module": "nhk",
+ "name": "technician-payouts",
+ "owner": "Administrator",
+ "page_name": "technician-payouts",
+ "roles": [
+  {
+   "role": "NHK Admin"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Technician Payouts"
+}

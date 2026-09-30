@@ -20,6 +20,10 @@ Two gates run ahead of every read and every write:
 * **Duty.** Off duty there is nothing to read. `my_jobs` and `job` refuse rather
   than returning a filtered view, so a phone that is not on shift is not holding
   patient names, addresses, phone numbers and outstanding balances on screen.
+  The exception is **answering** a job: `accept_job` and `reject_job` work off
+  duty (decided 2026-09-29), because the assignment notification carries
+  Accept / Reject and technicians confirm tomorrow's work from home. Accepting
+  is a promise, not an arrival -- `check_in` and `complete_job` still need duty.
 * **Acceptance.** The office assigns a job; the technician answers it. Until
   `accept_job` lands, `check_in` and `complete_job` refuse. A rejection is
   recorded with its reason and leaves the visit assigned -- reassignment is the
@@ -28,7 +32,7 @@ Two gates run ahead of every read and every write:
 
 import frappe
 from frappe import _
-from frappe.utils import add_to_date, cint, flt, get_datetime, now_datetime, today
+from frappe.utils import add_to_date, cint, flt, get_datetime, getdate, now_datetime, today
 
 from nhk.api.guards import (
 	RESPONSE_ACCEPTED,
@@ -42,6 +46,7 @@ from nhk.api.guards import (
 	owned_visit,
 	response_of,
 )
+from nhk.api import addresses, distance, notify, visits
 
 #: Jobs older than this drop out of the day list into the backlog. The open queue
 #: is full of jobs nobody intends to do -- 366 of 437 are over a month old -- and
@@ -52,11 +57,9 @@ DAY_LIST_WINDOW_DAYS = 7
 #: mis-tap, short enough that an arrival time stays meaningful.
 UNDO_WINDOW_MINUTES = 15
 
-#: `change_status` transitions, keyed by visit type.
-COMPLETION_STATUS = {
-	"Delivery": "Delivered",
-	"Pickup": "Picked up",
-}
+#: Re-exported: `my_stats` and `job` read it, and callers have imported it
+#: from here since before the completion routine moved to `visits`.
+COMPLETION_STATUS = visits.COMPLETION_STATUS
 
 
 # ---------------------------------------------------------------------------
@@ -128,8 +131,32 @@ VISIT_LIST_FIELDS = [
 ]
 
 
+#: When a visit belongs to a month, for the dashboard's cards and the list a
+#: card opens (`my_month`, `my_visits(month=...)`): a finished one in the month
+#: it was completed in, an open one in the month it is scheduled for -- or was
+#: given out in, if never scheduled. Rejected jobs are the office's again --
+#: including one the order closed anyway: pressing DELIVERED on a rental closes
+#: every open Delivery visit on it, a rejected one too (2 such on nhk.local,
+#: 2026-09-29). That is not work this technician did.
+#:
+#: Done means paid for: a status the payout counts, or settled by a processed
+#: month (`Closed` with a `payout_month`). A visit the office closed without the
+#: work (`Closed`, never settled) is not a job done. So the cards, the list, the
+#: profile and the payout count the same visits (decided 2026-09-30).
+_DONE_IN_MONTH = """(status in (%s) or ifnull(payout_month, '') != '')
+	and ifnull(technician_response, '') != 'Rejected'
+	and coalesce(completed_at, technician_update_datetime) >= %%(start)s
+	and coalesce(completed_at, technician_update_datetime) < %%(end)s""" % ", ".join(
+	"'%s'" % status for status in visits.COUNTED_STATUSES
+)
+_OPEN_FOR_MONTH = """status = 'Assigned'
+	and ifnull(technician_response, '') != 'Rejected'
+	and coalesce(scheduled_datetime, creation) >= %(start)s
+	and coalesce(scheduled_datetime, creation) < %(end)s"""
+
+
 @frappe.whitelist()
-def my_visits(limit=100):
+def my_visits(limit=100, month=None, type=None):
 	"""Every visit that is the caller's, newest first -- the app's list screen.
 
 	`my_jobs` answers "what is on today". This answers "what is mine at all",
@@ -142,12 +169,33 @@ def my_visits(limit=100):
 	technician = current_technician()
 	assert_on_duty(technician)
 
+	filters = {"technician_id": technician, "technician_user_id": frappe.session.user}
+	if month:
+		# What a dashboard card counted: that month's jobs of that type, done and
+		# open, however old -- not the newest `limit` of everything.
+		from nhk.api import payouts
+
+		start, end = payouts._bounds(payouts._validated_month(month))
+		type_clause = "and type in %(types)s" if type else ""
+		names = frappe.db.sql_list(
+			f"""select name from `tabTechnician Visit Entry`
+			where technician_id = %(technician)s {type_clause}
+				and (({_DONE_IN_MONTH}) or ({_OPEN_FOR_MONTH}))""",
+			{"technician": technician, "types": _types_of(type) if type else (), "start": start, "end": end},
+		)
+		if not names:
+			return []
+		filters["name"] = ("in", names)
+	elif type:
+		filters["type"] = ("in", _types_of(type))
+
 	visits = frappe.get_all(
 		"Technician Visit Entry",
-		filters={"technician_id": technician, "technician_user_id": frappe.session.user},
+		filters=filters,
 		fields=VISIT_LIST_FIELDS,
 		order_by="created_datetime desc, creation desc",
-		limit_page_length=cint(limit) or 100,
+		# A month's list is bounded by the month; everything else by `limit`.
+		limit_page_length=0 if month else (cint(limit) or 100),
 	)
 
 	# Rejected jobs belong to the office now -- same rule as `my_jobs`.
@@ -168,6 +216,7 @@ def job(visit_id):
 	from nhk.custom_script import get_sales_order_details
 
 	detail = get_sales_order_details(visit.sales_order_id) if visit.sales_order_id else {}
+	where = addresses.for_order(visit.sales_order_id, visit.area, visit.patient_id)
 
 	# The desk call returns the full ledger. A technician needs to know what is
 	# outstanding, not every journal and payment entry behind it.
@@ -193,14 +242,27 @@ def job(visit_id):
 			"technician_update_datetime": visit.technician_update_datetime,
 			"created_datetime": visit.created_datetime,
 			"kilometers": visit.kilometers,
+			"calculated_kilometers": visit.calculated_kilometers,
+			"distance_source": visit.distance_source,
+			"distance_method": visit.distance_method,
 			"charges": visit.charges,
+			"extra_payment": visit.extra_payment,
+			"extra_payment_reason": visit.extra_payment_reason,
+			"extra_payment_note": visit.extra_payment_note,
 			"notes": visit.notes,
 			"order_notes": visit.order_notes,
 			"technician_response": response_of(visit),
 			"technician_response_at": visit.technician_response_at,
 			"rejection_reason": visit.rejection_reason,
 		},
-		"order": detail,
+		"order": {
+			**detail,
+			# What to show, and what to open in Maps -- the Maps link written in
+			# the free-text address wins for navigation even when the linked
+			# Address is what is shown (`nhk.api.addresses`).
+			"address": where["address"],
+			"map_url": where["map_url"],
+		},
 		# The app must not carry a second copy of the transition table: a type it
 		# cannot close is one this map has no entry for, whatever the desk does.
 		"completion_status": COMPLETION_STATUS.get(visit.type),
@@ -217,11 +279,165 @@ def job(visit_id):
 	}
 
 
+#: The dashboard's cards, in the order they are shown, and the visit types each
+#: covers. "Service" and "Technician Assignment For Service" are one kind of job
+#: for the technician (decided 2026-10-01); "Technician Assignment For Sales" is
+#: an installation.
+MONTH_CARDS = (
+	("Delivery", ("Delivery",)),
+	("Pickup", ("Pickup",)),
+	("Service", ("Service", "Technician Assignment For Service")),
+	("Installation", ("Technician Assignment For Sales",)),
+)
+MONTH_CARD_TYPES = tuple(key for key, _types in MONTH_CARDS)
+
+
+def _types_of(card_or_type):
+	"""The visit types a card covers; a plain visit type stands for itself."""
+	return dict(MONTH_CARDS).get(card_or_type, (card_or_type,))
+
+#: `my_month`'s `completed` keys, one per card.
+_MONTH_CARD_GROUPS = {
+	"Delivery": "deliveries",
+	"Pickup": "pickups",
+	"Service": "services",
+	"Installation": "installations",
+}
+
+
+@frappe.whitelist()
+def my_month(month=None):
+	"""The calling technician's month, for the app's dashboard. This month by default.
+
+	* **Jobs completed** in the month, by type, dated as the payout dates them
+	  (`completed_at`, else `technician_update_datetime`).
+	* **Payout.** While the month is open: what is building up from the visits
+	  -- their slab charges plus extra payments -- and nothing else. Sales and
+	  fixed incentives are the office's, typed in at month end, so they are not
+	  guessed at (decided 2026-10-01). Once the month is processed: the saved
+	  breakdown for this technician, all of it (`Technician Payout Month`).
+
+	**Refused off duty** (decided 2026-09-29): off duty the app shows no numbers
+	and no payout. Only ever the caller's own figures.
+	"""
+	from nhk.api import payouts
+
+	technician = current_technician()
+	assert_on_duty(technician)
+	month = payouts._validated_month(month or today()[:7])
+	start, end = payouts._bounds(month)
+
+	# Every figure is read off the cards, so the dashboard and the profile
+	# cannot disagree (reported 2026-09-30: 37 on the cards, 39 on the profile).
+	cards = _month_cards(technician, start, end)
+	completed = {_MONTH_CARD_GROUPS[card["type"]]: card["completed"] for card in cards}
+	completed["total"] = sum(card["completed"] for card in cards)
+
+	return {
+		"month": month,
+		"is_current": month == today()[:7],
+		"completed": completed,
+		"by_type": cards,
+		"kilometers": flt(frappe.db.sql(
+			f"""select sum(kilometers) from `tabTechnician Visit Entry`
+			where technician_id = %(technician)s and {_DONE_IN_MONTH}""",
+			{"technician": technician, "start": start, "end": end},
+		)[0][0]),
+		# Open for this month, as the cards count them -- not every month's.
+		"open_jobs": sum(card["open"] for card in cards),
+		"payout": _month_payout(technician, month),
+	}
+
+
+def _month_cards(technician, start, end):
+	"""One card per visit type for the month: done in it, and open for it.
+
+	Done jobs belong to the month they were completed in; open ones to the month
+	they are scheduled for, or were given out in if never scheduled. Rejected
+	jobs are the office's again and are not counted.
+	"""
+	window = {"technician": technician, "start": start, "end": end}
+	done = dict(frappe.db.sql(
+		f"""select type, count(*) from `tabTechnician Visit Entry`
+		where technician_id = %(technician)s and {_DONE_IN_MONTH}
+		group by type""", window,
+	))
+	still_open = dict(frappe.db.sql(
+		f"""select type, count(*) from `tabTechnician Visit Entry`
+		where technician_id = %(technician)s and {_OPEN_FOR_MONTH}
+		group by type""", window,
+	))
+	cards = []
+	for key, types in MONTH_CARDS:
+		completed = sum(done.get(t, 0) for t in types)
+		opened = sum(still_open.get(t, 0) for t in types)
+		cards.append({"type": key, "types": list(types), "completed": completed,
+					  "open": opened, "total": completed + opened})
+	return cards
+
+
+def _month_payout(technician, month):
+	"""The month's pay for one technician: building up while open, the saved
+	breakup once processed. See `my_month`."""
+	from nhk.api import payouts
+
+	saved = payouts._saved(month)
+	row = next((r for r in (saved.rows if saved else []) if r.technician_id == technician), None)
+	if saved and saved.status == "Processed":
+		payout = {
+			"processed": True,
+			"processed_on": saved.processed_on,
+			"visit_count": row.visit_count if row else 0,
+			"visit_charges": flt(row.visit_charges) if row else 0,
+			"extra_count": row.extra_count if row else 0,
+			"extra_payments": flt(row.extra_payments) if row else 0,
+			"sales_incentive": flt(row.sales_incentive) if row else 0,
+			"fixed_incentive": flt(row.fixed_incentive) if row else 0,
+			"total": flt(row.total) if row else 0,
+		}
+	else:
+		visits = payouts._month_visits(month, technician)
+		charges = sum(flt(v.charges) for v in visits)
+		extras = [flt(v.extra_payment) for v in visits if flt(v.extra_payment)]
+		payout = {
+			"processed": False,
+			"visit_count": len(visits),
+			"visit_charges": charges,
+			"extra_count": len(extras),
+			"extra_payments": sum(extras),
+			"total": charges + sum(extras),
+		}
+	return payout
+
+
+@frappe.whitelist()
+def my_payout_history(months=6):
+	"""The caller's payout for each of the last `months` months, newest first.
+
+	For the profile page's history: one line a month, the total and whether it
+	is final. Same figures as `my_month`'s payout. Refused off duty, as
+	`my_month` is.
+	"""
+	technician = current_technician()
+	assert_on_duty(technician)
+	months = min(max(cint(months) or 6, 1), 24)
+	first = getdate(today()).replace(day=1)
+	history = []
+	for back in range(months):
+		month = add_to_date(first, months=-back, as_string=True)[:7]
+		payout = _month_payout(technician, month)
+		history.append({"month": month, "processed": payout["processed"], "total": payout["total"]})
+	return history
+
+
+
 @frappe.whitelist()
 def my_stats(from_date=None, to_date=None):
 	"""Completed job count. Deliberately no money: distances are not yet honest
-	enough for a rupee figure to survive an argument."""
+	enough for a rupee figure to survive an argument. Refused off duty, as
+	`my_month` is."""
 	technician = current_technician()
+	assert_on_duty(technician)
 	filters = {
 		"technician_id": technician,
 		"status": ("in", list(COMPLETION_STATUS.values())),
@@ -359,6 +575,14 @@ def end_duty(latitude=None, longitude=None, accuracy=None, is_mocked=0):
 		duty.name, "Day ended", latitude=latitude, longitude=longitude,
 		accuracy=accuracy, is_mocked=is_mocked,
 	)
+	# Duty no longer expires by itself, so any other open one would keep the
+	# technician on duty after they checked out.
+	for stray in frappe.get_all(
+		"Technician Check In",
+		filters={"technician_id": technician, "kind": "Duty", "closed_at": ("is", "not set")},
+		pluck="name",
+	):
+		_close_checkin(stray, "Day ended")
 
 	return {
 		"on_duty": False,
@@ -379,9 +603,11 @@ def accept_job(visit_id):
 	Acceptance is what the office watches to know a job is actually moving, so
 	it is a distinct step from arriving: a technician can accept the day's work
 	from the depot and drive to the first address afterwards.
+
+	Works off duty -- see the module docstring. The office user who assigned the
+	job is told (`nhk.api.notify.tell_office`).
 	"""
 	technician = current_technician()
-	assert_on_duty(technician)
 
 	visit = owned_visit(visit_id, technician=technician)
 	assert_open(visit)
@@ -399,13 +625,57 @@ def accept_job(visit_id):
 		"technician_response_at": responded_at,
 		"rejection_reason": None,
 	})
+	notify.tell_office(visit, RESPONSE_ACCEPTED)
 
 	return {"name": visit.name, "technician_response": RESPONSE_ACCEPTED,
 			"technician_response_at": responded_at, "already_accepted": False}
 
 
+#: Why a technician may hand a job back (decided 2026-09-29). "Others" is the
+#: last and needs the technician's own words.
+REJECTION_REASONS = (
+	"Off Duty",
+	"Bike Service",
+	"Going for a different order not in my route",
+	"Feeling unwell",
+	"Patient Cancelled",
+	"Patient Postponed",
+	"Others",
+)
+REJECTION_OTHERS = "Others"
+
+
 @frappe.whitelist()
-def reject_job(visit_id, reason):
+def rejection_reasons():
+	"""The list the app offers when rejecting, from the app and the notification."""
+	current_technician()
+	return list(REJECTION_REASONS)
+
+
+def _rejection_text(reason, note=None):
+	"""What `rejection_reason` records: a listed reason as the list writes it,
+	or "Others: <their words>".
+
+	Free text that is not on the list -- the notification's reply box, an older
+	app build -- is kept as Others rather than refused: the office still learns
+	why, and the technician is not stuck on a lock screen.
+	"""
+	reason = (reason or "").strip()
+	note = (note or "").strip()
+	listed = next((r for r in REJECTION_REASONS if r.lower() == reason.lower()), None)
+
+	if listed and listed != REJECTION_OTHERS:
+		return listed
+	words = note if listed == REJECTION_OTHERS else " ".join(p for p in (reason, note) if p)
+	if not words:
+		if listed == REJECTION_OTHERS:
+			frappe.throw(_("Say what the other reason is, so the office can act on it."))
+		frappe.throw(_("Say why you are rejecting this job so the office can reassign it."))
+	return "%s: %s" % (REJECTION_OTHERS, words)
+
+
+@frappe.whitelist()
+def reject_job(visit_id, reason, note=None):
 	"""Hand a job back, with a reason the office can act on.
 
 	The visit stays `Assigned` and stays on this technician: reassignment is an
@@ -415,16 +685,16 @@ def reject_job(visit_id, reason):
 
 	A job already under way cannot be handed back -- arriving is a commitment,
 	and the stock state behind a half-done delivery is not the app's to unwind.
+
+	Works off duty, and tells the office, with the reason -- as `accept_job`.
 	"""
 	technician = current_technician()
-	assert_on_duty(technician)
 
 	visit = owned_visit(visit_id, technician=technician)
 	assert_open(visit)
 
-	reason = (reason or "").strip()
-	if not reason:
-		frappe.throw(_("Say why you are rejecting this job so the office can reassign it."))
+	# One of `REJECTION_REASONS`; "Others" needs `note`.
+	reason = _rejection_text(reason, note)
 
 	if _open_visit_checkin(technician, visit.name):
 		frappe.throw(_("You have already arrived at this job. Call the office instead."))
@@ -435,6 +705,7 @@ def reject_job(visit_id, reason):
 		"technician_response_at": responded_at,
 		"rejection_reason": reason,
 	})
+	notify.tell_office(visit, RESPONSE_REJECTED, reason)
 
 	return {"name": visit.name, "technician_response": RESPONSE_REJECTED,
 			"technician_response_at": responded_at, "rejection_reason": reason}
@@ -462,14 +733,33 @@ def check_in(visit_id, latitude=None, longitude=None, accuracy=None, is_mocked=0
 	doc = _record_checkin(technician, "Visit", visit_entry=visit.name, latitude=latitude,
 						  longitude=longitude, accuracy=accuracy, is_mocked=is_mocked)
 
-	frappe.db.set_value("Technician Visit Entry", visit.name, {
-		"started_at": doc.checked_in_at,
-		"start_latitude": doc.latitude,
-		"start_longitude": doc.longitude,
-	})
+	arrival = {"started_at": doc.checked_in_at}
+	# Float columns are NOT NULL -- see `_close_checkin`. A phone with no fix
+	# arrives without coordinates, and writing its nulls here threw an
+	# IntegrityError that stopped the technician checking in at all.
+	if doc.latitude is not None and doc.longitude is not None:
+		arrival.update(start_latitude=doc.latitude, start_longitude=doc.longitude)
+
+	# The distance from the office to here, for the app to pre-fill at completion
+	# (decided 2026-09-30; `nhk.api.distance`). Kept on the visit beside
+	# whatever the technician enters.
+	# By road where Google can say, otherwise the straight line x a factor.
+	measured = distance.for_visit({
+		"start_latitude": doc.latitude, "start_longitude": doc.longitude,
+		"patient_id": visit.patient_id,
+	}) or {}
+	arrival.update(
+		calculated_kilometers=measured.get("km") or 0,
+		distance_source=measured.get("source"),
+		distance_method=measured.get("method"),
+		straight_line_kilometers=measured.get("straight_line_km") or 0,
+	)
+	frappe.db.set_value("Technician Visit Entry", visit.name, arrival)
 
 	return {"name": doc.name, "kind": doc.kind, "visit_entry": visit.name,
-			"checked_in_at": doc.checked_in_at}
+			"checked_in_at": doc.checked_in_at,
+			"calculated_kilometers": measured.get("km"), "distance_source": measured.get("source"),
+			"distance_method": measured.get("method")}
 
 
 @frappe.whitelist()
@@ -500,7 +790,10 @@ def undo_check_in(checkin_id):
 	# Float columns are NOT NULL in Frappe, so the coordinates zero out rather
 	# than clear; `started_at` going empty is what marks the arrival undone.
 	frappe.db.set_value("Technician Visit Entry", doc.visit_entry, {
-		"started_at": None, "start_latitude": 0, "start_longitude": 0
+		"started_at": None, "start_latitude": 0, "start_longitude": 0,
+		# Measured from the arrival being undone.
+		"calculated_kilometers": 0, "distance_source": None,
+		"distance_method": None, "straight_line_kilometers": 0,
 	})
 	return {"name": doc.name, "undone": True}
 
@@ -512,20 +805,21 @@ def undo_check_in(checkin_id):
 
 @frappe.whitelist()
 def complete_job(visit_id, kilometers, notes=None, latitude=None, longitude=None,
-				 payment_pending_reason=None):
-	"""Finish a job: move the Sales Order, then move the visit.
+				 payment_pending_reason=None, extra_payment=None, extra_payment_reason=None,
+				 extra_payment_note=None):
+	"""Finish a job: the visit and its Sales Order, together or not at all.
 
 	Note the absent `charges` argument -- see the module docstring.
 
-	**The order of those two is load-bearing.** `nhk.custom_script.change_status`
-	ends with its own `frappe.db.commit()`. Anything that raised after it -- and
-	`make_delivered` raises routinely, with a bare "Item Is Not Reserved" -- left
-	the visit `Delivered` in the database while the request rolled back and the
-	app was told the job had failed. The technician saw an error, the office saw
-	a completed job, and the check-in and `completed_at` that come after were
-	never written: the visit was half closed, with no arrival closed out and no
-	completion time. Everything that can fail now runs *before* that commit, so
-	the call is all-or-nothing again.
+	The closing itself is `nhk.api.visits.complete_visit`, shared with the
+	desk. What is the app's own is the gates in front of it: duty, ownership,
+	acceptance, and a check-in -- the office closes visits nobody arrived at,
+	the app does not.
+
+	`extra_payment` is what the technician is owed beyond the visit's charge --
+	out of station, waiting -- with a reason, and a note for "Other". It is paid
+	with the month's payout (`nhk.api.payouts`); the office can correct it
+	until then.
 	"""
 	technician = current_technician()
 	assert_on_duty(technician)
@@ -541,101 +835,20 @@ def complete_job(visit_id, kilometers, notes=None, latitude=None, longitude=None
 
 	assert_accepted(visit)
 
-	checkin = _open_visit_checkin(technician, visit.name)
-	if not checkin:
+	if not _open_visit_checkin(technician, visit.name):
 		frappe.throw(_("Check in at the job before completing it."))
 
-	distance = _validated_distance(kilometers)
-
-	new_status = COMPLETION_STATUS.get(visit.type)
-	if not new_status:
+	if not COMPLETION_STATUS.get(visit.type):
 		frappe.throw(_("The app cannot complete a {0} visit.").format(visit.type))
 
-	completed_at = now_datetime()
+	completed_at = visits.complete_visit(
+		visit, kilometers, notes=notes, latitude=latitude, longitude=longitude,
+		extra={"amount": extra_payment, "reason": extra_payment_reason, "note": extra_payment_note},
+	)
 
-	# Distance first: the slab lookup runs in validate(), so it must see the real
-	# number before anything reads `charges`.
-	visit.kilometers = distance
-	if notes:
-		visit.notes = notes
-	visit.completed_at = completed_at
-	visit.complete_latitude = flt(latitude)
-	visit.complete_longitude = flt(longitude)
-	visit.save()
-
-	# Then the Sales Order, while a raise can still be taken back. This is the
-	# step that fails in the field.
-	_advance_sales_order(visit, new_status)
-
-	_close_checkin(checkin.name, "Completed")
-
-	# Last, because it commits: after this line nothing can be undone.
-	from nhk.custom_script import change_status
-
-	change_status(visit.name, new_status)
-
-	visit.reload()
 	return {"name": visit.name, "status": visit.status, "kilometers": visit.kilometers,
-			"charges": visit.charges, "completed_at": completed_at}
-
-
-def _validated_distance(kilometers):
-	"""Distance must be a whole number of at least 1 km.
-
-	The slab boundaries are integers, so a fractional distance can land between
-	two rows and silently leave the payout unchanged.
-	"""
-	if kilometers in (None, ""):
-		frappe.throw(_("Enter the distance travelled."))
-
-	distance = flt(kilometers)
-	if distance != int(distance):
-		frappe.throw(_("Distance must be a whole number of kilometres."))
-	if distance < 1:
-		frappe.throw(_("Distance must be at least 1 km."))
-
-	return int(distance)
-
-
-def _advance_sales_order(visit, new_status):
-	"""Drive the Sales Order forward, translating the fork's errors.
-
-	`make_delivered` throws a bare 'Item Is Not Reserved' when stock state does
-	not line up. That is unfixable in the field, so it is re-raised as something
-	the app can show on a blocking screen with a call-the-office action.
-
-	Note what `make_delivered` wants for `customer_name`: despite the name it
-	writes the value into `Item.customer_n`, which is a **Link to Customer**, so
-	it has to be the Customer docname (`NHK-CUS-0105`) and not the display name.
-	Both desk callers pass the Sales Order's own `customer` field; passing
-	`visit.patient_name` here threw `Could not find Customer: <person's name>`
-	on every delivery, because customers are named by series and the docname is
-	never the display name.
-	"""
-	from erpnext.selling.doctype.sales_order.sales_order import make_delivered, make_pickedup
-
-	if not visit.sales_order_id:
-		# Nothing to advance. Only Delivery and Pickup reach here and both carry
-		# an order, but a visit created by hand may not.
-		return
-
-	stamp = frappe.utils.nowdate()
-	try:
-		if new_status == "Delivered":
-			# Read it off the order being advanced rather than off the visit: the
-			# order is what `make_delivered` acts on, and the visit's own
-			# `patient_id` is a copy that can drift.
-			customer = frappe.db.get_value(
-				"Sales Order", visit.sales_order_id, "customer"
-			) or visit.patient_id
-			make_delivered(visit.sales_order_id, customer, stamp)
-		else:
-			make_pickedup(visit.sales_order_id, stamp)
-	except Exception as exc:
-		frappe.throw(
-			_("The job could not be closed on order {0}: {1}. Call the office before you leave.")
-			.format(visit.sales_order_id, str(exc))
-		)
+			"charges": visit.charges, "completed_at": completed_at,
+			"extra_payment": visit.extra_payment, "extra_payment_reason": visit.extra_payment_reason}
 
 
 # ---------------------------------------------------------------------------

@@ -7,59 +7,62 @@
 // 	},
 // });
 frappe.ui.form.on('Technician Visit Entry', {
+    // Asks for the distance before a completion, every time, and hands it to
+    // `callback` -- it does not save it. The distance goes to the server in the
+    // same call as the completion (`complete_with_distance`), so a cancel, or a
+    // refusal, leaves the visit exactly as it was. Saving it first used to let
+    // either one keep the new distance, and its re-priced charge, on a visit
+    // still open.
+    //
+    // It used to ask only when `kilometers` was empty -- but `validate()` sets
+    // an empty distance to 1.0 on every save, so it was almost never empty and
+    // almost never asked. The visit closed at 1 km, the bottom slab. It also
+    // offered a hand-typed "Incentive Amount (Charges)" defaulting to 1, which
+    // the slab calculation then kept. Pay is slab-derived now: the server
+    // prices from this distance (`nhk.api.visits.close_visit`). An admin can
+    // still correct `charges` on the form itself.
     check_kilometers_and_proceed: function(frm, callback) {
-        let fields = [];
-        let has_kms = !!frm.doc.kilometers;
-        let has_charges = frm.doc.charges && parseFloat(frm.doc.charges) > 0;
-
-        if (!has_kms) {
-            fields.push({
+        // The completion reloads the form, which would drop unsaved edits.
+        if (frm.is_dirty()) {
+            frappe.msgprint(__('Save your changes before completing this visit.'));
+            return;
+        }
+        frappe.prompt([
+            {
                 fieldname: 'kilometers',
-                fieldtype: 'Float',
-                label: __('Kilometers'),
-                description: __('If left empty, it will default to 1')
+                fieldtype: 'Int',
+                label: __('Distance travelled (km)'),
+                reqd: 1,
+                default: frm.doc.kilometers > 1 ? frm.doc.kilometers : undefined,
+                description: __('Whole kilometres. Sets the technician\'s pay.')
+            }
+        ], function(values) {
+            if (!(values.kilometers >= 1)) {
+                frappe.msgprint(__('Distance must be at least 1 km.'));
+                return;
+            }
+            callback(values.kilometers);
+        }, __('Complete Visit'), __('Complete'));
+    },
+
+    // One completion for every visit-form button: the distance and the status
+    // change in one request. Called directly rather than through
+    // `call_change_status`, because the enabled Client Script copy of this form
+    // also defines that handler, and `frm.events[name]` keeps the last one
+    // registered -- its version would drop the distance.
+    complete_with_distance: function(frm, new_status) {
+        frm.events.check_kilometers_and_proceed(frm, function(kilometers) {
+            frappe.call({
+                method: 'nhk.custom_script.change_status_sales',
+                args: { docname: frm.doc.name, new_status: new_status, kilometers: kilometers },
+                freeze: true,
+                callback: function(response) {
+                    if (!response.message) return;
+                    frappe.show_alert({ message: response.message, indicator: 'green' });
+                    frm.reload_doc();
+                }
             });
-        }
-
-        if (!has_charges) {
-            fields.push({
-                fieldname: 'charges',
-                fieldtype: 'Currency',
-                label: __('Incentive Amount (Charges)'),
-                default: 1.0,
-                description: __('If left empty, it will default to 1')
-            });
-        }
-
-        if (fields.length === 0) {
-            callback();
-        } else {
-            frappe.prompt(fields, function(values) {
-                if (!has_kms) {
-                    let kms = values.kilometers;
-                    if (kms === undefined || kms === null || kms === "" || parseFloat(kms) <= 0) {
-                        kms = 1.0;
-                    }
-                    frm.set_value('kilometers', kms);
-                }
-
-                if (!has_charges) {
-                    let val = values.charges;
-                    if (val === undefined || val === null || val === "" || parseFloat(val) <= 0) {
-                        val = 1.0;
-                    }
-                    frm.set_value('charges', val);
-                }
-
-                if (frm.is_dirty()) {
-                    frm.save(null, function() {
-                        callback();
-                    });
-                } else {
-                    callback();
-                }
-            }, __('Required Information'), __('Submit'));
-        }
+        });
     },
     check_incentive_amount_and_proceed: function(frm, callback) {
         let default_val = frm.doc.incentive_amount_to_be_processed || frm.doc.charges || 1.0;
@@ -474,69 +477,23 @@ if ((frm.doc.status === 'Incentive Finalize') && frappe.user.has_role("NHK Admin
             // --- ACTION 1: Service Done Action ---
         if (frm.doc.status === 'Assigned' && frm.doc.type === 'Technician Assignment For Service') {
             frm.add_custom_button(__('Service Done'), function() {
-                frm.events.check_kilometers_and_proceed(frm, function() {
-                    frappe.confirm(
-                        __('Are you sure you want to change the status to Service Done?'),
-                        function() {
-                            frm.events.call_change_status(frm, 'Service Done');
-                        }
-                    );
-                });
+                // The distance prompt is the confirmation: cancelling it saves nothing.
+                frm.events.complete_with_distance(frm, 'Service Done');
             }, __('Action'));
         }
 
         // --- ACTION 2: Installation Done Action ---
         if (frm.doc.status === 'Assigned' && frm.doc.type === 'Technician Assignment For Sales') {
             frm.add_custom_button(__('Installation Done'), function() {
-                frm.events.check_kilometers_and_proceed(frm, function() {
-                    frappe.confirm(
-                        __('Are you sure you want to change the status to Installation Done?'),
-                        function() {
-                            frm.events.call_change_status(frm, 'Installation Done');
-                        }
-                    );
-                });
+                // The distance prompt is the confirmation: cancelling it saves nothing.
+                frm.events.complete_with_distance(frm, 'Installation Done');
             }, __('Action'));
         }
             
             if (frm.doc.status === 'Assigned' && frm.doc.type === 'Service')  {
                 frm.add_custom_button(__('Service Done'), function() {
-                    frm.events.check_kilometers_and_proceed(frm, function() {
-                        // Confirm before changing status
-                        frappe.confirm(
-                            `Are you sure you want to change the status to Service Done?`,
-                            function() {
-                                // Call the server-side method to change status
-                                frappe.call({
-                                    method: "nhk.custom_script.change_status_sales", // Update with your actual method path
-                                    args: {
-                                        docname: frm.doc.name,
-                                        new_status: 'Service Done'
-                                    },
-                                    callback: function(response) {
-                                        if (response.message) {
-                                            // Show success message
-                                            frappe.show_alert({ message: response.message, indicator: 'green' });
-                                                        setTimeout(() => {
-                                                            window.location.reload();
-                                                        }, 1000);
-                                            // Refresh the form to reflect the changes
-                                            frm.refresh();
-                                        } else {
-                                            frappe.show_alert({ message: 'Error changing status.', indicator: 'red' });
-                                        }
-                                    },
-                                    error: function(error) {
-                                        frappe.show_alert({ message: 'Error changing status: ' + error.message, indicator: 'red' });
-                                    }
-                                });
-                            },
-                            function() {
-                                // Handle cancel case
-                                frappe.show_alert({ message: 'Status change canceled.', indicator: 'orange' });
-                            }
-                        );
-                    });
+                    // The distance prompt is the confirmation: cancelling it saves nothing.
+                    frm.events.complete_with_distance(frm, 'Service Done');
                 },('Action'));
             }
         // if (frm.doc.status === 'Assigned' && frm.doc.type === 'Delivery')  {

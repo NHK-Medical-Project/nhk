@@ -18,13 +18,15 @@ OTHER_USER = "suvam.nirmalhealthcare@gmail.com"
 
 
 def _visit(cleanup, technician=PILOT_TECH, user=PILOT_USER, age_days=0, status="Assigned",
-		   type_="Delivery", response="Accepted"):
+		   type_="Delivery", response="Accepted", sales_order=None):
 	"""Create a Technician Visit Entry owned by `technician`, `age_days` old.
 
 	Accepted by default: most tests here are about what happens *after* the
 	technician has taken the job on, and the acceptance gate has its own tests.
 	"""
-	so = frappe.db.get_value("Technician Visit Entry", {"sales_order_id": ("is", "set")}, "sales_order_id")
+	so = sales_order or frappe.db.get_value(
+		"Technician Visit Entry", {"sales_order_id": ("is", "set")}, "sales_order_id"
+	)
 	doc = frappe.get_doc({
 		"doctype": "Technician Visit Entry",
 		"technician_id": technician,
@@ -37,6 +39,11 @@ def _visit(cleanup, technician=PILOT_TECH, user=PILOT_USER, age_days=0, status="
 		"technician_response": response,
 	}).insert(ignore_permissions=True)
 	cleanup.add("Technician Visit Entry", doc.name)
+	# Deleting the visit subtracts its charge from the technician's settled total
+	# (`TechnicianVisitEntry.on_trash`) -- see `Cleanup.restore_after_delete`.
+	# Reassignment tests elsewhere move visits; restore both pilot technicians.
+	for tech in {technician, PILOT_TECH, OTHER_TECH}:
+		cleanup.restore_after_delete("Technician Details", tech, "total_amount_settled")
 
 	if age_days:
 		old = datetime.now() - timedelta(days=age_days)
@@ -59,7 +66,12 @@ def _on_duty(cleanup, user=PILOT_USER):
 	from nhk.api import staff
 
 	_as(user)
-	return cleanup.add("Technician Check In", staff.start_duty()["name"])
+	duty = staff.start_duty()
+	# Never claim a duty this test did not start: it would be a real
+	# technician's, and the clean-up would delete it (see
+	# `Cleanup.set_aside_real_checkins`, which should make this impossible).
+	assert not duty["already_on_duty"], "a real duty check-in was still open during a test"
+	return cleanup.add("Technician Check In", duty["name"])
 
 
 # --------------------------------------------------------------------------
@@ -120,7 +132,8 @@ def test_start_duty_creates_a_duty_checkin(cleanup):
 	assert staff.duty_status()["on_duty"] is True
 
 
-def test_duty_from_yesterday_does_not_count_as_on_duty(cleanup):
+def test_duty_lasts_past_midnight_until_the_technician_checks_out(cleanup):
+	"""Decided 2026-09-29: no automatic checkout at midnight."""
 	from nhk.api import staff
 
 	_as(PILOT_USER)
@@ -130,7 +143,28 @@ def test_duty_from_yesterday_does_not_count_as_on_duty(cleanup):
 	yesterday = datetime.now() - timedelta(days=1)
 	frappe.db.set_value("Technician Check In", res["name"], "checked_in_at", yesterday)
 
-	assert staff.duty_status()["on_duty"] is False, "duty must expire at local midnight"
+	assert staff.duty_status()["on_duty"] is True, "duty started yesterday ended by itself"
+	staff.end_duty()
+	assert staff.duty_status()["on_duty"] is False
+
+
+def test_checking_out_closes_every_open_duty(cleanup):
+	"""With no midnight expiry a stray second duty would outlive the checkout."""
+	from nhk.api import staff
+
+	_as(PILOT_USER)
+	first = cleanup.add("Technician Check In", staff.start_duty()["name"])
+	frappe.db.set_value("Technician Check In", first, "checked_in_at",
+						datetime.now() - timedelta(days=2))
+	# A second open duty, as a double tap or an old record could leave.
+	second = cleanup.add("Technician Check In", frappe.get_doc({
+		"doctype": "Technician Check In", "technician_id": PILOT_TECH, "technician_user_id": PILOT_USER,
+		"kind": "Duty", "checked_in_at": datetime.now(),
+	}).insert(ignore_permissions=True).name)
+
+	staff.end_duty()
+	for name in (first, second):
+		assert frappe.db.get_value("Technician Check In", name, "closed_at"), "%s was left open" % name
 
 
 def test_my_jobs_refuses_off_duty(cleanup):
@@ -281,6 +315,69 @@ def test_reject_hides_the_job_but_leaves_it_assigned(cleanup):
 	assert visit not in {j["name"] for j in staff.my_jobs()}, "a rejected job should drop out of the day list"
 
 
+REASONS = [
+	"Off Duty",
+	"Bike Service",
+	"Going for a different order not in my route",
+	"Feeling unwell",
+	"Patient Cancelled",
+	"Patient Postponed",
+	"Others",
+]
+
+
+def _rejected_with(cleanup, reason, note=None):
+	from nhk.api import staff
+
+	visit = _visit(cleanup, response="Pending")
+	_as(PILOT_USER)
+	try:
+		staff.reject_job(visit, reason, note=note)
+	finally:
+		_as("Administrator")
+	return frappe.db.get_value("Technician Visit Entry", visit, "rejection_reason")
+
+
+def test_the_rejection_reasons_are_the_offices_list(cleanup):
+	"""User, 2026-09-29: the reasons a technician can reject a job for."""
+	from nhk.api import staff
+
+	_as(PILOT_USER)
+	try:
+		assert staff.rejection_reasons() == REASONS
+	finally:
+		_as("Administrator")
+
+
+def test_a_listed_reason_is_stored_as_it_is(cleanup):
+	assert _rejected_with(cleanup, "Patient Postponed") == "Patient Postponed"
+	# However the phone capitalised it.
+	assert _rejected_with(cleanup, "feeling UNWELL") == "Feeling unwell"
+
+
+def test_others_needs_the_technicians_own_words(cleanup):
+	from nhk.api import staff
+
+	visit = _visit(cleanup, response="Pending")
+	_as(PILOT_USER)
+	try:
+		staff.reject_job(visit, "Others")
+	except frappe.ValidationError:
+		pass
+	else:
+		raise AssertionError("'Others' was accepted with nothing said")
+	finally:
+		_as("Administrator")
+
+	assert _rejected_with(cleanup, "Others", note="Road flooded near Silk Board") == "Others: Road flooded near Silk Board"
+
+
+def test_free_text_from_an_older_app_is_kept_as_others(cleanup):
+	"""The notification's reply box and older app builds send free text; it is
+	kept, under Others, rather than refused."""
+	assert _rejected_with(cleanup, "Customer asked to come tomorrow") == "Others: Customer asked to come tomorrow"
+
+
 def test_rejected_job_cannot_be_checked_in(cleanup):
 	from nhk.api import staff
 
@@ -423,10 +520,10 @@ def test_complete_job_reports_an_office_completion(cleanup):
 
 
 def test_a_failed_sales_order_leaves_the_visit_untouched(cleanup):
-	"""The bug this ordering exists to prevent.
+	"""The bug the no-commit rule in `nhk.api.visits` exists to prevent.
 
-	`nhk.custom_script.change_status` commits. When it ran before the Sales
-	Order was advanced, a `make_delivered` failure -- "Item Is Not Reserved",
+	`nhk.custom_script.change_status` commits. When the app closed visits with
+	it, before the Sales Order was advanced, a `make_delivered` failure -- "Item Is Not Reserved",
 	which happens routinely -- left the visit `Delivered` in the database while
 	the request rolled back and the app was told the job had failed. The office
 	saw a completed job; the technician saw an error and a job still open.
@@ -442,8 +539,10 @@ def test_a_failed_sales_order_leaves_the_visit_untouched(cleanup):
 	# failure being tested.
 	frappe.db.commit()
 
-	original = staff._advance_sales_order
-	staff._advance_sales_order = lambda *a, **kw: frappe.throw("Item Is Not Reserved")
+	from nhk.api import visits
+
+	original = visits._advance_sales_order
+	visits._advance_sales_order = lambda *a, **kw: frappe.throw("Item Is Not Reserved")
 	try:
 		staff.complete_job(visit, kilometers=12)
 	except frappe.ValidationError:
@@ -451,7 +550,7 @@ def test_a_failed_sales_order_leaves_the_visit_untouched(cleanup):
 	else:
 		raise AssertionError("complete_job should have surfaced the Sales Order failure")
 	finally:
-		staff._advance_sales_order = original
+		visits._advance_sales_order = original
 		# What the request handler does when an endpoint throws.
 		frappe.db.rollback()
 
@@ -475,7 +574,7 @@ def test_delivery_hands_the_sales_order_a_customer_it_can_link(cleanup):
 	`make_delivered` gets far enough to validate the link depends on the order's
 	stock state, and the contract being pinned here does not.
 	"""
-	from nhk.api import staff
+	from nhk.api import visits
 	from erpnext.selling.doctype.sales_order import sales_order as so_module
 
 	visit = _visit(cleanup)
@@ -493,7 +592,7 @@ def test_delivery_hands_the_sales_order_a_customer_it_can_link(cleanup):
 		docname=docname, customer_name=customer_name
 	)
 	try:
-		staff._advance_sales_order(doc, "Delivered")
+		visits._advance_sales_order(doc, "Delivered")
 	finally:
 		so_module.make_delivered = original
 		frappe.db.rollback()
@@ -506,6 +605,48 @@ def test_delivery_hands_the_sales_order_a_customer_it_can_link(cleanup):
 	assert passed == frappe.db.get_value("Sales Order", doc.sales_order_id, "customer"), (
 		"the delivery should name the order's own customer, got %r" % passed
 	)
+
+
+def test_delivery_completes_on_a_dispatched_order(cleanup):
+	"""The normal case, which used to fail.
+
+	A rental order is `DISPATCHED` while the technician is on the road. Moving
+	it to `Active` fires the core `validate_technician_visit`, which sets every
+	open Delivery visit on the order to `Delivered` itself. When the visit was
+	still `Assigned` at that point, the `Assigned -> Delivered` change that
+	followed found it already `Delivered` and threw "Invalid status change",
+	rolling the whole completion back.
+
+	`make_delivered` is replaced by the part of it that matters here -- the
+	order's status change, through the real core validation -- because the real
+	one also needs the device to be in reserved stock.
+	"""
+	from nhk.api import staff
+	from erpnext.selling.doctype.sales_order import sales_order as so_module
+
+	so = frappe.db.get_value("Sales Order", {"order_type": "Rental", "docstatus": 1}, "name")
+	cleanup.restore("Sales Order", so, "status")
+	frappe.db.set_value("Sales Order", so, "status", "DISPATCHED", update_modified=False)
+
+	visit = _visit(cleanup, sales_order=so)
+	_on_duty(cleanup)
+	cleanup.add("Technician Check In", staff.check_in(visit, latitude=12.9, longitude=77.5)["name"])
+
+	def goes_active(docname, *a, **kw):
+		order = frappe.get_doc("Sales Order", docname)
+		order.status = "Active"
+		order.validate_technician_visit()
+		frappe.db.set_value("Sales Order", docname, "status", "Active", update_modified=False)
+
+	original = so_module.make_delivered
+	so_module.make_delivered = goes_active
+	try:
+		result = staff.complete_job(visit, kilometers=12)
+	finally:
+		so_module.make_delivered = original
+
+	assert result["status"] == "Delivered", "delivery closed at %r" % result["status"]
+	assert result["charges"], "the delivery was closed without a charge"
 
 
 def test_distance_drives_the_slab_charge(cleanup):
@@ -530,6 +671,105 @@ def test_pickup_prices_from_the_pickup_column(cleanup):
 	doc.kilometers = 25
 	doc.save(ignore_permissions=True)
 	assert doc.charges == 150, "pickup at 21-40km should be 150, got %s" % doc.charges
+
+
+# --------------------------------------------------------------------------
+# Sales and Service orders
+# --------------------------------------------------------------------------
+
+#: Visit type -> (Sales Order `order_type`, status the app closes the visit at).
+#: A Sales or Service order is assigned from the Sales Order form, which creates
+#: a visit of the first two types; `Service` is the one a rental's service call
+#: creates. The desk closes all three through `change_status_sales`.
+ORDER_FLOW_TYPES = {
+	"Technician Assignment For Sales": ("Sales", "Installation Done"),
+	"Technician Assignment For Service": ("Service", "Service Done"),
+	"Service": ("Service", "Service Done"),
+}
+
+
+def _assigned_order(cleanup, order_type):
+	"""A real submitted order of `order_type`, put in `Technician Assigned`.
+
+	Snapshots everything the completion (and the visit's own `on_update`) may
+	write on the order, so the harness puts it back.
+	"""
+	so = frappe.db.get_value("Sales Order", {"order_type": order_type, "docstatus": 1}, "name")
+	if not so:
+		raise AssertionError("no submitted %s order on this site to test against" % order_type)
+
+	cleanup.restore("Sales Order", so, "status")
+	cleanup.restore("Sales Order", so, "custom_technician_id_before_delivered")
+	for item in frappe.get_all("Sales Order Item", filters={"parent": so}, pluck="name"):
+		cleanup.restore("Sales Order Item", item, "child_status")
+		cleanup.restore("Sales Order Item", item, "technician_id_before_deliverd")
+
+	frappe.db.set_value("Sales Order", so, "status", "Technician Assigned", update_modified=False)
+	return so
+
+
+def test_job_names_a_completion_for_every_order_visit_type(cleanup):
+	"""The app shows the complete button off `completion_status`. With no entry
+	here a Sales or Service order's visit could be accepted and checked in to,
+	and then never closed."""
+	from nhk.api import staff
+
+	visits = {t: _visit(cleanup, type_=t) for t in ORDER_FLOW_TYPES}
+	_on_duty(cleanup)
+
+	for type_, (_order_type, expected) in ORDER_FLOW_TYPES.items():
+		got = staff.job(visits[type_])["completion_status"]
+		assert got == expected, "%s should close at %r, job() said %r" % (type_, expected, got)
+
+
+def _complete_order_flow_visit(cleanup, type_):
+	from nhk.api import staff
+
+	order_type, expected = ORDER_FLOW_TYPES[type_]
+	so = _assigned_order(cleanup, order_type)
+	visit = _visit(cleanup, type_=type_, sales_order=so)
+	_on_duty(cleanup)
+	cleanup.add("Technician Check In", staff.check_in(visit, latitude=12.9, longitude=77.5)["name"])
+
+	result = staff.complete_job(visit, kilometers=12)
+
+	assert result["status"] == expected, "%s closed at %r, expected %r" % (type_, result["status"], expected)
+	assert result["completed_at"], "completion time was not recorded"
+	assert frappe.db.get_value("Sales Order", so, "status") == "Technician Work Done", (
+		"the %s order was left %r -- the desk moves it to Technician Work Done"
+		% (order_type, frappe.db.get_value("Sales Order", so, "status"))
+	)
+	items = frappe.get_all("Sales Order Item", filters={"parent": so}, pluck="child_status")
+	assert items and all(s == "Technician Work Done" for s in items), (
+		"order items were left %r" % items
+	)
+
+
+def test_installation_visit_completes_a_sales_order(cleanup):
+	_complete_order_flow_visit(cleanup, "Technician Assignment For Sales")
+
+
+def test_service_assignment_visit_completes_a_service_order(cleanup):
+	_complete_order_flow_visit(cleanup, "Technician Assignment For Service")
+
+
+def test_service_visit_completes(cleanup):
+	_complete_order_flow_visit(cleanup, "Service")
+
+
+def test_order_flow_completion_leaves_an_order_past_assignment_alone(cleanup):
+	"""The desk only moves an order that is still `Technician Assigned`. One the
+	office has already taken further is not the app's to pull back."""
+	from nhk.api import staff
+
+	so = _assigned_order(cleanup, "Service")
+	frappe.db.set_value("Sales Order", so, "status", "SO Completed", update_modified=False)
+	visit = _visit(cleanup, type_="Technician Assignment For Service", sales_order=so)
+	_on_duty(cleanup)
+	cleanup.add("Technician Check In", staff.check_in(visit)["name"])
+
+	assert staff.complete_job(visit, kilometers=3)["status"] == "Service Done"
+	assert frappe.db.get_value("Sales Order", so, "status") == "SO Completed"
 
 
 def test_endpoints_reject_a_caller_who_is_not_a_technician(cleanup):

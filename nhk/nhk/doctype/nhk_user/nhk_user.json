@@ -25,7 +25,9 @@
   "mobile_no",
   "password",
   "section_break_xeud",
-  "nhk_roles"
+  "nhk_roles",
+  "section_devices",
+  "devices"
  ],
  "fields": [
   {
@@ -153,11 +155,26 @@
    "label": "Role",
    "options": "User Role Profile",
    "reqd": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_devices",
+   "fieldtype": "Section Break",
+   "label": "Devices"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Phones that get this user's push notifications. Registered by the technician app on login; written directly by nhk.api.devices, never by saving this form.",
+   "fieldname": "devices",
+   "fieldtype": "Table",
+   "label": "Devices",
+   "options": "NHK User Device",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2025-02-19 16:33:51.707367",
+ "modified": "2026-09-29 12:12:00.337888",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "NHK User",
