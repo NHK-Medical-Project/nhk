@@ -200,6 +200,29 @@ def tell_office(visit, response, reason=None):
 	))
 
 
+def tell_office_about(visit, subject):
+	"""Tell whoever assigned `visit` something else the technician did -- a
+	payment collected, or left pending. After commit, as `tell_office`."""
+	if frappe.flags.nhk_mute_notifications:
+		return
+	frappe.db.after_commit.add(functools.partial(
+		_tell_office_about, visit.name, subject, frappe.session.user
+	))
+
+
+def _tell_office_about(visit_name, subject, technician_user):
+	try:
+		visit = frappe.db.get_value(
+			"Technician Visit Entry", visit_name,
+			["name", "sales_order_id", "assigned_by", "owner"], as_dict=True,
+		)
+		to = visit.assigned_by or visit.owner
+		if to and to not in (technician_user, "Guest"):
+			_office_alert(to, subject, visit, "Payment", None)
+	except Exception:
+		frappe.log_error(title="Office alert failed", message=frappe.get_traceback())
+
+
 def _tell_office(visit_name, response, reason, technician_user):
 	try:
 		visit = frappe.db.get_value(

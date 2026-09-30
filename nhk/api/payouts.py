@@ -39,7 +39,7 @@ from frappe.utils import add_months, flt, get_datetime, getdate, now_datetime
 
 from nhk.api.visits import COUNTED_STATUSES, PAYOUT_ROLE, _assert_office_may_change
 
-EXTRA_REASONS = ("Out of Station", "Waiting", "Other")
+EXTRA_REASONS = ("Out of Station", "Waiting", "Item Replacement", "Other")
 
 #: The figures a row is built from; Sales and Fixed are the only hand-entered ones.
 ROW_FIGURES = ("visit_count", "visit_charges", "extra_count", "extra_payments")

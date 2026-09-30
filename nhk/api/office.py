@@ -1,121 +1,135 @@
-"""The office's view of open technician visits: the NHK Technician workspace block.
+"""The office's day of technician visits: the NHK Technician workspace block.
 
-One call answers the three things the office acts on, in the words it already
-sees on the visit form and the Sales Order's visit table:
+One call answers, for one day (today by default), every visit and where it
+stands -- in the words the office already sees on the visit form and the Sales
+Order's visit table:
 
-* **Rejected** -- the technician handed the job back. Reassign it.
 * **Pending** -- the technician has not accepted it yet. Chase or reassign.
 * **Accepted** -- on its way. Reschedule or reassign if plans change.
+* **Rejected** -- the technician handed it back. Reassign it.
+* **Completed** -- done that day.
 
-`Technician Response` values, not new names (decided 2026-09-30). Each row
-carries `stage` and `next_step` from `visits._describe`, the same sentences the
-Sales Order shows. The block also lists the technicians, on or off duty and
-how many open jobs each holds, so the office can see who to give a job to.
+A visit belongs to a day as it belongs to a month on the technician's
+dashboard (`nhk.api.staff._OPEN_FOR_MONTH` / `_DONE_IN_MONTH`): an open one on
+the day it is scheduled for, or was given out on if never scheduled; a
+completed one on the day it was completed. So the office and the technician
+count the same visits (decided 2026-09-30).
+
+Each row carries `stage` and `next_step` from `visits._describe` -- the Sales
+Order's sentences -- and the patient's payment: **Payment Status** on the order
+(Pending or Paid, as the app shows it) with its Reason For Payment Pending, and
+the **Mode Of Payment** of whatever the technician collected on that visit.
 
 Gated on `share` on Technician Visit Entry, the permission that already means
 "the office" (`nhk.api.assignment.reassign_visit`).
 """
 
 import frappe
-from frappe import _
-from frappe.utils import add_days, cint, now_datetime
+from frappe.utils import add_days, flt, getdate, today
 
-from nhk.api.guards import OPEN_STATUSES, open_duty
-from nhk.api.visits import SLOTS, _describe
+from nhk.api.staff import _DONE_IN_MONTH, _OPEN_FOR_MONTH
+from nhk.api.visits import _describe
 
-RESPONSES = ("Rejected", "Pending", "Accepted")
+#: The block's tabs, after Total.
+GROUPS = ("Pending", "Accepted", "Rejected", "Completed")
 
-#: Orders past these are finished; a visit still open on one is left over, not work.
-FINISHED_ORDER_STATUSES = ("Completed", "Closed", "Cancelled")
+#: Orders past these are finished; a visit still open on one is left over, not
+#: work. NHK's own end states first: the device is back at the office, or the
+#: rental carried on in its renewal order. 339 of the 432 open visits on
+#: nhk.local (2026-09-30) sat on one of these two.
+FINISHED_ORDER_STATUSES = (
+	"Submitted to Office", "RENEWED", "Rental SO Completed", "SO Completed",
+	"Completed", "Closed", "Cancelled",
+)
 
-#: Rows sent per response. More than this is a cleanup job, not a queue; the
-#: block says so and the search narrows it.
-MAX_ROWS = 300
+_FIELDS = """name, type, status, technician_id, technician_name, technician_mobile_no,
+	sales_order_id, patient_name, area, item_code, scheduled_datetime, slot, started_at,
+	completed_at, technician_update_datetime, payout_month,
+	ifnull(nullif(technician_response, ''), 'Pending') as technician_response,
+	technician_response_at, rejection_reason, creation"""
+
+#: Open and handed back on the day: `_OPEN_FOR_MONTH`, for the rejected ones.
+_REJECTED_FOR_DAY = """status = 'Assigned'
+	and technician_response = 'Rejected'
+	and coalesce(scheduled_datetime, creation) >= %(start)s
+	and coalesce(scheduled_datetime, creation) < %(end)s"""
 
 
 @frappe.whitelist()
-def technician_visits(days=30):
-	"""Open visits by technician response, and the technicians to give them to.
-
-	`days` keeps old visits out: only visits scheduled -- or, when never
-	scheduled, created -- in the last `days` days, or later. `0` shows every
-	open visit. Rejected ones are always shown: each needs reassigning, however old.
-	"""
+def technician_visits(date=None):
+	"""Every visit of one day, by where it stands, with the patient's payment."""
 	frappe.has_permission("Technician Visit Entry", "share", throw=True)
 
-	days = cint(days)
-	since = add_days(now_datetime(), -days) if days > 0 else None
-	now = now_datetime()
-	counts, held, rows, limited = {}, {}, [], False
-	for response in RESPONSES:
-		found = _open_visits(response, since)
-		counts[response] = sum(found["by_technician"].values())
-		for technician_id, n in found["by_technician"].items():
-			held.setdefault(technician_id, {})[response] = n
-		limited = limited or counts[response] > len(found["rows"])
-		for row in found["rows"]:
-			row["technician_name"] = (row.technician_name or "").strip()
-			row["stage"], row["next_step"] = _describe(row)
-			row["past_scheduled"] = bool(row.scheduled_datetime and row.scheduled_datetime < now)
+	day = getdate(date or today())
+	window = {"start": day, "end": add_days(day, 1)}
+	rows = []
+	for group, where in (("open", _OPEN_FOR_MONTH), ("Rejected", _REJECTED_FOR_DAY), ("Completed", _DONE_IN_MONTH)):
+		for row in frappe.db.sql(
+			f"select {_FIELDS} from `tabTechnician Visit Entry` where {where}", window, as_dict=True
+		):
+			row["group"] = row.technician_response if group == "open" else group
 			rows.append(row)
 
-	return {
-		"counts": counts,
-		"rows": rows,
-		"technicians": _technicians(held),
-		"slots": list(SLOTS),
-		"days": days,
-		"limited": limited,
+	orders = _orders({r.sales_order_id for r in rows if r.sales_order_id})
+	collected = _collected([r.name for r in rows])
+	shown = []
+	for row in rows:
+		order = orders.get(row.sales_order_id) or {}
+		if row.group != "Completed" and order.get("status") in FINISHED_ORDER_STATUSES:
+			continue
+		row["technician_name"] = (row.technician_name or "").strip()
+		row["customer_name"] = (order.get("customer_name") or "").strip()
+		row["stage"], row["next_step"] = _describe(row)
+		row["payment_status"] = order.get("payment_status")
+		row["reason_for_payment_pending"] = order.get("reason_for_payment_pending")
+		row["payments"] = collected.get(row.name, [])
+		shown.append(row)
+
+	position = {group: i for i, group in enumerate(GROUPS)}
+	shown.sort(key=lambda r: (position[r["group"]], r.scheduled_datetime or r.creation, r.name))
+	counts = {group: sum(1 for r in shown if r["group"] == group) for group in GROUPS}
+	return {"date": str(day), "counts": {"Total": len(shown), **counts}, "rows": shown}
+
+
+def _orders(names):
+	"""Customer, status and the patient's Payment Status for each order.
+
+	Pending or Paid, from `get_sales_order_details` -- the figures the job
+	screen and the desk's "Enter Payment Details" use, Draft entries counted
+	as paid."""
+	from nhk.custom_script import get_sales_order_details
+
+	if not names:
+		return {}
+	orders = {
+		o.name: o for o in frappe.get_all(
+			"Sales Order", filters={"name": ("in", list(names))},
+			fields=["name", "status", "customer_name", "reason_for_payment_pending"],
+		)
 	}
+	owed = ("Unpaid", "Partially Paid")
+	for name, order in orders.items():
+		d = get_sales_order_details(name)
+		pending = d["rental_payment_status"] in owed or d["security_deposit_payment_status"] in owed
+		order["payment_status"] = "Pending" if pending else "Paid"
+	return orders
 
 
-def _open_visits(response, since):
-	"""One response's open visits, oldest scheduled first, and how many each
-	technician holds. Rejected ones ignore `since`: each needs reassigning,
-	however old."""
-	where = """v.status in %(open)s
-		and ifnull(nullif(v.technician_response, ''), 'Pending') = %(response)s
-		and ifnull(so.status, '') not in %(finished)s"""
-	if since and response != "Rejected":
-		where += " and coalesce(v.scheduled_datetime, v.creation) >= %(since)s"
-	values = {"open": OPEN_STATUSES, "finished": FINISHED_ORDER_STATUSES,
-			  "response": response, "since": since}
-	source = """`tabTechnician Visit Entry` v
-		left join `tabSales Order` so on so.name = v.sales_order_id"""
-
-	by_technician = dict(frappe.db.sql(
-		f"select v.technician_id, count(*) from {source} where {where} group by v.technician_id", values
-	))
-	rows = frappe.db.sql(
-		f"""
-		select v.name, v.type, v.status, v.technician_id, v.technician_name,
-			v.technician_mobile_no, v.sales_order_id, so.customer_name, v.patient_name,
-			v.area, v.item_code, v.scheduled_datetime, v.slot, v.started_at,
-			%(response)s as technician_response, v.technician_response_at,
-			v.rejection_reason, v.creation
-		from {source} where {where}
-		order by coalesce(v.scheduled_datetime, v.creation), v.name
-		limit {MAX_ROWS}
-		""",
-		values,
-		as_dict=True,
-	)
-	return {"by_technician": by_technician, "rows": rows}
-
-
-def _technicians(held):
-	"""Every technician: on duty or not, and their Pending and Accepted visits --
-	the same visits the tabs count, so a technician's numbers match the rows
-	shown when the office picks them."""
-	people = frappe.get_all(
-		"Technician Details", fields=["name", "name1", "mobile_number"], order_by="name1"
-	)
-	for person in people:
-		jobs = held.get(person.name, {})
-		person["name1"] = (person.name1 or "").strip()
-		person["on_duty"] = bool(open_duty(person.name))
-		person["pending"] = jobs.get("Pending", 0)
-		person["accepted"] = jobs.get("Accepted", 0)
-	# On duty first; among them, the least loaded first.
-	people.sort(key=lambda p: (not p.on_duty, p.pending + p.accepted, p.name1 or ""))
-	return people
+def _collected(visit_names):
+	"""What each visit's technician collected: mode, amount, Draft or Submitted."""
+	if not visit_names:
+		return {}
+	status = {0: "Draft", 1: "Submitted"}
+	collected = {}
+	for visit, mode, amount, docstatus in frappe.db.sql(
+		"""select custom_technician_visit_id, mode_of_payment, paid_amount, docstatus
+		from `tabPayment Entry` where custom_technician_visit_id in %(v)s and docstatus < 2
+		union all
+		select custom_technician_visit_entry_id, mode_of__payment, total_debit, docstatus
+		from `tabJournal Entry` where custom_technician_visit_entry_id in %(v)s and docstatus < 2""",
+		{"v": visit_names},
+	):
+		collected.setdefault(visit, []).append(
+			{"mode_of_payment": mode, "amount": flt(amount), "status": status.get(docstatus, "")}
+		)
+	return collected

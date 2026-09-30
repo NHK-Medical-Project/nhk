@@ -477,7 +477,7 @@ nhk.sales_order_visits = {
 				},
 				{
 					fieldname: "reason", fieldtype: "Select", label: __("Reason"),
-					options: ["", "Out of Station", "Waiting", "Other"].join("\n"),
+					options: ["", "Out of Station", "Waiting", "Item Replacement", "Other"].join("\n"),
 					default: row.extra_payment_reason || "",
 					depends_on: "eval:doc.amount", mandatory_depends_on: "eval:doc.amount"
 				},

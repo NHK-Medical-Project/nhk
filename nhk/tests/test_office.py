@@ -6,10 +6,11 @@ Run:  cd ~/bench-nhk/sites && ../env/bin/python ../apps/nhk/nhk/tests/test_offic
 import sys
 
 import frappe
+from frappe.utils import add_days, today
 
 sys.path.insert(0, __file__.rsplit("/", 1)[0])
 
-from test_staff_api import PILOT_TECH, PILOT_USER, _visit
+from test_staff_api import PILOT_USER, _visit
 
 
 def _order(finished=False):
@@ -20,28 +21,53 @@ def _order(finished=False):
 	return frappe.db.get_value("Sales Order", {"status": (op, FINISHED_ORDER_STATUSES), "docstatus": 1}, "name")
 
 
-def _queue(days=30):
+def _day(date=None):
 	from nhk.api import office
 
-	return office.technician_visits(days)
+	return office.technician_visits(date)
 
 
-def _names(result, response):
-	return {r["name"] for r in result["rows"] if r["technician_response"] == response}
+def _group_of(result, visit):
+	return next((r["group"] for r in result["rows"] if r["name"] == visit), None)
 
 
-def test_open_visits_are_sorted_by_the_technicians_answer(cleanup):
+def _completed_today(cleanup, order):
+	visit = _visit(cleanup, response="Accepted", status="Delivered", sales_order=order)
+	frappe.db.set_value("Technician Visit Entry", visit, "completed_at", frappe.utils.now_datetime(), update_modified=False)
+	return visit
+
+
+def test_the_day_opens_on_today(cleanup):
+	assert _day()["date"] == today()
+
+
+def test_every_visit_of_the_day_is_in_one_group_and_the_total_adds_up(cleanup):
 	order = _order()
-	before = _queue()["counts"]
 	pending = _visit(cleanup, response="Pending", sales_order=order)
-	rejected = _visit(cleanup, response="Rejected", sales_order=order)
 	accepted = _visit(cleanup, response="Accepted", sales_order=order)
-	_visit(cleanup, response="Accepted", status="Delivered", sales_order=order)  # done: not open
+	rejected = _visit(cleanup, response="Rejected", sales_order=order)
+	completed = _completed_today(cleanup, order)
 
-	result = _queue()
-	assert pending in _names(result, "Pending") and rejected in _names(result, "Rejected")
-	assert accepted in _names(result, "Accepted")
-	assert result["counts"] == {k: before[k] + 1 for k in before}, (before, result["counts"])
+	result = _day()
+	assert [_group_of(result, v) for v in (pending, accepted, rejected, completed)] == [
+		"Pending", "Accepted", "Rejected", "Completed"]
+	counts = result["counts"]
+	assert counts["Total"] == sum(counts[g] for g in ("Pending", "Accepted", "Rejected", "Completed")) == len(result["rows"])
+
+
+def test_a_visit_belongs_to_the_day_it_is_scheduled_for_or_completed_on(cleanup):
+	order = _order()
+	tomorrow = add_days(today(), 1)
+	scheduled = _visit(cleanup, response="Pending", sales_order=order)
+	frappe.db.set_value("Technician Visit Entry", scheduled, "scheduled_datetime", tomorrow + " 10:00:00")
+	done_yesterday = _visit(cleanup, response="Accepted", status="Delivered", sales_order=order)
+	frappe.db.set_value("Technician Visit Entry", done_yesterday, "completed_at",
+						add_days(today(), -1) + " 12:00:00", update_modified=False)
+
+	assert _group_of(_day(), scheduled) is None
+	assert _group_of(_day(tomorrow), scheduled) == "Pending"
+	assert _group_of(_day(), done_yesterday) is None
+	assert _group_of(_day(add_days(today(), -1)), done_yesterday) == "Completed"
 
 
 def test_rows_say_what_the_sales_order_says(cleanup):
@@ -50,71 +76,40 @@ def test_rows_say_what_the_sales_order_says(cleanup):
 
 	visit = _visit(cleanup, response="Rejected", sales_order=_order())
 	frappe.db.set_value("Technician Visit Entry", visit, "rejection_reason", "Bike Service")
-	row = next(r for r in _queue()["rows"] if r["name"] == visit)
+	row = next(r for r in _day()["rows"] if r["name"] == visit)
 	assert (row["stage"], row["next_step"]) == _describe(row), row
 	assert "Reassign" in row["next_step"], row
 
 
-def test_old_visits_wait_for_all_open_but_rejected_ones_never_do(cleanup):
-	order = _order()
-	old_pending = _visit(cleanup, response="Pending", age_days=90, sales_order=order)
-	old_rejected = _visit(cleanup, response="Rejected", age_days=90, sales_order=order)
+def test_rows_carry_the_payment_status_and_what_was_collected(cleanup):
+	from nhk.custom_script import get_sales_order_details
+	from test_payment_collection import _collect, _job
 
-	recent = _queue(30)
-	assert old_pending not in _names(recent, "Pending")
-	assert old_rejected in _names(recent, "Rejected"), "a rejected visit needs reassigning, however old"
-	assert old_pending in _names(_queue(0), "Pending")
+	visit, order = _job(cleanup)
+	_collect(cleanup, visit, mode_of_payment="Cash", rental_payment_amount=100)
 
-
-def test_visits_left_open_on_a_finished_order_are_not_in_the_queue(cleanup):
-	finished = _order(finished=True)
-	visit = _visit(cleanup, response="Pending", sales_order=finished)
-	assert visit not in {r["name"] for r in _queue(0)["rows"]}
+	row = next(r for r in _day()["rows"] if r["name"] == visit)
+	d = get_sales_order_details(order)
+	owed = d["rental_payment_status"] in ("Unpaid", "Partially Paid") or d["security_deposit_payment_status"] in (
+		"Unpaid", "Partially Paid")
+	assert row["payment_status"] == ("Pending" if owed else "Paid"), row["payment_status"]
+	assert row["payments"] == [{"mode_of_payment": "Cash", "amount": 100, "status": "Draft"}], row["payments"]
 
 
-def test_a_past_scheduled_time_is_flagged(cleanup):
-	visit = _visit(cleanup, response="Accepted", sales_order=_order())
-	frappe.db.set_value("Technician Visit Entry", visit, "scheduled_datetime", "2020-01-01 10:00:00")
-	row = next(r for r in _queue(0)["rows"] if r["name"] == visit)
-	assert row["past_scheduled"] is True
+def test_visits_left_open_on_a_finished_order_are_not_shown(cleanup):
+	visit = _visit(cleanup, response="Pending", sales_order=_order(finished=True))
+	assert _group_of(_day(), visit) is None
 
 
-def test_every_technician_is_listed_with_their_open_jobs(cleanup):
-	order = _order()
-	before = next(t for t in _queue()["technicians"] if t["name"] == PILOT_TECH)
-	_visit(cleanup, response="Pending", sales_order=order)
-	_visit(cleanup, response="Rejected", sales_order=order)            # not theirs to do now
-	after = next(t for t in _queue()["technicians"] if t["name"] == PILOT_TECH)
-
-	assert (after["pending"], after["accepted"]) == (before["pending"] + 1, before["accepted"]), (before, after)
-	assert len(_queue()["technicians"]) == frappe.db.count("Technician Details")
-
-
-def test_the_technicians_numbers_add_up_to_the_tabs(cleanup):
-	"""Picking a technician shows exactly the visits their numbers promise, in
-	either window -- found 2026-09-30: 7 Pending beside a name, 0 rows."""
-	order = _order()
-	_visit(cleanup, response="Pending", age_days=90, sales_order=order)
-	for days in (30, 0):
-		result = _queue(days)
-		people = result["technicians"]
-		for response, key in (("Pending", "pending"), ("Accepted", "accepted")):
-			assert sum(t[key] for t in people) == result["counts"][response], (days, response)
-		if not result["limited"]:
-			pilot = next(t for t in people if t["name"] == PILOT_TECH)
-			shown = [r for r in result["rows"] if r["technician_id"] == PILOT_TECH and r["technician_response"] == "Pending"]
-			assert pilot["pending"] == len(shown), (days, pilot, len(shown))
-
-
-def test_only_the_office_sees_the_queue(cleanup):
+def test_only_the_office_sees_the_day(cleanup):
 	frappe.set_user(PILOT_USER)
 	try:
-		_queue()
+		_day()
 	except frappe.PermissionError:
 		return
 	finally:
 		frappe.set_user("Administrator")
-	raise AssertionError("a technician read the office's queue")
+	raise AssertionError("a technician read the office's day")
 
 
 if __name__ == "__main__":
