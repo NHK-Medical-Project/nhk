@@ -37,10 +37,7 @@ import frappe
 from frappe import _
 from frappe.utils import add_months, flt, get_datetime, getdate, now_datetime
 
-from nhk.api.visits import DONE_STATUSES, PAYOUT_ROLE, _assert_office_may_change
-
-#: Visit statuses whose pay is still to be settled by a month.
-COUNTED_STATUSES = DONE_STATUSES + ("Incentive Finalize",)
+from nhk.api.visits import COUNTED_STATUSES, PAYOUT_ROLE, _assert_office_may_change
 
 EXTRA_REASONS = ("Out of Station", "Waiting", "Other")
 
@@ -72,7 +69,13 @@ def _saved(month):
 
 
 def _month_visits(month, technician_id=None):
-	"""Unsettled completed visits dated inside `month`, oldest first."""
+	"""Unsettled completed visits dated inside `month`, oldest first.
+
+	Not rejected ones: a visit the technician turned down is not their work,
+	even when the order closed it as done anyway (DELIVERED closes every open
+	Delivery visit on a rental). Same rule as the app's month cards, so the pay
+	and the job counts agree (decided 2026-09-30).
+	"""
 	start, end = _bounds(month)
 	conditions = ""
 	values = {"start": start, "end": end, "statuses": COUNTED_STATUSES}
@@ -88,6 +91,7 @@ def _month_visits(month, technician_id=None):
 		from `tabTechnician Visit Entry`
 		where status in %(statuses)s
 			and ifnull(payout_month, '') = ''
+			and ifnull(technician_response, '') != 'Rejected'
 			and coalesce(completed_at, technician_update_datetime) >= %(start)s
 			and coalesce(completed_at, technician_update_datetime) < %(end)s
 			{conditions}
@@ -103,6 +107,7 @@ def _undated_count():
 		"""
 		select count(*) from `tabTechnician Visit Entry`
 		where status in %(statuses)s and ifnull(payout_month, '') = ''
+			and ifnull(technician_response, '') != 'Rejected'
 			and completed_at is null and technician_update_datetime is null
 		""",
 		{"statuses": COUNTED_STATUSES},

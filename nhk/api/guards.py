@@ -101,15 +101,17 @@ def assert_open(visit) -> None:
 
 
 class OffDuty(frappe.PermissionError):
-	"""The caller has no open Duty check-in for today."""
+	"""The caller has no open Duty check-in."""
 
 
 def open_duty(technician: str | None = None):
-	"""The technician's Duty check-in for today, if it is still open.
+	"""The technician's open Duty check-in, the latest if there is more than one.
 
-	Duty expires at local midnight rather than on a missed check-out, so a
-	technician who forgets to go off duty is not left on duty for a week. An
-	explicit `end_duty` closes it early and records where they were.
+	Duty lasts until the technician checks out (`end_duty`) -- it no longer
+	expires at midnight (decided 2026-09-29: technicians check in and out
+	themselves). Before that, duty started on an earlier day did not count; the
+	ones still open from then were closed at their day's end by the patch
+	`nhk.patches.v1_0.close_duty_left_open_before_manual_checkout`.
 	"""
 	technician = technician or current_technician()
 
@@ -118,11 +120,11 @@ def open_duty(technician: str | None = None):
 		{
 			"technician_id": technician,
 			"kind": "Duty",
-			"checked_in_at": (">=", today()),
 			"closed_at": ("is", "not set"),
 		},
 		["name", "checked_in_at", "latitude", "longitude"],
 		as_dict=True,
+		order_by="checked_in_at desc",
 	)
 
 

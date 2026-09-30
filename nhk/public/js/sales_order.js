@@ -59,6 +59,8 @@ nhk.sales_order_visits = {
 		const target = this.target(frm);
 		if (!target) return;
 		if (frm.is_new()) {
+			target.$body.empty();
+			target.$body.removeData("rows");
 			target.show(false);
 			return;
 		}
@@ -90,7 +92,10 @@ nhk.sales_order_visits = {
 
 		if (field) {
 			$body = field.$wrapper;
-			show = () => {};
+			show = (on) => {
+				$body.toggle(!!on);
+				$body.closest(".form-section").toggleClass("hidden", !on);
+			};
 		} else {
 			const $section = this.section(frm);
 			if (!$section) return null;
@@ -319,9 +324,20 @@ nhk.sales_order_visits = {
 			schedule = `<span class="text-muted small" style="display: inline-flex; align-items: center; gap: 4px;"><i class="fa fa-clock-o"></i> ${__("Not scheduled")}</span>`;
 		}
 
+		// What the technician entered, and what the office-to-arrival distance
+		// says (nhk.api.distance), highlighted when the two disagree.
+		const calc = flt(row.calculated_kilometers);
+		const differs = calc && flt(row.kilometers) && Math.abs(flt(row.kilometers) - calc) > Math.max(2, calc * 0.2);
 		const pay = [
 			row.charges ? `<div style="font-weight: 600; font-size: 13px;">${format_currency(row.charges)}</div>` : "",
 			row.kilometers ? `<div class="text-muted small">${esc(String(row.kilometers))} km</div>` : "",
+			calc
+				? `<div class="small ${differs ? "" : "text-muted"}" ${differs ? 'style="color: var(--orange-600);"' : ""}
+					title="${esc(row.distance_method === "Road (Google)"
+					? __("By road from the office to the {0}; straight line {1} km", [__(row.distance_source || ""), row.straight_line_kilometers || ""])
+					: __("Estimated: straight line from the office x factor, to the {0}", [__(row.distance_source || "")]))}">
+					${row.distance_method === "Road (Google)" ? __("road {0} km", [esc(String(calc))]) : __("est. {0} km", [esc(String(calc))])}</div>`
+				: "",
 			row.incentive_amount_to_be_processed && row.incentive_amount_to_be_processed !== row.charges
 				? `<div class="text-muted small">${__("Incentive")} ${format_currency(row.incentive_amount_to_be_processed)}</div>`
 				: "",
@@ -372,10 +388,10 @@ nhk.sales_order_visits = {
 		return `
 			<div class="nhk-attachments-grid" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
 				${list.map((f) => {
-					const url = esc(f.file_url || "");
-					const name = esc(f.file_name || f.name || __("Attachment"));
-					if (is_image(f.file_url)) {
-						return `
+			const url = esc(f.file_url || "");
+			const name = esc(f.file_name || f.name || __("Attachment"));
+			if (is_image(f.file_url)) {
+				return `
 							<a href="${url}" target="_blank" rel="noopener" class="nhk-attachment-thumb" title="${name}">
 								<img src="${url}" alt="${name}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; display: block;"
 									onerror="this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='flex';" />
@@ -383,15 +399,15 @@ nhk.sales_order_visits = {
 									<i class="fa fa-image"></i>
 								</div>
 							</a>`;
-					}
-					const is_pdf = /\.pdf$/i.test(f.file_url || "");
-					const icon = is_pdf ? "fa-file-pdf-o text-danger" : "fa-file-text-o text-primary";
-					return `
+			}
+			const is_pdf = /\.pdf$/i.test(f.file_url || "");
+			const icon = is_pdf ? "fa-file-pdf-o text-danger" : "fa-file-text-o text-primary";
+			return `
 						<a href="${url}" target="_blank" rel="noopener" class="nhk-attachment-file" title="${name}">
 							<i class="fa ${icon}"></i>
 							<span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${name}</span>
 						</a>`;
-				}).join("")}
+		}).join("")}
 			</div>`;
 	},
 
@@ -481,10 +497,14 @@ nhk.sales_order_visits = {
 		const dialog = new frappe.ui.Dialog({
 			title: __("Reschedule {0}", [row.name]),
 			fields: [
-				{ fieldname: "scheduled_datetime", fieldtype: "Datetime", label: __("New date and time"), reqd: 1,
-					default: row.scheduled_datetime },
-				{ fieldname: "slot", fieldtype: "Select", label: __("Slot"),
-					options: ["", "Morning", "Afternoon", "Evening"].join("\n"), default: row.slot || "" },
+				{
+					fieldname: "scheduled_datetime", fieldtype: "Datetime", label: __("New date and time"), reqd: 1,
+					default: row.scheduled_datetime
+				},
+				{
+					fieldname: "slot", fieldtype: "Select", label: __("Slot"),
+					options: ["", "Morning", "Afternoon", "Evening"].join("\n"), default: row.slot || ""
+				},
 			],
 			primary_action_label: __("Reschedule"),
 			primary_action: (values) =>
@@ -509,16 +529,22 @@ nhk.sales_order_visits = {
 		const dialog = new frappe.ui.Dialog({
 			title: __("Extra payment for {0}", [row.name]),
 			fields: [
-				{ fieldname: "amount", fieldtype: "Currency", label: __("Amount"),
+				{
+					fieldname: "amount", fieldtype: "Currency", label: __("Amount"),
 					default: row.extra_payment || 0,
-					description: __("Set 0 to remove it. Paid with this month's technician payout.") },
-				{ fieldname: "reason", fieldtype: "Select", label: __("Reason"),
+					description: __("Set 0 to remove it. Paid with this month's technician payout.")
+				},
+				{
+					fieldname: "reason", fieldtype: "Select", label: __("Reason"),
 					options: ["", "Out of Station", "Waiting", "Other"].join("\n"),
 					default: row.extra_payment_reason || "",
-					depends_on: "eval:doc.amount", mandatory_depends_on: "eval:doc.amount" },
-				{ fieldname: "note", fieldtype: "Small Text", label: __("Note"),
+					depends_on: "eval:doc.amount", mandatory_depends_on: "eval:doc.amount"
+				},
+				{
+					fieldname: "note", fieldtype: "Small Text", label: __("Note"),
 					default: row.extra_payment_note || "",
-					depends_on: "eval:doc.amount", mandatory_depends_on: "eval:doc.reason=='Other'" },
+					depends_on: "eval:doc.amount", mandatory_depends_on: "eval:doc.reason=='Other'"
+				},
 			],
 			primary_action_label: __("Save"),
 			primary_action: (values) =>
@@ -713,6 +739,17 @@ nhk.sales_order_visits = {
 		return `<span class="indicator-pill ${colour}">${frappe.utils.escape_html(__(label || ""))}</span>`;
 	},
 };
+
+// Permanent Address (Link) offers only this customer's addresses. The free-text
+// Permanent Address beside it is independent (decided 2026-09-30).
+frappe.ui.form.on("Sales Order", {
+	onload(frm) {
+		frm.set_query("permanent_address_link", () => ({
+			query: "frappe.contacts.doctype.address.address.address_query",
+			filters: { link_doctype: "Customer", link_name: frm.doc.customer },
+		}));
+	},
+});
 
 frappe.ui.form.on("Sales Order", {
 	// `setup` runs once per form, after ERPNext's script has built `frm.cscript`

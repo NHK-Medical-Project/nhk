@@ -351,20 +351,41 @@ def test_update_shares_refuses(cleanup):
 def test_changing_the_category_reprices_the_visit(cleanup):
 	"""Category selects the slab table; it used to be ignored once charges was set.
 
-	A 5km Pickup pays 50 under `Order` and 200 under `Sleep Study Level 2`. Most
-	category pairs are useless for this -- `Order` and `Visit`, for instance, carry
-	identical rates in every distance band, so swapping them proves nothing.
+	The rates are read from Admin Settings rather than written in here: Finance
+	changes them (it did on 2026-09-28, which broke the pinned 50 -> 200 this test
+	used to assert), and the rule under test is "a new category re-prices", not
+	any particular rupee amount. Most category pairs are useless for it -- `Order`
+	and `Visit` carry identical rates in every band -- so it picks one whose 5km
+	pickup rate differs from `Order`'s.
 	"""
+	from frappe.utils import flt
+
+	def pickup_at_5km(category):
+		for row in frappe.get_single("Admin Settings").technician_charges_table:
+			if row.category == category and flt(row.from_distance) <= 5 <= flt(row.to_distance):
+				return flt(row.pickup)
+		return None
+
+	order_rate = pickup_at_5km("Order")
+	other = next(
+		(c for c in frappe.get_all("Technician Category", pluck="name")
+		 if pickup_at_5km(c) is not None and pickup_at_5km(c) != order_rate),
+		None,
+	)
+	assert other, "no category's 5km pickup rate differs from Order's; nothing to test against"
+
 	visit = _visit(cleanup, type_="Pickup")
 	before = frappe.db.get_value("Technician Visit Entry", visit.name, "charges")
-	assert before == 50.0, "expected the Order pickup rate at 5km, got %s" % before
+	assert before == order_rate, "expected the Order pickup rate at 5km (%s), got %s" % (order_rate, before)
 
 	visit.reload()
-	visit.technician_category = "Sleep Study Level 2"
+	visit.technician_category = other
 	visit.save()
 
 	after = frappe.db.get_value("Technician Visit Entry", visit.name, "charges")
-	assert after == 200.0, "the visit kept the previous category's rate (%s)" % after
+	assert after == pickup_at_5km(other), (
+		"moving to %s kept the previous category's rate (%s, expected %s)" % (other, after, pickup_at_5km(other))
+	)
 
 
 def test_reassignment_leaves_the_category_alone(cleanup):

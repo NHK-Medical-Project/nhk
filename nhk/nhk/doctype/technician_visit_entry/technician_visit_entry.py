@@ -31,6 +31,7 @@ class TechnicianVisitEntry(Document):
             self.kilometers = 1.0
         guard_payout_lock(self)
         validate_extra_payment(self)
+        stamp_assigned_by(self)
         update_technician_charge(self)
 
 
@@ -63,6 +64,18 @@ def guard_payout_lock(doc):
                 doc.name, before.payout_month, ", ".join(changed)
             )
         )
+
+
+def stamp_assigned_by(doc):
+    """Remember who gave the job out, so they hear when the technician answers.
+
+    Set when the visit is created and whenever its technician changes -- that is,
+    by whoever assigned or reassigned it (`nhk.api.notify.tell_office`).
+    """
+    if frappe.session.user in (None, "Guest"):
+        return
+    if doc.is_new() or doc.has_value_changed("technician_id"):
+        doc.assigned_by = frappe.session.user
 
 
 def validate_extra_payment(doc):

@@ -60,13 +60,17 @@ SALES_ORDER_VISIT_FIELDS = [
 	"technician_id", "technician_name", "technician_mobile_no",
 	"technician_response", "technician_response_at", "rejection_reason",
 	"scheduled_datetime", "slot", "started_at", "completed_at",
-	"kilometers", "charges", "incentive_amount_to_be_processed", "payment_status",
+	"kilometers", "calculated_kilometers", "distance_source", "distance_method", "straight_line_kilometers",
+	"charges", "incentive_amount_to_be_processed", "payment_status",
 	"extra_payment", "extra_payment_reason", "extra_payment_note", "payout_month",
 	"notes", "order_notes", "patient_signature", "creation",
 ]
 
 #: A visit's statuses once the work is done, before the payout run touches it.
 DONE_STATUSES = tuple(dict.fromkeys(COMPLETION_STATUS.values()))
+
+#: Visit statuses whose pay is still to be settled by a month.
+COUNTED_STATUSES = DONE_STATUSES + ("Incentive Finalize",)
 
 #: Who may see and settle technician pay (`nhk.api.payouts`). The visit form
 #: hid its payout buttons from everyone else, but `nhk.custom_script.change_status`

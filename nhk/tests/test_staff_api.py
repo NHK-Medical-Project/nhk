@@ -66,7 +66,12 @@ def _on_duty(cleanup, user=PILOT_USER):
 	from nhk.api import staff
 
 	_as(user)
-	return cleanup.add("Technician Check In", staff.start_duty()["name"])
+	duty = staff.start_duty()
+	# Never claim a duty this test did not start: it would be a real
+	# technician's, and the clean-up would delete it (see
+	# `Cleanup.set_aside_real_checkins`, which should make this impossible).
+	assert not duty["already_on_duty"], "a real duty check-in was still open during a test"
+	return cleanup.add("Technician Check In", duty["name"])
 
 
 # --------------------------------------------------------------------------
@@ -127,7 +132,8 @@ def test_start_duty_creates_a_duty_checkin(cleanup):
 	assert staff.duty_status()["on_duty"] is True
 
 
-def test_duty_from_yesterday_does_not_count_as_on_duty(cleanup):
+def test_duty_lasts_past_midnight_until_the_technician_checks_out(cleanup):
+	"""Decided 2026-09-29: no automatic checkout at midnight."""
 	from nhk.api import staff
 
 	_as(PILOT_USER)
@@ -137,7 +143,28 @@ def test_duty_from_yesterday_does_not_count_as_on_duty(cleanup):
 	yesterday = datetime.now() - timedelta(days=1)
 	frappe.db.set_value("Technician Check In", res["name"], "checked_in_at", yesterday)
 
-	assert staff.duty_status()["on_duty"] is False, "duty must expire at local midnight"
+	assert staff.duty_status()["on_duty"] is True, "duty started yesterday ended by itself"
+	staff.end_duty()
+	assert staff.duty_status()["on_duty"] is False
+
+
+def test_checking_out_closes_every_open_duty(cleanup):
+	"""With no midnight expiry a stray second duty would outlive the checkout."""
+	from nhk.api import staff
+
+	_as(PILOT_USER)
+	first = cleanup.add("Technician Check In", staff.start_duty()["name"])
+	frappe.db.set_value("Technician Check In", first, "checked_in_at",
+						datetime.now() - timedelta(days=2))
+	# A second open duty, as a double tap or an old record could leave.
+	second = cleanup.add("Technician Check In", frappe.get_doc({
+		"doctype": "Technician Check In", "technician_id": PILOT_TECH, "technician_user_id": PILOT_USER,
+		"kind": "Duty", "checked_in_at": datetime.now(),
+	}).insert(ignore_permissions=True).name)
+
+	staff.end_duty()
+	for name in (first, second):
+		assert frappe.db.get_value("Technician Check In", name, "closed_at"), "%s was left open" % name
 
 
 def test_my_jobs_refuses_off_duty(cleanup):
@@ -286,6 +313,69 @@ def test_reject_hides_the_job_but_leaves_it_assigned(cleanup):
 	assert row.rejection_reason
 
 	assert visit not in {j["name"] for j in staff.my_jobs()}, "a rejected job should drop out of the day list"
+
+
+REASONS = [
+	"Off Duty",
+	"Bike Service",
+	"Going for a different order not in my route",
+	"Feeling unwell",
+	"Patient Cancelled",
+	"Patient Postponed",
+	"Others",
+]
+
+
+def _rejected_with(cleanup, reason, note=None):
+	from nhk.api import staff
+
+	visit = _visit(cleanup, response="Pending")
+	_as(PILOT_USER)
+	try:
+		staff.reject_job(visit, reason, note=note)
+	finally:
+		_as("Administrator")
+	return frappe.db.get_value("Technician Visit Entry", visit, "rejection_reason")
+
+
+def test_the_rejection_reasons_are_the_offices_list(cleanup):
+	"""User, 2026-09-29: the reasons a technician can reject a job for."""
+	from nhk.api import staff
+
+	_as(PILOT_USER)
+	try:
+		assert staff.rejection_reasons() == REASONS
+	finally:
+		_as("Administrator")
+
+
+def test_a_listed_reason_is_stored_as_it_is(cleanup):
+	assert _rejected_with(cleanup, "Patient Postponed") == "Patient Postponed"
+	# However the phone capitalised it.
+	assert _rejected_with(cleanup, "feeling UNWELL") == "Feeling unwell"
+
+
+def test_others_needs_the_technicians_own_words(cleanup):
+	from nhk.api import staff
+
+	visit = _visit(cleanup, response="Pending")
+	_as(PILOT_USER)
+	try:
+		staff.reject_job(visit, "Others")
+	except frappe.ValidationError:
+		pass
+	else:
+		raise AssertionError("'Others' was accepted with nothing said")
+	finally:
+		_as("Administrator")
+
+	assert _rejected_with(cleanup, "Others", note="Road flooded near Silk Board") == "Others: Road flooded near Silk Board"
+
+
+def test_free_text_from_an_older_app_is_kept_as_others(cleanup):
+	"""The notification's reply box and older app builds send free text; it is
+	kept, under Others, rather than refused."""
+	assert _rejected_with(cleanup, "Customer asked to come tomorrow") == "Others: Customer asked to come tomorrow"
 
 
 def test_rejected_job_cannot_be_checked_in(cleanup):
