@@ -7,3 +7,4 @@
 nhk.patches.v1_0.seed_technician_charges
 nhk.patches.v1_0.move_fcm_devices_to_nhk_user
 nhk.patches.v1_0.close_duty_left_open_before_manual_checkout
+nhk.patches.v1_0.add_technician_visits_block

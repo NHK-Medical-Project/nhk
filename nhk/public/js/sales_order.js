@@ -456,70 +456,11 @@ nhk.sales_order_visits = {
 	},
 
 	reassign(frm, row) {
-		const current = row.technician_name || row.technician_id || __("nobody");
-		const dialog = new frappe.ui.Dialog({
-			title: __("Reassign {0}", [row.name]),
-			fields: [
-				{
-					fieldtype: "HTML",
-					options: `<p class="text-muted">${frappe.utils.escape_html(__("Currently with {0}.", [current]))}</p>`,
-				},
-				{
-					fieldname: "technician_id", fieldtype: "Link", options: "Technician Details",
-					label: __("Reassign To"), reqd: 1,
-					get_query: () => ({ filters: { name: ["!=", row.technician_id] } }),
-				},
-				{
-					fieldname: "force", fieldtype: "Check", default: 0,
-					label: __("Reassign even though the technician has arrived"),
-					description: __("Leave this off unless the server refuses. It closes the current technician's check-in and clears the arrival from the visit."),
-				},
-			],
-			primary_action_label: __("Reassign"),
-			primary_action: (values) =>
-				frappe.call({
-					method: "nhk.api.assignment.reassign_visit",
-					args: { visit_id: row.name, technician_id: values.technician_id, force: values.force ? 1 : 0 },
-					freeze: true,
-					callback: (r) => {
-						if (!r.message) return;
-						dialog.hide();
-						this.after(frm, r.message.moved
-							? __("{0} reassigned to {1}.", [row.name, values.technician_id])
-							: __("{0} was already with {1}.", [row.name, values.technician_id]));
-					},
-				}),
-		});
-		dialog.show();
+		nhk.visit_dialogs.reassign(row, (message) => this.after(frm, message));
 	},
 
 	reschedule(frm, row) {
-		const dialog = new frappe.ui.Dialog({
-			title: __("Reschedule {0}", [row.name]),
-			fields: [
-				{
-					fieldname: "scheduled_datetime", fieldtype: "Datetime", label: __("New date and time"), reqd: 1,
-					default: row.scheduled_datetime
-				},
-				{
-					fieldname: "slot", fieldtype: "Select", label: __("Slot"),
-					options: ["", "Morning", "Afternoon", "Evening"].join("\n"), default: row.slot || ""
-				},
-			],
-			primary_action_label: __("Reschedule"),
-			primary_action: (values) =>
-				frappe.call({
-					method: "nhk.api.visits.reschedule",
-					args: { visit_id: row.name, scheduled_datetime: values.scheduled_datetime, slot: values.slot },
-					freeze: true,
-					callback: (r) => {
-						if (!r.message) return;
-						dialog.hide();
-						this.after(frm, __("{0} rescheduled.", [row.name]));
-					},
-				}),
-		});
-		dialog.show();
+		nhk.visit_dialogs.reschedule(row, (message) => this.after(frm, message));
 	},
 
 	// What the technician is owed beyond the visit's charge -- out of station,
@@ -536,7 +477,7 @@ nhk.sales_order_visits = {
 				},
 				{
 					fieldname: "reason", fieldtype: "Select", label: __("Reason"),
-					options: ["", "Out of Station", "Waiting", "Other"].join("\n"),
+					options: ["", "Out of Station", "Waiting", "Item Replacement", "Other"].join("\n"),
 					default: row.extra_payment_reason || "",
 					depends_on: "eval:doc.amount", mandatory_depends_on: "eval:doc.amount"
 				},
