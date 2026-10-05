@@ -13,7 +13,7 @@ app_license = "mit"
 # app_include_css = "/assets/nhk/css/nhk.css"
 # Desk-wide: the pop-up when a technician accepts or rejects a job the user
 # assigned (nhk.api.notify.tell_office). Served from nhk/public, no build step.
-app_include_js = "/assets/nhk/js/nhk_desk.js"
+app_include_js = "/assets/nhk/js/nhk_desk.js?v=2"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/nhk/css/nhk.css"
