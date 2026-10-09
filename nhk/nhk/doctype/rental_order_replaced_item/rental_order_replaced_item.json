@@ -1,0 +1,87 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:REPLACED-ITEM-{DD}-{MM}-{YY}-{###}",
+ "creation": "2024-03-25 17:30:19.877479",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "master_order_id",
+  "sales_order_id",
+  "replaced_datetime",
+  "column_break_bdpp",
+  "old_item",
+  "new_item",
+  "section_break_qjcf",
+  "reason"
+ ],
+ "fields": [
+  {
+   "fieldname": "master_order_id",
+   "fieldtype": "Link",
+   "label": "Master Order Id",
+   "options": "Sales Order"
+  },
+  {
+   "fieldname": "sales_order_id",
+   "fieldtype": "Link",
+   "label": "Sales Order Id",
+   "options": "Sales Order"
+  },
+  {
+   "fieldname": "column_break_bdpp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "old_item",
+   "fieldtype": "Link",
+   "label": "Old Item",
+   "options": "Item"
+  },
+  {
+   "fieldname": "new_item",
+   "fieldtype": "Link",
+   "label": "New Item",
+   "options": "Item"
+  },
+  {
+   "fieldname": "section_break_qjcf",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason"
+  },
+  {
+   "fieldname": "replaced_datetime",
+   "fieldtype": "Datetime",
+   "label": "Replaced Datetime"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-03-26 10:48:10.663770",
+ "modified_by": "Administrator",
+ "module": "nhk",
+ "name": "Rental Order Replaced Item",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -1,0 +1,46 @@
+<!-- ============ Blogs.html ========== -->
+{% extends "templates/web_base.html" %}
+{% block content %}
+<!-- ============ BANNER START ========== -->
+<section class="blog-banner clearfix">
+    <div class="slider slider-blog">
+        {% for blog in blog_details %}
+        <div class="blog-slide">
+            <div class="container">
+                <img src="{{ blog.image }}" class="img-fluid" alt="{{ blog.title }}">
+                <h2>{{ blog.title }}</h2>
+                <p><span>{{ blog.date.strftime('%d-%b-%Y') }}</span> {{ blog.description }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+ 
+ 
+<!-- ============ Popular Topics START ========== -->
+<section class="PopularTopics clearfix">
+    <div class="container">
+        <h2>Popular <span>Topics</span></h2>
+        <div class="row">
+            <!-- Repeat this block for each blog item -->
+            {% for blog in blogs %}
+                <div class="col-lg-3 col-md-4 col-12">
+                    <div class="card clearfix">
+                        <div class="card-thumb">
+                            <a href="blogdetail?id={{ blog.name }}"><img src="{{ blog.image }}" class="img-fluid" alt="{{ blog.title }}"/></a>
+                        </div>
+                        <div class="card-body">
+                            <div class="date-txt">{{ blog.date.strftime('%d-%b-%Y') }}</div>
+                            <h3><a href="blogdetail?id={{ blog.name }}">{{ blog.title }}</a></h3>
+                            <p>{{ blog.description }}</p>
+                            <div class="journal-title">
+                                By {{ blog.author }} <span>Journalist</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

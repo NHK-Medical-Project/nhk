@@ -1,0 +1,10 @@
+[pre_model_sync]
+# Patches added in this section will be executed before doctypes are migrated
+# Read docs to understand patches: https://frappeframework.com/docs/v14/user/en/database-migrations
+
+[post_model_sync]
+# Patches added in this section will be executed after doctypes are migrated
+nhk.patches.v1_0.seed_technician_charges
+nhk.patches.v1_0.move_fcm_devices_to_nhk_user
+nhk.patches.v1_0.close_duty_left_open_before_manual_checkout
+nhk.patches.v1_0.add_technician_visits_block

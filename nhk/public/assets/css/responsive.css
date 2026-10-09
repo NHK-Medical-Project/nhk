@@ -1,0 +1,1973 @@
+@media screen and (max-width:1367px) {
+.healthsolutioin .card-thumb {
+    height: auto;
+    padding: 9% 20px;
+}
+
+}
+@media screen and (max-width:1281px) {
+.heroarea h1 {
+    font-size: 36px;
+}
+.heroarea p {
+    font-size: 20px;
+    line-height: 28px;
+}	
+.heroarea .slide2 img {
+    right: -90px;
+}	
+.partnerform .card li:nth-child(2) {
+    font-size: 16px;
+    width: 66%;
+    line-height: 20px;
+}	
+	
+
+}
+@media screen and (max-width:1169px) {
+ 	
+.heroarea .slide1 img {
+    width: 645px;
+    right: -90px;
+}	
+.heroarea .slide1, .heroarea .slide2, .heroarea .slide3 {
+    padding: 20px 0 70px 20px;
+}	
+.heroarea p {
+    font-size: 22px;
+    line-height: 32px;
+}	
+.heroarea .slide2 img {
+    right: -150px;
+    width: 650px;
+}	
+.heroarea .slide3 img {
+    right: -120px;
+    width: 845px;
+}
+.homeplan .card.select:before {
+    height: 80px;   
+}	
+.SleepApnea .card {
+    padding: 60px 15px 30px;
+}	
+.SleepApnea h2 {
+    font-size: 32px;
+    margin: 0px 0 25px;
+}	
+.SleepApnea p {
+    margin-bottom: 20px;
+    font-size: 16px;
+    line-height: 27px;
+}	
+.SleepApnea h3 {
+    font-size: 22px;
+    margin-bottom: 20px;
+}	
+.SleepApnea ul {
+    margin-left: 25px;
+    margin-bottom: 20px;
+}
+.SleepApnea li {
+    font-size: 16px;
+    line-height: 20px;
+    margin-bottom: 15px;
+}		
+.exportmedical .slick-slide {
+    margin: 0 20px;
+}	
+.exportmedical, .OurImpact, .ClientJourney {
+    padding: 40px 0 0;
+}	
+.exportmedical h2, .OurImpact h2, .ClientJourney h2, .valueclient h2, .homeplan h2, .healthsolutioin h2 {
+    font-size: 32px;
+    margin-bottom: 25px;
+}	
+.valueclient {
+    padding: 40px 0 30px;
+}	
+.valueclient .card {
+    padding: 20px;
+    width: 100%;
+}	
+.valueclient .slick-slide.slick-current.slick-active.slick-center .card {
+    padding: 50px 20px;
+}	
+.valueclient h4 {
+    font-size: 18px;
+	padding-top: 0px;
+}	
+.profile img {
+    width: 60px;
+    height: 60px;
+}	
+.profile {
+    padding-left: 75px;    
+}	
+.valueclient h3 {
+    margin-bottom: 12px;
+    font-size: 17px;
+}	
+.valueclient .slick-slide.slick-current.slick-active.slick-center .card h3 {
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+.homeplan .card-header h3 {
+    font-size: 20px;
+    margin-bottom: 10px;
+}	
+.homeplan .card {
+    border-radius: 20px;
+    padding: 10px 10px 5px;
+}	
+.homeplan .card-body {
+    padding: 10px;
+}	
+.homeplan .card-body li {
+    font-size: 15px;
+    line-height: 22px;
+    margin-bottom: 10px;
+}	
+.title-reco {
+    font-size: 22px;
+    margin-bottom: 25px;
+    padding: 0;
+}	
+.homeplan .card.select {
+    padding: 10px;
+}	
+.homeplan .SlickActive .card-body li {
+    font-size: 16px;
+    line-height: 25px;
+    margin-bottom: 15px;
+}	
+.homeplan h4 {
+    font-size: 26px;
+    margin-top: 30px;
+    margin-bottom: 30px;
+}	
+.healthsolutioin {
+    padding: 30px 0;
+}	
+.healthsolutioin .card-thumb {
+    padding: 20px 10px;
+	height: auto;
+}	
+.healthsolutioin h3 {
+    font-size: 20px;
+}	
+/*
+.healthsolutioin .card{
+	margin: 0 20px
+}	
+*/
+.healthsolutioin .card-body {
+    padding: 10px;
+}	
+.healthsolutioin p a {
+    padding: 8px 10px;
+}
+.healthsolutioin .container, .moreblog .container {
+    width: 100%;
+}	
+.moreblog h3 {
+    font-size: 16px;
+    margin-bottom: 10px;
+    line-height: 24px;
+}	
+.moreblog p {
+    font-size: 12px;    
+    line-height: 22px;
+}	
+	
+.cartwrap {
+    padding: 40px 0 20px;
+}	
+	
+.signLeft {
+    width: 50%;
+    height: 100vh;
+}	
+.signLeft .logo {
+    bottom: auto;
+    top: 25px;
+}	
+.signRight {
+    padding: 25px 40px 20px;
+}	
+.signLeft img.img-fluid{ height: 768px;}	
+.signRight {
+    padding: 75px 70px 20px;
+}	
+.partnerform .card li:nth-child(2) {
+    padding: 12px 0 0 20px;
+    font-size: 16px;
+    width: 57%;
+    line-height: 22px;
+}	
+	
+	
+	
+}
+
+@media screen and (max-width:1023px) {
+ .moreblog h2 {
+    font-size: 26px;
+    margin-bottom: 20px;
+}
+	
+.heroarea .slide1 {
+    padding: 30px 0 34px 20px;
+	overflow: hidden;
+}	
+.heroarea .slide1 img {
+    width: 475px;
+}	
+.heroarea h1 {
+    margin-bottom: 20px;
+    padding-bottom: 5px;
+    line-height: 45px;
+    font-size: 30px;
+}
+.heroarea h1 br{
+	display: none;
+}	
+.heroarea p {
+    font-size: 20px;
+    line-height: 24px;
+    margin-bottom: 15px;
+}
+.heroarea .slide2 img {
+    width: 481px;
+    right: -110px;
+}	
+.heroarea .slide2 {
+    padding: 20px 0 20px 20px;
+}	
+.heroarea .slide3 {
+    padding: 40px 0 44px 20px;
+}	
+.heroarea .slide3 img {
+    right: -170px;
+    width: 80.1%;
+}
+.SleepApnea {
+    padding: 0 10px;
+}	
+.SleepApnea .card {
+    padding: 50px 20px 20px;
+}	
+.SleepApnea h2 {
+    font-size: 25px;
+    margin: 0px 0 25px;
+}	
+.SleepApnea p {
+    margin-bottom: 10px;
+    font-size: 16px;
+    line-height: 24px;
+}	
+.SleepApnea h3 {
+    font-size: 18px;
+    margin-bottom: 20px;
+}	
+.SleepApnea li {
+    font-size: 16px;
+    line-height: 18px;
+    margin-bottom: 10px;
+}	
+.SleepApnea ul {
+    margin-left: 25px;
+    margin-bottom: 10px;
+}	
+.exportmedical {
+    padding: 20px 0 0;
+}	
+.exportmedical h2 {
+    font-size: 26px;
+    margin-bottom: 30px;
+}	
+.exportmedical .container .card {
+    padding: 25px 10px;
+}	
+.OurImpact {
+    padding: 30px 0 0;
+}	
+.OurImpact h2 {
+    font-size: 26px;
+    margin-bottom: 25px;
+}
+.OurImpact .reachwrap {
+    height: 310px;
+}
+.impactbox {
+    padding: 55px 0 0;
+}	
+.impactbox img {
+    width: 70px;
+}	
+.impactbox h3 {   
+    font-size: 35px;
+    margin: 10px 0;
+}	
+.impactbox p {
+    font-size: 23px;
+    line-height: 32px;
+}	
+.ImpactIndent {
+    padding: 25px 0 10px;
+}	
+.ImpactIndent h3 {
+    font-size: 22px;
+    margin: 10px 0;
+}	
+.ImpactIndent img{
+	height: 50px;
+}	
+.ClientJourney h2 {
+    font-size: 26px;
+    margin-bottom: 15px;
+}	
+.ClientJourney {
+    padding: 40px 0 0;
+}	
+.valueclient {
+    padding: 40px 0;
+}	
+.valueclient h2 {
+    font-size: 26px;
+    margin-bottom: 15px;
+}	
+.valueclient .slick-slide {
+    margin: 20px 15px;
+}	
+.valueclient .slick-slide.slick-current.slick-active.slick-center .card {
+    padding: 65px 15px;
+}	
+.valueclient .slick-slide.slick-current.slick-active.slick-center .card h3 {
+    font-size: 16px;
+}	
+.homeplan h2 {
+    font-size: 26PX;
+    margin-bottom: 30px;
+}	
+.homeplan .card-body {
+    padding: 25px 0;
+}	
+.homeplan .card-body li {
+    font-size: 14px;
+    line-height: 22px;
+    margin-bottom: 8px;
+}	
+.homeplan .card-body ul {
+    height: 180px;
+}	
+.title-reco {
+    font-size: 22px;
+    margin-bottom: 30px;
+    padding: 0;
+}
+.homeplan .card.select:before {
+    height: 86px;
+}	
+.homeplan .card-header h3 {
+    font-size: 22px;
+}	
+.pricetag {
+    font-size: 24px;
+    line-height: 32px;
+}	
+.homeplan .SlickActive .card-body li {
+    font-size: 17px;
+    line-height: 25px;
+    margin-bottom: 10px;
+}	
+.homeplan .card.select .card-body ul {
+    height: 140px;
+}	
+.homeplan h4 {
+    font-size: 24px;
+    margin-top: 40px;
+    margin-bottom: 20px;
+}	
+.healthsolutioin {
+    padding: 30px 0;
+}		
+.heroleft {
+    padding: 10% 0 0 40px;
+    height: 340px;
+}	
+.heroinner h1 {
+    font-size: 32px;
+    line-height: 40px;
+}
+.heroinner h1 span {
+    font-size: 32px;
+}	
+.heroinner p {
+    font-size: 28px;
+}	
+.heroright {
+    height: 340px;
+}	
+.heroleft:after {
+    height: 340px;
+}	
+.healthsolutioin .card-thumb {
+    height: auto;
+    padding: 10px;   
+}	
+.healthsolutioin .card-body {
+    padding: 10px;
+}	
+.healthsolutioin h3 {
+    font-size: 17px;
+    margin-bottom: 10px;
+    line-height: 20px;
+}	
+.healthsolutioin p a {
+    padding: 5px 5px;
+    border-radius: 5px;
+    width: 45%;
+    text-align: center;
+    margin: 0 2px;
+    font-size: 11px;
+}	
+.healthsolutioin h2 {
+    font-size: 25px;
+    margin-bottom: 35px;
+}	
+.healthsolutioin .container {
+    width: 100%;
+    max-width: 100%;
+}	
+.banner-slider .slider.slider-nav {
+    height: 100px;
+}	
+.vehicle-detail-banner{
+	position: relative
+}	
+.banner-slider .slider.slider-nav {
+    max-width: 100%;
+    position: absolute;
+    z-index: 11;
+    top: auto;
+    bottom: 0;
+	padding-left: 20px
+}	
+.banner-slider .slider.slider-for {
+    max-width: 100%;
+    padding-left: 0;
+}
+.slider-banner-image {
+    height: 310px;
+}	
+.vehicle-detail-banner .slider-nav .slick-slide.thumbnail-image .thumbImg {
+    max-width: 70px;
+    height: 70px;
+    margin: 0;
+}
+.productdetail h2 {
+    font-size: 22px;
+}	
+.productdetail p {
+    font-size: 13px;
+	margin-bottom: 5px;
+}	
+.devicebox {
+    padding: 30px 0 0;
+}	
+.moreblog .container {
+    width: 100%;
+}
+.moreblog h3 {
+    font-size: 15px;
+    margin-bottom: 5px;
+    line-height: 24px;
+}	
+	
+.abouthero {
+    padding: 50px 0;
+	margin-top: 55px;
+}	
+.abouthero h1 {
+    font-size: 42px;
+    line-height: 50px;
+}	
+.aboutwrap h2 {
+    font-size: 26px;
+    margin-bottom: 15px;
+}	
+.aboutwrap p {
+    font-size: 18px;
+    line-height: 28px;
+    padding: 0 50px;
+}	
+.aboutpage p {
+    font-size: 18px;
+    line-height: 30px;
+}	
+.MeetVisionary {
+    padding: 25px 15px;
+}	
+.MeetVisionary .container {
+    padding: 20px;
+}	
+.MeetVisionary h2 {
+    padding: 10px 5px;
+    font-size: 20px;
+}	
+.MeetVisionary p {
+    font-size: 16px;
+    line-height: 28px;
+    margin-top: 0;
+}	
+.whatweoffer {
+    padding: 0;
+}	
+.contactbanner {
+    padding: 75px 0;
+}	
+.contactbx h2 {
+    font-size: 26px;
+    margin-bottom: 20px;
+    padding-bottom: 25px;
+    line-height: 42px;
+}	
+.signRight {
+    padding: 75px 40px 20px;
+}
+.BenefitStudy .card img {
+    left: 15px;
+    height: 32px;
+}	
+.BenefitStudy .card {
+    padding: 15px 5px 10px 70px;
+    font-size: 18px;
+    line-height: 26px;
+}	
+.SleepStudy {
+    padding: 40px 0 20px;
+}	
+.PartnerFrequently {
+    padding: 20px 0 0;
+}	
+.PartnerFrequently h2 {
+    font-size: 30px;
+    line-height: 42px;
+}	
+.PartnerFrequently h2 br{ display: none;}	
+
+.partnerform .card li:nth-child(2) {
+    padding: 15px 0 10px 20px;
+    width: 43%;
+    line-height: 22px;
+    height: auto;
+}	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+}
+ 
+
+@media screen and (max-width:767px) {
+.m-hide { display: none !important; }
+.d-hide { display: block !important; }
+.maintitle h2 {
+    font-size: 24px;
+}
+header {
+    width: 100%;
+    box-shadow: 0px 1px 4.4px 0px rgba(0, 0, 0, 0.25);
+    background: #1EC29D;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 999;
+}	
+header .navbar {
+    padding:9px 15px;
+	height: 55px;
+}
+header .navbar .navbar-brand {
+    padding: 0 0 0 45px;
+}	
+header .navbar .navbar-brand img{
+	width: 150px;
+}	
+header .navbar-toggler-icon {
+    position: absolute;
+    left: 12px;
+    top: 16px;
+    background: url(../images/menu-b.svg) left top no-repeat;
+    width: 26px;
+    height: 24px;
+    background-size: 100%;
+}
+header .navbar-collapse {
+    width: 100%;
+    left: 0;
+    right: 0;
+    top: 55px;
+    position: absolute;
+    z-index: 99;
+    background: #E6F8F3;
+	padding-bottom: 50px;
+}
+header .navbar-nav .dropdown-menu {
+    position: static;
+    float: none;
+    background: #f3f3f3;
+}
+header .navbar-expand-md .navbar-nav .nav-link {
+    padding: 18px 20px;
+    font-size: 16.5px;
+	color: #1EC29D;
+}
+header .navbar-expand-md .navbar-nav .nav-link.active{
+	color: #1B997C;
+	font-weight: 700;
+	border-bottom: 1px solid #1B997C;
+}
+	
+	
+	
+.wrap .fa {
+    top: 9px;
+}	
+.mobileCart {
+    width: 120px;
+    position: absolute;
+    right: 0;
+	text-align: right;
+}
+.mobileCart li{
+	float: inherit;
+	margin: 0 8px;
+	display: inline-block;
+}
+.mobileCart li img{
+	width: 22px; 
+	height: auto;
+}	
+.wrap {
+    right: 92px;
+}
+	
+	
+.heroarea {
+    padding: 0;
+    margin-top: 54px;
+	overflow: hidden;
+}	
+
+.heroarea .slide1{ background: url("../images/herobg.png") left top no-repeat; background-size: cover; position: relative; padding: 20px 15px 320px; overflow: hidden;}
+.heroarea .slide1 img{ position: absolute; top: auto; right: 0; bottom: 0; width: 100%;}
+.heroarea .slide2{ background: url("../images/herobg.png") left top no-repeat; background-size: cover; position: relative; padding: 20px 15px 320px; overflow: hidden;}
+.heroarea .slide2 img{ position: absolute; top: auto; right: 0; bottom: 0; width: 100%;}
+.heroarea .slide3{ background: url("../images/herobg.png") left top no-repeat; background-size: cover; position: relative; padding: 20px 15px 320px; overflow: hidden;}
+.heroarea .slide3 img{ position: absolute; top: auto; right: 0; bottom: 0; width:100%;}
+
+.heroarea h1 {
+    margin-bottom: 20px;
+    padding-bottom: 5px;
+    line-height: 32px;
+    font-size: 22px;
+}	
+.heroarea h1:before {
+    width: 170px;
+    height: 2px;
+    bottom: -10px;
+}	
+.heroarea p {
+    font-size: 16px;
+    line-height: 22px;
+    margin-bottom: 15px;
+}	
+.heroarea p a {
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 15px;
+}
+.SleepApnea .container {
+    margin-top: 0;
+    padding: 0 25px;
+}	
+.SleepApnea {
+    padding: 0;
+    margin-top: 5px;
+}
+.SleepApnea h2 {
+    font-size: 22px;
+	text-align: center;
+    margin: 15px 0 25px;
+}	
+.SleepApnea h2:before, .SleepApnea h3:before{
+	display: none;
+}
+.SleepApnea h3 {
+    font-size: 16px;
+    text-align: center;
+    margin-top: 30px;
+    margin-bottom: 10px;
+}	
+.SleepApnea img{
+	width: 75%;
+	height: auto;
+}	
+.SleepApnea .card {
+    padding: 20px 0 20px;
+    border: 0px;
+}	
+.SleepApnea ul {
+    margin: 35px 0 15px 0;
+}
+.SleepApnea li {
+    line-height: 20px;
+    display: initial;
+    margin: 13px;
+    text-align: center;
+	font-size: 14px;
+}	
+.SleepApnea p a.btn-call {
+    width: auto;
+}	
+.SleepApnea p {
+    text-align: center;
+    font-size: 15px;
+    line-height: 24px;
+    margin-top: 20px;
+    margin-bottom: 0;
+}
+.exportmedical .container .card {
+    border: 0;
+    padding: 0;
+    border-radius: 0;
+}
+.exportmedical {
+    padding: 60px 0 0;
+}	
+.exportmedical h2 {
+    font-size: 20px;
+    margin-bottom: 25px;
+    max-width: 250px;
+    margin: 0 auto 35px;
+}
+.exportmedical .slick-slide {
+    margin: 0px 13px;
+}	
+.OurImpact {
+    padding: 60px 0;
+}	
+.OurImpact h2 {
+    font-size: 24px;
+    margin-bottom: 25px;
+}	
+.OurImpact .reachwrap {
+    background: url("../images/reachbg-mobile.png") center top no-repeat;
+    background-size: cover;
+    height: auto;
+}	
+.impactbox {
+    padding: 5px 0 20px 120px;
+    background: #1EC29D;
+    border-radius: 0 0 20px 20px;
+    position: relative;
+}	
+.impactbox img {
+    width: 64px;
+    position: absolute;
+    left: 30px;
+    top: 20px;
+}	
+.impactbox h3 {
+    color: #fff;
+    font-size: 40px;
+    font-weight: 700;
+    margin: 10px 0 10px;
+	text-align: left;
+}	
+.impactbox p {
+    font-size: 18px;
+	text-align: left;
+}	
+.ImpactIndent img {
+    width: auto;
+    height: 30px;
+}	
+.ImpactIndent h3 {
+    font-size: 20px;
+    margin: 10px 0 5px;
+}	
+.ImpactIndent p {
+    font-size: 14px;
+    line-height: 20px;
+    padding: 0 5px;
+}	
+.ImpactIndent {
+    padding: 15px 0 10px;
+}
+.journeymap .container{
+	padding: 0 15px;
+	overflow-x: scroll;
+}	
+.journeymap .container img{
+	width: 670px;
+	max-width: inherit;
+	height: auto;
+}
+	
+.ClientJourney {
+    padding: 0;
+}	
+.ClientJourney h2 {
+    font-size: 22px;
+    max-width: 250px;
+    margin: 0 auto 25px;
+}	
+.valueclient {
+    padding: 60px 0;
+}
+.valueclient .container{
+	padding: 0px;
+}	
+.valueclient .slick-slide.slick-current.slick-active.slick-center {
+    margin: 0 10px 15px;
+}
+.valueclient .slick-slide.slick-current.slick-active.slick-center .card {
+    padding: 20px 15px 15px;
+}	
+.valueclient .slick-slide {
+    margin: 0 10px 15px;
+}	
+.valueclient .card {
+	margin: 0 auto;
+	width: 90%;
+	padding: 20px;
+}
+.valueclient h4 {
+    margin-bottom: 10px;
+    padding-top: 0;
+    font-size: 20px;
+}	
+.valueclient p {
+    font-size: 15px;
+    line-height: 22px;
+}	
+.valueclient h3 {
+    margin-bottom: 10px;
+    font-size: 16px;
+}	
+.profile {
+    padding-left: 80px;
+    margin-bottom: 15px;
+    height: 65px;
+}
+.profile img {
+    width: 65px;
+    height: 65px;
+}	
+.valueclient h2 {
+    font-size: 20px;
+    margin-bottom: 25px;
+    padding: 0 10px;
+}	
+.homeplan h2 {
+    font-size: 22px;
+    margin-bottom: 40px;
+}
+.homeplan .container {
+	padding: 0;
+}
+.homeplan .card.select {
+    padding: 10px 15px;
+}	
+.homeplan .card-body li {
+    font-size: 14px;
+    line-height: 20px;
+    margin-bottom: 5px;
+}	
+.homeplan .SlickActive .card-body li {
+    font-size: 15px;
+    line-height: 23px;
+    margin-bottom: 10px;
+}	
+.homeplan .card-body ul {
+    height: 210px;
+}
+.homeplan .card.select .card-body ul {
+    height: 170px;
+}
+.title-reco {
+    font-size: 20px;
+    margin-bottom: 35px;
+    padding: 0 0 10px;
+}
+.homeplan .card.select:before {
+    height: 92px;
+}	
+.homeplan .slick-slide	{
+	margin: 0 10px;
+}
+.homeplan .card-body {
+    padding: 25px 10px 10px;
+}
+.homeplan .card-header h3 {
+    font-size: 20px;
+}	
+.homeplan {
+    padding: 10px 0 40px;
+	margin-top: 40px;
+}	
+.homeplan h4 {
+    font-size: 18px;
+    margin-top: 20px;
+    line-height: 26px;
+    padding: 0 15px;
+}	
+.btn-call {
+    padding: 12px 30px 11px;
+    font-size: 16px;    
+    width: 90%;
+    margin: 12px auto 0;
+}	
+.healthsolutioin h2 {
+    font-size: 22px;
+    margin-bottom: 25px;
+}	
+.healthsolutioin .card-thumb {
+    height: auto;
+    padding: 10% 10px;
+}	
+.healthsolutioin {
+    padding: 50px 0;
+}
+.healthsolutioin .container {
+    width: 100%;
+    max-width: 100%;   
+}
+.healthsolutioin .card {
+    border-radius: 10px;
+}	
+.healthsolutioin .card-body {
+    padding: 10px 5px 20px;
+	border-radius: 0 0 10px 10px;
+}
+.healthsolutioin .container h2 {
+    padding: 0 15px;
+    max-width: 280px;
+    margin: 0 auto 25px;
+    line-height: 28px;
+}
+.healthsolutioin h3 {
+    font-size: 16px;
+    text-align: left;
+    padding-left: 7px;
+}	
+.healthsolutioin p {
+    font-size: 18px;
+    line-height: 22px;
+    margin-top: 10px;
+    margin-bottom: 0;
+    text-align: left;
+    padding-left: 10px;
+}	
+.healthsolutioin p span.rate__col {
+    padding: 3px 8px 1px;
+    font-size: 15px;
+}	
+.healthsolutioin p a {
+    padding: 6px 20px 7px;
+    width: 45%;
+    margin: 0 2px;
+    font-family: 'Quicksand', sans-serif;
+    font-size: 13px;
+}	
+.moreblog {    
+    padding: 0 0 40px;
+}
+.moreblog .container {
+    width: 100%;
+}	
+.moreblog h2 {
+    font-size: 22px;
+    max-width: 300px;
+    margin: 0 auto 25px;
+}	
+footer {
+    padding: 20px 0 10px;
+}	
+footer .copyright {
+    font-size: 16px;
+    margin-top: 20px;
+    text-align: center;
+}
+footer h2 {
+    margin-top: 25px;
+}	
+.socialfooter {
+    text-align: left;
+}
+.socialfooter a {
+    margin:0 10px 0 0;
+}
+footer .copytop {
+    padding-top: 20px;
+    text-align: left;
+	font-family: 'Quicksand', sans-serif;
+}	
+.moreblog h3 {
+    font-size: 15px;
+    line-height: 20px;
+}	
+.moreblog .card-body {
+	padding: 10px;
+}	
+.moreblog p {
+    font-size: 11px;
+    line-height: 18px;
+    margin-bottom: 10px;
+}	
+.moreblog .card {
+    border-radius: 10px;
+}	
+.moreblog .card-thumb {
+    border-radius: 10px 10px 0 0;
+}	
+.assistenceFixed {
+    width: 45px;
+    right: 15px;
+    bottom: 15px;
+}	
+.assistenceFixed a svg {
+    width: 35px;
+    height: 35px;
+}
+.heroinner .container{
+	padding: 0px;
+	background: #1EC29D;
+}
+.heroinner .innerproduct {
+    background: none;
+}
+.heroleft:after{ display: none;}
+.heroinner {
+    margin-top: 52px;
+}	
+.heroinner h1 {
+    font-size: 32px;
+    line-height: 45px;
+    margin-bottom: 10px;
+}
+.heroinner h1 span {
+    font-size: 28px;
+}
+.heroinner p {
+    font-size: 24px;
+}
+.heroinner p span {
+    line-height: 28px;
+	padding: 3px 8px
+}	
+.heroleft {
+    width: 100%;
+    padding: 15px 20px;
+    height: auto;
+    text-align: center;
+}
+.heroright {
+    width: 100%;
+    background: #E6F8F3;
+    height: auto;
+    padding: 15px;
+}	
+	
+.selectwrap .form-control.w25 {
+    width: 100% !important;
+}	
+.devicewrap .card {
+    border-radius: 10px;
+    border: 1px solid #1EC29D;
+    margin: 10px 0;
+	box-shadow: inherit;
+}	
+.devicewrap .card-thumb {
+    height: auto;
+    padding: 20px 10px;
+    overflow: hidden;
+}	
+.devicewrap .card-body {
+    border-top: 1px solid #1EC29D;
+    border-radius: 0 0 10px 10px;
+	padding: 7px 7px 2px;
+}	
+.devicewrap h3 {
+    font-size: 16px;
+    margin-bottom: 10px;
+    line-height: 22px;
+}	
+.devicewrap p {
+    font-size: 14px;
+    line-height: 20px;
+    margin-bottom: 10px;
+}
+.devicewrap p a {
+    padding: 6px 5px;
+    width: 48%;
+    margin: 6px 0;
+    font-size: 11px;
+    font-weight: 500;
+}	
+.devicebox {
+    padding: 30px 0 0;
+}	
+.devicebox h2 {
+    font-size: 24px;
+}	
+.devicebox p {
+    font-size: 14px;
+    line-height: 22px;
+    margin-bottom: 15px;
+}	
+.devicebox h3 {
+    font-size: 20px;
+    margin-bottom: 12px;
+}	
+.devicebox li {
+    font-size: 14px;
+    line-height: 22px;
+    margin-bottom: 10px;
+}	
+.faqwrap {
+    padding: 20px 0;
+}	
+.faqwrap h2 {
+    font-size: 20px;
+}	
+.faqwrap .accordion .item .item-header h2 button { white-space: inherit;}	
+.vehicle-detail-banner .slick-next {
+    display: none !important;
+}	
+.vehicle-detail-banner {
+    margin-bottom: 20px;
+    padding-bottom: 65px;
+    border-bottom: 1px solid rgba(30, 194, 157, 0.50);
+}
+.productdetail h2 {
+    font-size: 22px;
+    margin-top: 25px;
+}	
+.productwrap {
+    padding: 80px 0 20px;
+}	
+.devicebox {
+    padding: 20px 0 0;
+}
+.cartwrap {
+    padding: 80px 0 20px;
+}	
+.cartBox {
+    padding: 10px 22px 10px 10px;
+    margin-bottom: 20px;
+	border-radius: 10px;
+}	
+.btn-now {
+    font-size: 14px;
+    padding: 9px 10px;
+    display: inline-block;
+    width: 47%;
+    vertical-align: top;
+    margin: 15px 2px 0;
+}	
+.cartBox h2 {
+    font-size: 18px;
+    margin-bottom: 7px;
+}
+.cartBox .close {
+    top: 6px;
+    right: 10px;
+    width: 15px;
+    height: 15px;
+    z-index: 9;
+}	
+.cartwrap h1 {
+    font-size: 26px;
+    margin-bottom: 15px;
+}	
+.abouthero h1 {
+    font-size: 26px;
+    line-height: 35px;
+}
+.aboutwrap {
+    padding: 0 15px;
+}	
+.aboutwrap h2 {
+    font-size: 20px;
+    margin-bottom: 15px;
+    line-height: 28px;
+}	
+.aboutwrap p {
+    font-size: 15px;
+    line-height: 24px;
+    padding: 0 12px;
+}	
+.aboutpage {
+    padding: 0 15px;
+    margin-top: 0;
+}	
+.aboutpage .container {
+    padding: 30px 22px 5px;
+}	
+.aboutpage .container img{ width: 120px; height: auto; margin: 0 auto 15px;}	
+.aboutpage p {
+    font-size: 18px;
+    line-height: 30px;
+    text-align: center;
+    margin-bottom: 25px;
+}	
+.MeetVisionary p {
+    text-align: center;
+}	
+.whatweoffer h2 {
+    font-size: 26px;
+}	
+.whatweoffer p {
+    font-size: 16px;
+    line-height: 25px;
+    padding: 0 0 15px;
+    text-align: center;
+}	
+.contactbanner {
+    padding: 85px 0;
+	margin-top: 55px;
+}	
+.contactbanner h1 {
+    font-size: 26px;
+    line-height: 40px;
+}
+.contactbx {
+    padding: 15px;
+}	
+.contactbx .container {
+    padding: 20px 20px;
+}	
+.goodNight h2 {
+    font-size: 26px;
+    line-height: 36px;
+}	
+.goodNight p {
+    font-size: 16px;
+    line-height: 22px;
+    margin-bottom: 25px;
+}
+.goodNight p br{ display: none;}	
+
+.blog-banner .blog-slide {
+    padding: 60px 0px 40px;
+}
+.blog-banner h2 {
+    font-size: 25px;
+    line-height: 35px;
+}
+.blog-banner p {
+    font-size: 16px;
+    line-height: 26px;
+    padding-left: 0;
+    padding-top: 32px;
+}
+.blogdetail {
+    padding: 20px 0;
+}
+.blogdetail p {
+    font-size: 14px;
+    line-height: 24px;
+    margin-bottom: 25px;
+}
+.PopularTopics {
+    padding: 30px 0;
+}
+.PopularTopics h2 {
+    font-size: 26px;
+}
+.PopularTopics .card-thumb {
+    border-radius: 6px 0 0 6px;
+    width: 40%;
+    float: left;
+}
+.PopularTopics .card {
+    margin-bottom: 15px;
+    display: block;
+}
+.PopularTopics .card-body {
+    float: right;
+    width: 60%;
+    display: inline-block;
+    padding:10px 15px;
+}
+.PopularTopics h3, .PopularTopics p{
+	display: none;
+}
+
+
+.signLeft {
+    width: 100%;
+    height: 280px;
+    overflow: hidden;
+}	
+.signLeft .logo {
+    bottom: auto;
+    width: 200px;
+    margin: 0 auto;
+    top: 25px;
+}
+.signLeft img.img-fluid {
+    height: auto;
+    margin-top: -50px;
+}	
+.signRight {
+    width: 100%;
+    padding: 20px 25px 10px;
+}
+.signRight h2 {
+    font-size: 22px;
+    margin-bottom: 20px;
+}
+.signRight .form-group {
+    margin-bottom: 20px;
+}	
+.signRight .form-control {
+    height: 40px;
+}	
+.signRight .btn-submit {
+    padding: 8px 15px 10px;
+    font-size: 16px;
+}	
+.SleepStudy h2, .BenefitStudy h2, .PartnerFrequently h2 {
+    font-size: 22px;
+    margin-bottom: 20px;
+    line-height: 32px;
+}
+.SleepStudy p {
+    font-size: 15px;
+    line-height: 24px;
+    margin-bottom: 12px;
+}	
+.partnerform h3 {
+    font-size: 20px;
+    padding: 6px 12px;
+    width: 80%;
+    margin-bottom: 5px;
+}	
+.partnerform {
+    padding: 30px 0;
+}	
+	
+.partnerform .card {
+    margin: 10px 0;
+}	
+.partnerform .card li:last-child {
+    width: 100px;
+    padding: 9px 0 0;
+}	
+.switch-field label {
+    font-size: 13px;
+    line-height: 15px;
+    padding: 15px 10px 3px;
+    height: 42px;
+}	
+.switch-field label:first-of-type {
+    margin: 0 5px;
+}	
+.partnerform .card li:nth-child(2) {
+    padding: 10px 0 10px 10px;
+    width: 56%;
+    font-size: 12px;
+    line-height: 16px;
+}
+.partnerform .btn-submit {
+    font-size: 22px;
+    margin-top: 15px;
+    width: 100%;
+}	
+.SymptomsHealthRisks {
+    padding: 10px 0;
+}	
+.SymptomsHealthRisks h3 {
+    font-size: 22px;
+    padding-bottom: 10px;
+    margin:15px 0;
+}	
+.BenefitStudy p {
+    font-size: 16px;
+    margin-bottom: 25px;
+    line-height: 24px;
+}	
+.BenefitStudy {
+    padding: 40px 0;
+    margin-top: 20px;
+}	
+.BenefitStudy .card {
+    padding: 11px 5px 10px 140px;
+    font-size: 22px;
+    line-height: 30px;
+    height: auto;
+    margin: 5px 0;
+}
+.BenefitStudy .card img {
+    left: 45px;
+    height: 50px;
+    top: 11px;
+}
+.BenefitStudy .card.mb-4{ margin-bottom: 15px !important}	
+.blog-banner {
+    margin-top: 55px;
+}	
+header .nav-item .nav-link.active:after { display: none;}	
+.star {
+    font-size: 14px;
+}	
+.faqwrap .accordion .item .item-header h2 button.btn.btn-link {
+    font-size: 13px;
+	line-height: 24px;
+    padding: 10px 25px 10px 10px;
+}	
+.faqwrap .faq-txt {
+    padding: 15px;
+    line-height: 28px;
+    font-size: 15px;
+}
+.valueclient  .slick-dots {
+    bottom: -40px;
+}	
+.devicewrap {
+    padding: 30px 0 0;
+}	
+/* Update mobile view */
+.customerReviews h2 {
+    font-size: 22px;
+    margin-bottom: 5px;
+}	
+.product__rating .card-body {
+    padding: 15px 0;
+    margin-bottom: 0;
+	border: 0px;
+}	
+.product__rating .card-body h3 {
+    font-size: 45px;
+    line-height: 60px;
+    margin-bottom: 5px;
+}
+.rating {
+    margin: 0 0 10px;
+    font-size: 13px;
+}
+.product__rating .card-body p {
+    font-size: 14px;
+}	
+.rating__avarge {
+    border-radius: 15px;
+    padding: 10px 0;
+	border: 0px;
+}	
+.rating__avarge li {
+    padding: 2px 0;
+}	
+.progress {
+    display: inline-block;
+    width: 45%;
+    height: 4px;
+    margin-right: 5px;
+}
+.more-review {
+    padding: 25px 0 0;
+}
+.rating__persent {
+    font-size: 14px;
+    color: #1B997C;
+    display: inline-block;
+    width: 40px;
+    text-align: center;
+}	
+.rating__star {
+    font-size: 10px;
+    margin-left: 0;
+    margin-top: 0;
+}	
+.product__rating {
+    margin-bottom: 15px;
+	border-bottom: 1px solid rgba(30, 194, 157, 0.50);
+	padding-bottom: 10px;
+}	
+.userFeedback li {
+    padding: 10px 0 15px 65px;
+}	
+.User-profile {
+    width: 50px;
+    height: 50px;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 50px;
+    top: 10px;
+}	
+.userFeedback li h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}	
+.customerReviews {
+    padding: 0 0 30px;
+}	
+.userFeedback li .rating {
+    margin-bottom: 12px;
+}	
+.userFeedback li h4 {
+    font-size: 13px;
+    margin-bottom: 8px;
+}	
+.userFeedback li p {
+    font-size: 12px;
+    line-height: 20px;
+}	
+.checkoutwrap {
+    padding: 80px 0 30px;
+}	
+.Status__cart li .cart-txt{
+	display: none;
+}	
+.Status__cart {
+    margin-bottom: 10px;
+    border-radius: 5px;
+    padding: 10px;
+}
+.checkoutPayment {
+    border-radius: 5px;
+    margin-bottom: 15px;
+    padding: 15px;
+	    box-shadow: inherit;
+}	
+.payment__card {
+    width: 100%;
+    padding-left: 0;
+    padding: 10px 25px;
+}
+.sucess-pic{
+	width: 65px;
+	height: auto
+}
+.order__successfull h2 {
+    font-size: 22px;
+    margin: 25px 0 35px;
+}	
+.address_order .card-address {
+    border-right: 0;
+    border-bottom: 1px solid #1B997C;
+    padding: 15px 0;
+}	
+.address_order {
+    margin-bottom: 5px;
+    padding: 15px 20px 0px;
+    margin-top: 20px;
+	border-radius: 5px;
+}	
+.order__successfull {
+    padding: 75px 0 40px;
+}	
+.track__order {
+    padding: 80px 0 30px;
+}
+.track__order h2 {
+    font-size: 25px;
+    margin-bottom: 20px;
+}	
+.track__status {
+    padding: 0 20px;
+}
+.track__status li {
+    width: 100%;
+    padding: 0 0 0 60px;
+	height: 110px;
+}	
+.track__status li:first-child {
+    width: 100%;
+}	
+.track__status li .check{
+	position:absolute;
+	left: 0;
+	top: 5px;
+}	
+.track__status li:after {
+    width: 6px;
+    height: 100%;
+    left: 12px;
+}	
+.track__status li .float-right{
+	float: left !important;
+}	
+.track__status li:last-child {
+    text-align: left;
+	height: auto
+}	
+.track__status li:last-child br{
+	display: none;
+}	
+.track__status li:last-child:after{
+	display: none
+}	
+
+.productwrap h2{
+ 	font-size: 16px;
+	font-weight: 600;
+	margin-bottom: 10px;
+}
+.mrp-txt {
+    display: inline;
+    margin-top: 9px;
+    padding-left: 0;
+    font-size: 12px;
+	font-family: 'Quicksand', sans-serif;
+}
+.price__product {
+    margin-bottom: 15px;
+    padding-left: 10px;
+    margin-top: 6px;
+	font-family: 'Quicksand', sans-serif;
+}
+.price-txt {
+    font-size: 28px;
+	font-family: 'Quicksand', sans-serif;
+}	
+.off-txt {
+    font-size: 12px;
+    display: inline-block;
+    padding-left: 0px;
+    margin-top: 3px;
+	font-family: 'Quicksand', sans-serif;
+}	
+.price__product .off-txt {
+    font-size: 19px;
+    margin-top: 0;
+    vertical-align: 5px;
+}
+.price__product .mrp-txt{
+	display: block;
+	font-size: 18px;
+	margin-bottom: 20px;
+}	
+.productwrap .btn-now {
+    font-size: 14px;
+    padding: 9px 10px;
+    display: block;
+    width: 100%;
+    margin: 0;
+}	
+.productdetail p {
+    margin-top: 15px;
+}	
+.checkout__data .form-control, .checkout__data select.form-control:not([size]):not([multiple]) {
+    border: 1px solid #E0E0E0;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #333;
+    height: 40px;
+}
+.makepayment a {	
+    padding: 14px 10px;
+    font-size: 16px;
+}
+.PriceShow li {
+    font-size: 13px;
+    padding: 6px 0;
+}	
+.cardProduct h4 {
+    font-size: 16px;
+    margin-bottom: 8px;
+    line-height: 20px;
+	height:20px;
+	text-overflow:ellipsis;
+	overflow:hidden;
+	white-space:nowrap;
+}	
+.checkout__data h2 {
+    font-size: 18px;
+    margin-bottom: 25px;
+}	
+.write__review {
+    padding: 85px 0 30px;
+}	
+.write__review h2 {
+    font-size: 24px;
+    margin-bottom: 15px;
+}	
+.checkoutPayment.mb-5{
+	margin-bottom: 25px !important
+}	
+.write__review h6 {
+    font-size: 16px;
+    margin: 0 0 15px;
+}	
+.write-rating {
+    margin-bottom: 40px;
+}	
+.review-add {
+    margin: 25px 0 20px;
+}	
+.write__review .form-control {
+    height: 48px;
+    font-size: 14px;
+}	
+.write__review .form-control.message {
+    height: 110px;
+}	
+.write__review .makepayment a {
+    display: block;
+}	
+.CardShow {
+    margin-bottom: 20px;
+    /* border-top: 0; */
+    padding-top: 15px;
+}	
+.cartDetail {
+    margin-bottom: 10px;
+}	
+.devicewrap p span.rate__col{
+	color: #fff;
+    font-weight: 300;
+    background: #1EC29D;
+    border-radius: 3px;
+    display: inline-block;
+    line-height: 24px;
+    padding: 0 6px;
+}	
+.devicewrap p span{
+	font-weight: 700;
+	font-size: 10px;
+}
+.devicewrap .col-md-6{
+	padding-left: 8px;
+	padding-right: 8px;
+}	
+.devicewrap .col-6{
+	padding-left: 8px;
+	padding-right: 8px;
+}		
+.devicewrap .card-thumb img {
+    width: 70%;
+    height: auto;
+}	
+	
+.scoreLine {
+    border-radius: 8px;
+    height: 36px;
+    position: relative;
+    background-size: 100%;
+}	
+.scoreLine .pointer {
+    top: 22px;
+}	
+.YourScore .SorceDetail{
+	padding: 25px 0 0
+}	
+.YourScore .SorceDetail li {
+    padding: 12px 0;
+    position: relative;
+    color: #1B997C;
+    font-size: 13px;
+    font-weight: 500;
+}	
+.YourScore {
+    padding: 40px 0;
+}	
+.YourScore h2 span {
+    font-size: 17px;
+    line-height: 19px;
+    border-radius: 10px;
+    padding: 12px 20px;
+}	
+.YourScore h2 {
+    margin-bottom: 30px;
+    text-align: center;
+}	
+.SymptomsHealthRisks p {
+    color: #232828;
+    font-family: 'Quicksand', sans-serif;
+    padding: 10px 0 10px 45px;
+    position: relative;
+    font-size: 18px;
+}	
+.faqwrap .accordion .item .item-header h2 i {
+    top: 13px;
+    right: 12px;
+}
+.rent-price h6 {
+    font-size: 14px;
+    margin-bottom: 6px;
+}	
+.mobileProduct{
+	border-bottom: 1px solid #1EC29D;
+	padding: 0 0 25px;
+	margin-bottom: 25px;
+}	
+.productwrap .container {
+    padding-bottom: 30px;
+}	
+	
+.cartwrap .price__product{
+	padding: 0;
+	margin: 0;
+}	
+.cartwrap .price-txt{
+	font-size: 17px;	
+}
+.cartwrap .price__product .mrp-txt {
+    display: inline-block;
+    font-size: 15px;
+    margin-bottom: 5px;
+	margin-top: 0;
+	padding-left: 0px;
+}	
+.cartwrap .star {
+    font-size: 15px;
+    margin-bottom: 10px !important;
+}	
+.cartwrap .col-5{ padding-right: 5px}	
+.cartwrap .col-7{ padding-left: 5px; padding-right: 5px;}	
+.cartwrap .price__product .off-txt { font-size: 16px;}
+.price__details {
+    border-radius: 10px;
+    padding: 15px;
+}	
+.price__details h4 {
+    font-size: 18px;
+    padding-bottom: 12px;
+}	
+.price__details .card-body	{ padding: 0px;}
+.makepayment {
+    padding: 15px 0 0;
+}	
+.Status__cart li {
+    width: 33.33%;
+}
+.Status__cart li:last-child{
+	display: none
+}
+.Status__cart li span.check {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+    line-height: 20px;
+}	
+.Status__cart li:after {
+    height: 3px;
+    top: 9px;
+}
+.Status__cart li:first-child:after {
+    width: 50%;
+}
+.Status__cart li:nth-child(3):after {
+    width: 40%;
+	right: auto;
+	left: 0;
+} 	
+	
+.checkout__data label {
+    font-size: 14px;
+}	
+.order__successfull .Status__cart{ margin-bottom: 35px;}	
+.order__successfull .cardProduct h4{ word-wrap: normal; white-space: nowrap;        overflow: hidden; text-overflow: ellipsis;}	
+	
+.faqwrap .accordion .item .item-header h2 i img {
+    width: 9px;
+}	
+.meetprofile {
+    width: 65%;
+    height: 230px;
+    margin: 0 auto 15px;
+}	
+.MeetVisionary h5 {
+    margin-bottom: 30px;
+    font-size: 15px;
+}	
+.MeetVisionary h4 {
+    margin-bottom: 7px;
+    font-size: 20px;
+}	
+.contactbx .form-control {
+    border-radius: 6px;
+    height: 48px;
+}	
+.contactbx .btn-submit {
+    border-radius: 6px;
+    width: 100%;
+}	
+.contactbx h2 {
+    font-size: 20px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    line-height: 26px;
+}
+.contactbx h2:after {
+    width: 140px;
+    height: 2px;
+}	
+.contactbx p {
+    font-size: 16px;
+    line-height: 24px;
+    margin-bottom: 20px;
+}	
+.contactbx h3 {
+    font-size: 24px;
+}	
+.no_order {
+    padding: 100px 0 40px;
+}
+.no_order img{ width: 62%; margin-bottom: 25px;}
+.no_order h2 {
+    font-size: 22px;
+    margin-bottom: 8px;
+}	
+.no_order p {
+    font-size: 16px;
+    margin-bottom: 20px;
+    line-height: 24px;
+}	
+.healthsolutioin .slick-slide .mrp-txt{ margin-left: 10px;}	
+	
+.track__order .cardProduct h4 {
+    font-size: 17px;
+    margin: 0 0 12px;
+}	
+.track__order .cardProduct p {
+    font-size: 16px;
+    margin-bottom: 7px;
+}	
+	
+	.custom-container{
+        grid-template-columns: 1fr;
+        padding: 10px;
+    }
+
+    .custom-image{
+        width: 100%;
+        object-fit: cover;
+    }
+	
+	.custom-image img{
+        width: 100%;
+        object-fit: cover;
+    }
+
+	
+	
+}
+
+
+

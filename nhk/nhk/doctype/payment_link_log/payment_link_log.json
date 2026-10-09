@@ -1,0 +1,219 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "format:RZP-LNK-{MM}-{YY}-{#####}",
+ "creation": "2024-05-30 17:04:29.893690",
+ "default_view": "List",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "sales_order",
+  "order_type",
+  "customer_id",
+  "customer_name",
+  "contact_person",
+  "mobile_number",
+  "live_link",
+  "payment_ids",
+  "expiry_datetime",
+  "column_break_yucj",
+  "date_of_generation",
+  "total_amount",
+  "payment_status",
+  "link_short_url",
+  "link_id",
+  "enabled",
+  "paid_amount",
+  "balance_amount",
+  "payment_entry_id",
+  "journal_entry_id",
+  "test_data_status",
+  "section_break_vejk",
+  "razorpay_payment_details"
+ ],
+ "fields": [
+  {
+   "fieldname": "sales_order",
+   "fieldtype": "Data",
+   "label": "Sales Order",
+   "options": "Sales Order",
+   "read_only": 1
+  },
+  {
+   "fieldname": "customer_id",
+   "fieldtype": "Link",
+   "in_filter": 1,
+   "in_standard_filter": 1,
+   "label": "Customer ID",
+   "options": "Customer",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "customer_id.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Customer Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "customer_id.mobile_number",
+   "fieldname": "contact_person",
+   "fieldtype": "Data",
+   "label": "Contact Person",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "customer_id.mobile_number",
+   "fieldname": "mobile_number",
+   "fieldtype": "Data",
+   "label": "Mobile Number",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "live_link",
+   "fieldtype": "Check",
+   "label": "Live Link",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_yucj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Now",
+   "fieldname": "date_of_generation",
+   "fieldtype": "Datetime",
+   "label": "Date of Generation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "label": "Total Amount",
+   "read_only": 1
+  },
+  {
+   "default": "created",
+   "fieldname": "payment_status",
+   "fieldtype": "Select",
+   "in_filter": 1,
+   "in_standard_filter": 1,
+   "label": "Payment Status",
+   "options": "created\npaid\npartially_paid\ncancelled\nexpired",
+   "permlevel": 2
+  },
+  {
+   "fieldname": "link_short_url",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Link Short URL",
+   "read_only": 1
+  },
+  {
+   "fieldname": "link_id",
+   "fieldtype": "Data",
+   "label": "Link ID",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "in_filter": 1,
+   "in_standard_filter": 1,
+   "label": "Enabled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "paid_amount",
+   "fieldtype": "Currency",
+   "label": "Paid Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_vejk",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "razorpay_payment_details",
+   "fieldtype": "Table",
+   "label": "Razorpay Payment Details",
+   "options": "Payment Link Log Child",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_ids",
+   "fieldtype": "Small Text",
+   "label": "Payment Ids",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_entry_id",
+   "fieldtype": "Data",
+   "label": "Payment Entry ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "journal_entry_id",
+   "fieldtype": "Data",
+   "label": "Journal Entry ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "balance_amount",
+   "fieldtype": "Currency",
+   "label": "Balance Amount",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "sales_order.order_type",
+   "fieldname": "order_type",
+   "fieldtype": "Data",
+   "label": "Order Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "test_data_status",
+   "fieldtype": "Text Editor",
+   "label": "Test data status"
+  },
+  {
+   "fieldname": "expiry_datetime",
+   "fieldtype": "Datetime",
+   "label": "Expired On",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-01-05 11:19:35.557945",
+ "modified_by": "Administrator",
+ "module": "nhk",
+ "name": "Payment Link Log",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [
+  {
+   "color": "Green",
+   "title": "paid"
+  }
+ ],
+ "track_changes": 1
+}
