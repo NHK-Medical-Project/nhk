@@ -983,17 +983,76 @@ def test_only_the_office_sees_sleep_study_pickups(cleanup):
 	assert _refused(technician_only(), ops.sleep_study_pickups)
 
 
-def test_the_list_carries_the_shortcuts_with_what_each_would_show(cleanup):
-	"""The Office tab's pills: Today first, each count equal to the list it opens."""
-	page = _list()
-	keys = [sh["key"] for sh in page["shortcuts"]]
-	assert keys == ["today", "to_assign", "active_rentals", "ready_for_pickup", "all"], keys
-	for sh in page["shortcuts"]:
-		opened = _list(order_type=sh["order_type"], status=sh["status"], since=sh["since"])
-		total = sum(opened["counts"]["order_type"].values())
-		assert sh["count"] == total, (sh, total)
-	today = page["shortcuts"][0]
-	assert today["since"] == frappe.utils.today() and today["status"] is None, today
+# --------------------------------------------------------------------------
+# month and shortcuts: the Office tab's three pills
+# --------------------------------------------------------------------------
+
+def _all_of(**kwargs):
+	names, cursor = [], None
+	while True:
+		page = _list(cursor=cursor, limit=100, **kwargs)
+		names += [r["name"] for r in page["rows"]]
+		cursor = page["next_cursor"]
+		if not cursor:
+			return names, page
+
+
+def test_three_shortcuts_each_counting_what_it_opens(cleanup):
+	for month in ("2026-09", frappe.utils.today()[:7]):
+		page = _list(month=month)
+		assert [sh["key"] for sh in page["shortcuts"]] == ["total", "to_assign", "pickups_due"], page["shortcuts"]
+		assert page["month"] == month
+		for sh in page["shortcuts"]:
+			names, _last = _all_of(month=month, shortcut=sh["key"])
+			assert len(names) == len(set(names)) == sh["count"], (month, sh, len(names))
+
+
+def test_total_and_to_assign_are_the_months_orders(cleanup):
+	month = "2026-09"
+	total, _ = _all_of(month=month, shortcut="total")
+	expected = frappe.get_all("Sales Order", filters={
+		"docstatus": 1, "transaction_date": ("between", ("2026-09-01", "2026-09-30"))}, pluck="name")
+	assert sorted(total) == sorted(expected), (len(total), len(expected))
+
+	to_assign, _ = _all_of(month=month, shortcut="to_assign")
+	rows = frappe.get_all("Sales Order", filters={"name": ("in", to_assign or [""])},
+						  fields=["order_type", "status", "transaction_date"])
+	assert all(r.status == "Order" and r.order_type in ("Sales", "Service") for r in rows)
+	assert all(str(r.transaction_date)[:7] == month for r in rows)
+
+
+def test_pickups_due_soonest_first_overdue_only_this_month(cleanup):
+	this_month = frappe.utils.today()[:7]
+	start = frappe.utils.getdate(this_month + "-01")
+	names, _ = _all_of(month=this_month, shortcut="pickups_due")
+	rows = {r.name: r for r in frappe.get_all("Sales Order", filters={"name": ("in", names or [""])},
+											   fields=["name", "order_type", "status", "end_date"])}
+	ends = [rows[n].end_date for n in names]
+	assert ends == sorted(ends), "not soonest first"
+	assert all(rows[n].order_type == "Rental" and rows[n].status in ("Active", "Ready for Pickup") for n in names)
+	assert any(e < start for e in ends), "this month should include overdue rentals"
+
+	past, _ = _all_of(month="2026-08", shortcut="pickups_due")
+	past_ends = frappe.get_all("Sales Order", filters={"name": ("in", past or [""])}, pluck="end_date")
+	assert all(str(e)[:7] == "2026-08" for e in past_ends), "another month shows only what fell due in it"
+
+
+def test_hand_set_filters_stay_inside_the_month(cleanup):
+	names, page = _all_of(month="2026-09", order_type="Rental")
+	dates = frappe.get_all("Sales Order", filters={"name": ("in", names or [""])},
+						   fields=["transaction_date", "order_type"])
+	assert all(str(d.transaction_date)[:7] == "2026-09" and d.order_type == "Rental" for d in dates)
+	assert page["counts"]["order_type"], "the filter sheet still gets its counts"
+
+
+def test_a_month_must_look_like_a_month(cleanup):
+	try:
+		_list(month="October")
+	except frappe.ValidationError as exc:
+		assert "2026-10" in str(exc), exc
+	else:
+		raise AssertionError("a malformed month was accepted")
+
 
 if __name__ == "__main__":
 	import harness
