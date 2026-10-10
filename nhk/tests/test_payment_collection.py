@@ -158,6 +158,60 @@ def test_only_the_technician_on_the_job_collects(cleanup):
 		frappe.set_user("Administrator")
 
 
+
+def test_a_payment_can_be_taken_after_delivery_or_pickup(cleanup):
+	"""The patient often pays when the device arrives or leaves, after the
+	technician has marked it (2026-10-10)."""
+	from nhk.api import payment_collection, staff
+
+	for done in ("Delivered", "Picked up"):
+		visit, _order = _job(cleanup)
+		frappe.db.set_value("Technician Visit Entry", visit, "status", done)
+
+		assert _call(staff.job, visit)["can_collect_payment"] is True, done
+		result = _collect(cleanup, visit, mode_of_payment="Cash", rental_payment_amount=100)
+		assert result["created"], (done, result)
+		frappe.set_user("Administrator")
+		# Leave the duty check-in for the next round's own `_on_duty`.
+		frappe.db.set_value("Technician Check In", {"technician_id": "NHK-TEC-002", "kind": "Duty",
+													 "closed_at": ("is", "not set")},
+							"closed_at", frappe.utils.now_datetime())
+
+
+def test_a_visit_closed_from_the_desk_without_an_answer_still_takes_a_payment(cleanup):
+	"""TEC-10-26-26352: Delivered from the desk, `technician_response` still
+	Pending, rent owed. Most done visits look like this."""
+	from nhk.api import staff
+
+	visit, _order = _job(cleanup, response="Pending")
+	frappe.db.set_value("Technician Visit Entry", visit, "status", "Delivered")
+	assert _call(staff.job, visit)["can_collect_payment"] is True
+	assert _collect(cleanup, visit, mode_of_payment="Cash", rental_payment_amount=100)["created"]
+
+
+def test_a_rejected_done_visit_and_an_unaccepted_open_one_take_none(cleanup):
+	from nhk.api import payment_collection, staff
+
+	rejected, _order = _job(cleanup, response="Rejected")
+	frappe.db.set_value("Technician Visit Entry", rejected, "status", "Picked up")
+	assert payment_collection.can_collect(frappe.get_doc("Technician Visit Entry", rejected)) is False
+
+	open_pending, _order2 = _job(cleanup, response="Pending", duty=False)
+	assert _call(staff.job, open_pending)["can_collect_payment"] is False
+
+def test_not_once_the_payout_run_has_the_visit(cleanup):
+	from nhk.api import payment_collection, staff
+
+	visit, _order = _job(cleanup)
+	frappe.db.set_value("Technician Visit Entry", visit, "status", "Incentive Finalize")
+	assert _call(staff.job, visit)["can_collect_payment"] is False
+	try:
+		_call(payment_collection.for_visit, visit)
+	except frappe.ValidationError as exc:
+		assert "Incentive Finalize" in str(exc), exc
+	else:
+		raise AssertionError("a payment was offered on a visit in the payout run")
+
 if __name__ == "__main__":
 	import harness
 	raise SystemExit(harness.run(sys.modules[__name__]))

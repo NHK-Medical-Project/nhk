@@ -12,6 +12,7 @@
   "technician_mobile_no",
   "technician_user_id",
   "assigned_by",
+  "pickup_arranged_by",
   "patient_id",
   "patient_name",
   "column_break_quoq",
@@ -208,6 +209,14 @@
    "fieldtype": "Link",
    "label": "Assigned By",
    "options": "User",
+   "read_only": 1
+  },
+  {
+   "description": "The technician who arranged this pickup from the app after their sleep study delivery. Blank when the office assigned it.",
+   "fieldname": "pickup_arranged_by",
+   "fieldtype": "Link",
+   "label": "Pickup Arranged By",
+   "options": "Technician Details",
    "read_only": 1
   },
   {
@@ -416,7 +425,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-30 19:10:00.000000",
+ "modified": "2026-10-09 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Technician Visit Entry",

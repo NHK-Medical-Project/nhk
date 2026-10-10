@@ -14,8 +14,11 @@ own "Payment Pending Reason" section: **Reason For Payment Pending** (a
 `Payment Pending Reason` from the office's list) and **Payment Pending Reason**
 (the note). The desk's DELIVERED dialog asks for the same two.
 
-Gates are the app's usual ones: on duty, the caller's own visit, still
-`Assigned` -- the desk only offers "Create Payment Entry" then -- and accepted.
+Gates: on duty and the caller's own visit. An open visit must be accepted; a
+done one (`COLLECT_STATUSES`) must only not have been rejected, since most
+were closed from the desk without an answer in the app. The patient often pays
+when the device is delivered or picked up (decided 2026-10-10; the desk
+offered the button only while open).
 Nothing here is submitted, and nothing needs the technician to have
 permission on Sales Order, Payment Entry or Journal Entry.
 """
@@ -25,7 +28,15 @@ from frappe import _
 from frappe.utils import flt, getdate, today
 
 from nhk.api import notify
-from nhk.api.guards import assert_accepted, assert_on_duty, current_technician, owned_visit
+from nhk.api.guards import (
+	RESPONSE_ACCEPTED,
+	RESPONSE_REJECTED,
+	assert_accepted,
+	assert_on_duty,
+	current_technician,
+	owned_visit,
+	response_of,
+)
 
 #: Modes the desk asks a Cheque/Reference No and Date for (the visit form's
 #: `create_payment_entry`).
@@ -43,13 +54,48 @@ NOT_PENDING_REASONS = ("test", "Paid", "DELIVERED", "DELIVERED DONE")
 OWED = ("Unpaid", "Partially Paid")
 
 
+#: Visit statuses a payment can be taken on: open, or done by the technician
+#: and not yet in the payout run (`nhk.api.visits.DONE_STATUSES`).
+COLLECT_STATUSES = ("Assigned", "Delivered", "Picked up", "Installation Done", "Service Done")
+
+
+def can_collect(visit):
+	"""Whether `collect` and `mark_pending` take this visit now, duty aside.
+
+	For `nhk.api.staff.job`, so the app shows Make Payment exactly when it works.
+	"""
+	return bool(visit.get("sales_order_id")) and _why_not_collect(visit) is None
+
+
+def _why_not_collect(visit):
+	"""Why no payment can be taken on this visit now, or None if it can.
+
+	An open visit must be accepted first, as before. A done one need not be:
+	3,460 of the 3,704 done visits on nhk.local (2026-10-10) were closed from
+	the desk and never answered in the app, and the job plainly happened. Only
+	a visit the technician rejected is refused.
+	"""
+	status = visit.get("status")
+	if status not in COLLECT_STATUSES:
+		return _("The office already marked this job {0}.").format(status)
+	response = response_of(visit)
+	if status == "Assigned":
+		return None if response == RESPONSE_ACCEPTED else _("Accept the job before you collect a payment.")
+	if response == RESPONSE_REJECTED:
+		return _("You rejected this job, so its payment is the office's.")
+	return None
+
+
 def _open_visit(visit_id):
 	technician = current_technician()
 	assert_on_duty(technician)
 	visit = owned_visit(visit_id, technician=technician)
-	if visit.status != "Assigned":
-		frappe.throw(_("The office already marked this job {0}.").format(visit.status))
-	assert_accepted(visit)
+	if visit.status == "Assigned":
+		# The guard's own message, which the app already shows for open jobs.
+		assert_accepted(visit)
+	reason = _why_not_collect(visit)
+	if reason:
+		frappe.throw(reason)
 	if not visit.sales_order_id:
 		frappe.throw(_("Visit {0} has no Sales Order to collect for.").format(visit.name))
 	return visit
