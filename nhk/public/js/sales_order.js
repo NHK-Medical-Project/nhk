@@ -676,6 +676,119 @@ nhk.sales_order_visits = {
 		);
 	},
 
+	ready_for_pickup(frm) {
+		frappe.prompt(
+			[
+				{
+					fieldname: "pickup_date",
+					fieldtype: "Datetime",
+					label: __("Pickup Date"),
+					reqd: 1,
+					default: frappe.datetime.now_datetime(),
+				},
+				{
+					fieldname: "pickup_reason",
+					fieldtype: "Select",
+					label: __("Pickup Reason"),
+					options: [
+						"Patient recovered",
+						"Patient Expired",
+						"Purchased Device from Us",
+						"Purchased Device from Others",
+						"Item Replacement",
+						"Other Reason"
+					].join("\n"),
+					default: "Other Reason",
+					reqd: 1,
+				},
+				{
+					fieldname: "pickup_remark",
+					fieldtype: "Small Text",
+					label: __("Pickup Remark"),
+					default: "Ready for Pickup",
+					reqd: 1,
+				},
+			],
+			(values) => {
+				frappe.call({
+					method: "erpnext.selling.doctype.sales_order.sales_order.make_ready_for_pickup",
+					args: {
+						docname: frm.doc.name,
+						pickup_date: values.pickup_date,
+						pickup_reason: values.pickup_reason,
+						pickup_remark: values.pickup_remark,
+					},
+					freeze: true,
+					freeze_message: __("Updating order..."),
+					callback: (r) => {
+						if (r.message) {
+							frappe.show_alert({
+								message: __("Sales Order marked as Ready for Pickup."),
+								indicator: "green",
+							});
+							frm.reload_doc();
+						}
+					},
+				});
+			},
+			__("Ready for Pickup"),
+			__("Continue")
+		);
+	},
+
+	prompt_assign_pickup(frm) {
+		frappe.prompt(
+			[
+				{
+					fieldname: "technician_id",
+					fieldtype: "Link",
+					options: "Technician Details",
+					label: __("Technician"),
+					reqd: 1,
+				},
+				{
+					fieldname: "pickup_date",
+					fieldtype: "Datetime",
+					label: __("Pickup Date"),
+					reqd: 1,
+					default: frm.doc.pickup_date || frappe.datetime.now_datetime(),
+				},
+				{
+					fieldname: "slot",
+					fieldtype: "Select",
+					label: __("Slot"),
+					options: ["Morning", "Afternoon", "Evening"].join("\n"),
+					default: "Morning",
+					reqd: 1,
+				},
+			],
+			(values) => {
+				frappe.call({
+					method: "nhk.api.pickup.assign_pickup_for_order",
+					args: {
+						sales_order_id: frm.doc.name,
+						technician_id: values.technician_id,
+						pickup_date: values.pickup_date,
+						slot: values.slot,
+					},
+					freeze: true,
+					freeze_message: __("Assigning pickup technician..."),
+					callback: (r) => {
+						if (r.message) {
+							frappe.show_alert({
+								message: __("Pickup assigned successfully."),
+								indicator: "green",
+							});
+							frm.reload_doc();
+						}
+					},
+				});
+			},
+			__("Assign Pickup Technician"),
+			__("Assign")
+		);
+	},
+
 	indicator(label, colour) {
 		return `<span class="indicator-pill ${colour}">${frappe.utils.escape_html(__(label || ""))}</span>`;
 	},
@@ -697,8 +810,6 @@ frappe.ui.form.on("Sales Order", {
 	// (frappe/public/js/frappe/form/script_manager.js: the doctype JS is
 	// evaluated, then "setup" is triggered).
 
-
-
 	setup(frm) {
 		const visits = nhk.sales_order_visits;
 		frm.cscript.mark_technician_work_done = () =>
@@ -713,9 +824,22 @@ frappe.ui.form.on("Sales Order", {
 			visits.distance_then(frm, "Delivery", "make_delivered", args);
 		frm.cscript.make_submitted_to_office = (...args) =>
 			visits.distance_then(frm, "Pickup", "make_submitted_to_office", args);
+		frm.cscript.make_ready_for_pickup = () =>
+			visits.ready_for_pickup(frm);
 	},
 
 	refresh(frm) {
 		nhk.sales_order_visits.render(frm);
+		if (
+			frm.doc.status === "Ready for Pickup" &&
+			frm.doc.order_type === "Rental" &&
+			!frm.doc.custom_technician_id_pickup
+		) {
+			frm.add_custom_button(
+				__("Assign Pickup Technician"),
+				() => nhk.sales_order_visits.prompt_assign_pickup(frm),
+				__("Action")
+			);
+		}
 	},
 });

@@ -951,6 +951,95 @@ def test_remove_job_attachment_leaves_the_offices_own_file_alone(cleanup):
 	raise AssertionError("a technician removed a file the office had attached")
 
 
+
+# --------------------------------------------------------------------------
+# comments: the visit's Frappe timeline
+# --------------------------------------------------------------------------
+
+def _forget_comments(cleanup, visit):
+	for name in frappe.get_all("Comment", filters={"reference_doctype": "Technician Visit Entry",
+												   "reference_name": visit}, pluck="name"):
+		cleanup.add("Comment", name)
+
+
+def test_job_carries_the_visits_comments_as_text(cleanup):
+	from nhk.api import staff
+
+	visit = _visit(cleanup)
+	doc = frappe.get_doc("Technician Visit Entry", visit)
+	doc.add_comment("Comment", "<p>Call before <b>9am</b></p>")
+	doc.add_comment("Info", "Something the system noted")
+	_forget_comments(cleanup, visit)
+
+	_on_duty(cleanup)
+	try:
+		comments = staff.job(visit)["comments"]
+	finally:
+		_as("Administrator")
+	assert [c["content"] for c in comments] == ["Call before 9am"], comments
+	assert comments[0]["is_mine"] is False and comments[0]["by"], comments
+
+
+def test_a_technician_comments_on_the_visits_timeline(cleanup):
+	from nhk.api import staff
+
+	visit = _visit(cleanup)
+	_on_duty(cleanup)
+	try:
+		comments = staff.add_job_comment(visit, "Gate code <1234>\nRing twice")
+	finally:
+		_as("Administrator")
+		_forget_comments(cleanup, visit)
+
+	row = frappe.get_all("Comment", filters={"reference_doctype": "Technician Visit Entry", "reference_name": visit,
+											 "comment_type": "Comment"}, fields=["content", "comment_email"])
+	assert row == [{"content": "Gate code &lt;1234&gt;<br>Ring twice", "comment_email": PILOT_USER}], row
+	assert comments[-1]["content"] == "Gate code <1234>\nRing twice", comments
+	assert comments[-1]["is_mine"] is True
+
+
+def test_a_comment_needs_text_the_callers_visit_and_duty(cleanup):
+	from nhk.api import staff
+	from nhk.api.guards import OffDuty
+
+	visit = _visit(cleanup)
+	other = _visit(cleanup, technician=OTHER_TECH, user=OTHER_USER)
+	_on_duty(cleanup)
+	try:
+		for args, expected in (((visit, "   "), frappe.ValidationError), ((other, "hello"), frappe.DoesNotExistError)):
+			try:
+				staff.add_job_comment(*args)
+			except expected:
+				pass
+			else:
+				raise AssertionError("comment accepted: %s" % (args,))
+	finally:
+		_as("Administrator")
+
+	_as(PILOT_USER)
+	staff.end_duty()
+	try:
+		staff.add_job_comment(visit, "off duty")
+	except OffDuty:
+		pass
+	else:
+		raise AssertionError("commented off duty")
+	finally:
+		_as("Administrator")
+		_forget_comments(cleanup, visit)
+
+
+def test_the_list_carries_each_visits_address(cleanup):
+	from nhk.api import addresses, staff
+
+	visit = _visit(cleanup)
+	_on_duty(cleanup)
+	try:
+		row = next(v for v in staff.my_visits() if v.name == visit)
+	finally:
+		_as("Administrator")
+	assert row["address"] == addresses.for_order(row.sales_order_id, row.area, row.patient_id)["address"]
+
 if __name__ == "__main__":
 	import harness
 	raise SystemExit(harness.run(sys.modules[__name__]))

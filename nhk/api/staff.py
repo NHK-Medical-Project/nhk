@@ -46,7 +46,7 @@ from nhk.api.guards import (
 	owned_visit,
 	response_of,
 )
-from nhk.api import addresses, distance, notify, visits
+from nhk.api import addresses, distance, notify, payment_collection, pickup, visits
 
 #: Jobs older than this drop out of the day list into the backlog. The open queue
 #: is full of jobs nobody intends to do -- 366 of 437 are over a month old -- and
@@ -199,7 +199,17 @@ def my_visits(limit=100, month=None, type=None):
 	)
 
 	# Rejected jobs belong to the office now -- same rule as `my_jobs`.
-	return [v for v in visits if response_of(v) != RESPONSE_REJECTED]
+	visits = [v for v in visits if response_of(v) != RESPONSE_REJECTED]
+
+	# Where each job is, as the job screen shows it (`nhk.api.addresses`): the
+	# list showed only the area. Once per order: an order's visits share it.
+	where = {}
+	for v in visits:
+		key = (v.sales_order_id, v.area, v.patient_id)
+		if key not in where:
+			where[key] = addresses.for_order(*key)["address"]
+		v["address"] = where[key]
+	return visits
 
 
 @frappe.whitelist()
@@ -275,6 +285,15 @@ def job(visit_id):
 		# thing the doorstep screen renders, and a second call would show it
 		# arriving late on a slow connection.
 		"attachments": _attachments_of(visit.name),
+		# The visit's Frappe comments: the same timeline the desk shows, so the
+		# office and the technician read and write one thread.
+		"comments": _comments_of(visit.name),
+		# Whether `nhk.api.payment_collection` will take a payment on this visit
+		# now. Not only while open: the patient often pays at delivery or pickup.
+		"can_collect_payment": payment_collection.can_collect(visit),
+		# A sleep study delivery's pickup, which this technician may assign
+		# (`nhk.api.pickup`). None for every other visit.
+		"pickup": pickup.pickup_state(visit, technician),
 		"on_duty": True,
 	}
 
@@ -711,9 +730,39 @@ def reject_job(visit_id, reason, note=None):
 			"technician_response_at": responded_at, "rejection_reason": reason}
 
 
+# ---------------------------------------------------------------------------
+# the pickup after a sleep study delivery
+# ---------------------------------------------------------------------------
+
+
+@frappe.whitelist()
+def pickup_technicians():
+	"""Who a sleep study pickup can go to, the caller first. See `nhk.api.pickup`."""
+	return pickup.pickup_technicians()
+
+
+@frappe.whitelist()
+def assign_pickup(visit_id, technician_id, pickup_date=None, slot=None):
+	"""Assign the pickup of the caller's sleep study delivery `visit_id`.
+
+	Works off duty -- the delivery ends at night. See `nhk.api.pickup`.
+	"""
+	return pickup.assign_pickup(visit_id, technician_id, pickup_date=pickup_date, slot=slot)
+
+
+@frappe.whitelist()
+def ready_for_pickup(visit_id, pickup_date=None, slot=None):
+	"""Mark caller's sleep study delivery order Ready for Pickup without assigning a technician.
+
+	Works off duty -- see `nhk.api.pickup`.
+	"""
+	return pickup.ready_for_pickup(visit_id, pickup_date=pickup_date, slot=slot)
+
+
 @frappe.whitelist()
 def check_in(visit_id, latitude=None, longitude=None, accuracy=None, is_mocked=0):
 	"""Record arrival at one job."""
+	
 	technician = current_technician()
 
 	if not _open_duty(technician):
@@ -848,7 +897,9 @@ def complete_job(visit_id, kilometers, notes=None, latitude=None, longitude=None
 
 	return {"name": visit.name, "status": visit.status, "kilometers": visit.kilometers,
 			"charges": visit.charges, "completed_at": completed_at,
-			"extra_payment": visit.extra_payment, "extra_payment_reason": visit.extra_payment_reason}
+			"extra_payment": visit.extra_payment, "extra_payment_reason": visit.extra_payment_reason,
+			# Set after a sleep study delivery: the app asks who picks it up next.
+			"pickup": pickup.pickup_state(visit, technician)}
 
 
 # ---------------------------------------------------------------------------
@@ -873,6 +924,78 @@ MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024
 #: Attachments are private files. A delivery photo has a patient's doorway in it
 #: and `/files/` is served to anyone with the URL.
 ATTACHMENT_IS_PRIVATE = 1
+
+
+#: Frappe's own comment kind: what the desk's timeline shows as comments, as
+#: opposed to its activity lines (Info, Edit, Like, Attachment...).
+COMMENT_TYPE = "Comment"
+
+#: A comment is a note, not a document.
+COMMENT_MAX_LENGTH = 2000
+
+
+def _comments_of(visit_name):
+	"""The visit's comments, oldest first, as plain text.
+
+	Frappe's `Comment` rows of type Comment: whatever the office writes on the
+	visit form's timeline, the lines the system writes there (a reassignment,
+	a pickup arranged), and what technicians add from the app. Desk comments
+	are HTML from the editor; the phone shows text.
+	"""
+	me = frappe.session.user
+	rows = frappe.get_all(
+		"Comment",
+		filters={
+			"reference_doctype": "Technician Visit Entry",
+			"reference_name": visit_name,
+			"comment_type": COMMENT_TYPE,
+		},
+		fields=["name", "content", "comment_email", "comment_by", "owner", "creation"],
+		order_by="creation asc",
+		ignore_permissions=True,
+	)
+	return [{
+		"name": r.name,
+		"content": _comment_text(r.content),
+		"by": r.comment_by or frappe.utils.get_fullname(r.comment_email or r.owner),
+		"at": r.creation,
+		"is_mine": (r.comment_email or r.owner) == me,
+	} for r in rows]
+
+
+def _comment_text(content):
+	"""Desk comment HTML as the text it reads as: lines kept, entities decoded."""
+	import html
+	import re
+
+	text = re.sub(r"(?i)<br\s*/?>|</p>|</div>|</li>", "\n", content or "")
+	text = html.unescape(frappe.utils.strip_html(text))
+	return re.sub(r"\n{3,}", "\n\n", text).strip()
+
+
+@frappe.whitelist()
+def add_job_comment(visit_id, content):
+	"""Add a comment to one of the caller's visits, on its Frappe timeline.
+
+	The office sees it on the visit form like any desk comment. On duty and
+	the caller's own visit, as every job read is (ADR-0003 of the app); any
+	status, because something worth saying often comes after the job is done.
+	"""
+	technician = current_technician()
+	assert_on_duty(technician)
+	visit = owned_visit(visit_id, technician=technician)
+
+	text = (content or "").strip()
+	if not text:
+		frappe.throw(_("Write the comment first."))
+	if len(text) > COMMENT_MAX_LENGTH:
+		frappe.throw(_("A comment can be at most {0} characters.").format(COMMENT_MAX_LENGTH))
+
+	# Escaped, line breaks kept: the desk renders comment content as HTML.
+	html = frappe.utils.escape_html(text).replace("\n", "<br>")
+	visit.add_comment(COMMENT_TYPE, html, comment_email=frappe.session.user,
+					  comment_by=frappe.utils.get_fullname(frappe.session.user))
+	return _comments_of(visit.name)
 
 
 def _attachments_of(visit_name):
