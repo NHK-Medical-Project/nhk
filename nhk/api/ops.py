@@ -112,88 +112,145 @@ _LEDGER_KEYS = ("payment_entries", "journal_entries", "all_payment_entries")
 
 
 @frappe.whitelist()
-def sales_orders(order_type=None, status=None, search=None, since=None, cursor=None, limit=PAGE_SIZE):
-	"""One page of submitted Sales Orders, newest first, with counts for the filters.
+def sales_orders(order_type=None, status=None, search=None, since=None, cursor=None, limit=PAGE_SIZE,
+				 month=None, shortcut=None):
+	"""One page of submitted Sales Orders, with counts for the filters and shortcuts.
+
+	`month` (`YYYY-MM`) limits the list to that month, as the Office tab asks
+	(2026-10-10). `shortcut` is one of `MONTH_SHORTCUTS` and replaces
+	`order_type` / `status` with its own rule; without one, `order_type` and
+	`status` filter the month's orders by hand. Without `month` the list is
+	every order, as before.
 
 	`search` matches the order's name, the customer's name, or their mobile (by
-	digits, so spaces and a +91 do not matter). `since` is a date, `"all"`, or
-	left out: left out, status `Order` without a search starts at
-	`DEFAULT_WINDOW_DAYS` ago, and every other list starts at the beginning. The
-	window that applied comes back as `since`, so the app can show it and offer
-	to drop it.
+	digits, so spaces and a +91 do not matter). Without `month`, `since` is a
+	date, `"all"`, or left out: left out, status `Order` without a search starts
+	at `DEFAULT_WINDOW_DAYS` ago, echoed back as `since`.
 
 	`counts` say how many orders each Order Type and each status would show with
-	the *other* filters left as they are, so a filter chip can say what tapping
-	it would give.
+	the *other* filters left as they are. `shortcuts` are the month's three
+	shortcuts with their counts under the same search.
 
-	Pages are keyed on `(transaction_date, name)`, not offsets, so an order
+	Pages are keyed on the sort date and the name, not offsets, so an order
 	submitted while someone scrolls does not shift the rest by one.
 	"""
 	require_office()
 
 	limit = min(max(cint(limit) or PAGE_SIZE, 1), MAX_PAGE_SIZE)
 	search = (search or "").strip()
-	since = _window(since, status, search)
+	bounds = _month_bounds(month) if month else None
 
-	filters = {"order_type": order_type or None, "status": status or None, "search": search, "since": since}
-	where, values = _where(**filters)
+	if shortcut:
+		if not bounds:
+			bounds = _month_bounds(None)
+		where, values, sort, ascending = _shortcut_scope(shortcut, bounds, search)
+		filters = None
+		applied_since = None
+	else:
+		if bounds:
+			applied_since = None
+			filters = {"order_type": order_type or None, "status": status or None, "search": search,
+					   "since": bounds[0], "until": bounds[1]}
+		else:
+			applied_since = _window(since, status, search)
+			filters = {"order_type": order_type or None, "status": status or None, "search": search,
+					   "since": applied_since}
+		where, values = _where(**filters)
+		sort, ascending = "transaction_date", False
+
 	if cursor:
 		after_date, after_name = _parse_cursor(cursor)
-		where += """ and (so.transaction_date < %(after_date)s
-			or (so.transaction_date = %(after_date)s and so.name < %(after_name)s))"""
+		op = ">" if ascending else "<"
+		where += f""" and (so.{sort} {op} %(after_date)s
+			or (so.{sort} = %(after_date)s and so.name {op} %(after_name)s))"""
 		values.update(after_date=after_date, after_name=after_name)
 
+	direction = "asc" if ascending else "desc"
 	rows = frappe.db.sql(
 		f"""select {_ORDER_FIELDS} from `tabSales Order` so where {where}
-		order by so.transaction_date desc, so.name desc limit %(limit)s""",
+		order by so.{sort} {direction}, so.name {direction} limit %(limit)s""",
 		{**values, "limit": limit + 1}, as_dict=True,
 	)
 	more = len(rows) > limit
 	rows = rows[:limit]
+	last = rows[-1] if rows else None
 
 	_add_list_details(rows)
 
 	return {
 		"rows": rows,
-		"next_cursor": "%s|%s" % (rows[-1].transaction_date, rows[-1].name) if more else None,
-		"since": str(since) if since else None,
+		"next_cursor": "%s|%s" % (last[sort], last.name) if more else None,
+		"since": str(applied_since) if applied_since else None,
+		"month": bounds[0].strftime("%Y-%m") if bounds else None,
 		"counts": {
-			"order_type": _counts("order_type", filters),
-			"status": _counts("status", filters),
+			"order_type": _counts("order_type", filters) if filters else {},
+			"status": _counts("status", filters) if filters else {},
 		},
-		"shortcuts": _shortcuts(search),
+		"shortcuts": _shortcuts(search, bounds or _month_bounds(None)),
 	}
 
 
-#: The Office tab's order shortcuts, in order: key, label, Order Type, status,
-#: since. "today" means the day the request is made. The app draws one pill per
-#: row with its count and sends the row's filters back when it is tapped.
-ORDER_SHORTCUTS = (
-	("today", "Today", None, None, "today"),
-	("to_assign", "To assign", None, "Order", None),
-	("active_rentals", "Active rentals", "Rental", "Active", None),
-	("ready_for_pickup", "Ready for pickup", "Rental", "Ready for Pickup", None),
-	("all", "All orders", None, None, None),
+#: The Office tab's shortcuts for a month (2026-10-10), in order: key, label.
+#: Three, each something to look at or act on that month:
+#:
+#: * **total** -- the orders taken that month.
+#: * **to_assign** -- that month's Sales and Service orders still in `Order`:
+#:   no technician given yet (`assign_technician`).
+#: * **pickups_due** -- rentals still out (`Active` or `Ready for Pickup`)
+#:   whose `end_date` falls in the month; for the current month, overdue ones
+#:   too. Soonest end first (`assign_pickup`).
+MONTH_SHORTCUTS = (
+	("total", "Total"),
+	("to_assign", "To assign"),
+	("pickups_due", "Pickups due"),
 )
 
+#: The rental statuses a pickup is still to be done from.
+_PICKUP_PENDING_STATUSES = ("Active", "Ready for Pickup")
 
-def _shortcuts(search=""):
-	"""Each shortcut with its filters and how many orders it shows now, under
-	the same search and the same window rules as the list itself."""
+
+def _month_bounds(month):
+	"""`(first day, first day of the next month)` for `YYYY-MM`, this month if None."""
+	from frappe.utils import get_first_day
+
+	# Checked by shape first: `getdate` reads "October-01" as a date.
+	if month and not re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", str(month)):
+		frappe.throw(_("Month must look like 2026-10."))
+	start = get_first_day(getdate(f"{month}-01") if month else getdate(_today()))
+	return start, add_days(frappe.utils.get_last_day(start), 1)
+
+
+def _shortcut_scope(key, bounds, search):
+	"""The `where`, its values, and the sort for one of `MONTH_SHORTCUTS`."""
+	start, end = bounds
+	if key == "total":
+		where, values = _where(search=search, since=start, until=end)
+		return where, values, "transaction_date", False
+	if key == "to_assign":
+		where, values = _where(status=UNASSIGNED_ORDER_STATUS, search=search, since=start, until=end)
+		where += " and so.order_type in %(assignable_types)s"
+		values["assignable_types"] = tuple(ASSIGNMENT_VISIT_TYPES)
+		return where, values, "transaction_date", False
+	if key == "pickups_due":
+		where, values = _where(order_type="Rental", search=search)
+		current = start <= getdate(_today()) < end
+		where += """ and so.status in %(pickup_pending)s and so.end_date is not null
+			and so.end_date < %(end)s"""
+		if not current:
+			# Another month: only what fell due in it. This month: overdue too.
+			where += " and so.end_date >= %(start)s"
+		values.update(pickup_pending=_PICKUP_PENDING_STATUSES, start=start, end=end)
+		return where, values, "end_date", True
+	frappe.throw(_("There is no shortcut called {0}.").format(key))
+
+
+def _shortcuts(search, bounds):
+	"""Each of the month's shortcuts and how many orders it shows now."""
 	out = []
-	for key, label, order_type, status, since in ORDER_SHORTCUTS:
-		day = _today() if since == "today" else None
-		window = _window(str(day) if day else None, status, search)
-		where, values = _where(order_type=order_type, status=status, search=search, since=window)
+	for key, label in MONTH_SHORTCUTS:
+		where, values, _sort, _asc = _shortcut_scope(key, bounds, search)
 		count = frappe.db.sql(f"select count(*) from `tabSales Order` so where {where}", values)[0][0]
-		out.append({
-			"key": key,
-			"label": label,
-			"order_type": order_type,
-			"status": status,
-			"since": str(day) if day else None,
-			"count": count,
-		})
+		out.append({"key": key, "label": label, "count": count})
 	return out
 
 
@@ -267,8 +324,11 @@ def _window(since, status, search):
 	return None
 
 
-def _where(order_type=None, status=None, search="", since=None):
-	"""The list's `where` clause for the filters given, and its values."""
+def _where(order_type=None, status=None, search="", since=None, until=None):
+	"""The list's `where` clause for the filters given, and its values.
+
+	`since` and `until` bound `transaction_date`, `until` exclusive.
+	"""
 	clauses = ["so.docstatus = 1"]
 	values = {}
 	if order_type:
@@ -280,6 +340,9 @@ def _where(order_type=None, status=None, search="", since=None):
 	if since:
 		clauses.append("so.transaction_date >= %(since)s")
 		values["since"] = since
+	if until:
+		clauses.append("so.transaction_date < %(until)s")
+		values["until"] = until
 	if search:
 		matches = ["so.name like %(like)s", "so.customer_name like %(like)s"]
 		# `%` and `_` typed into the search are text, not wildcards.
