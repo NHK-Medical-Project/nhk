@@ -736,7 +736,15 @@ nhk.sales_order_visits = {
 		);
 	},
 
-	prompt_assign_pickup(frm) {
+	async prompt_assign_pickup(frm) {
+		// The delivery's category, as `assign_pickup_for_order` takes it. A renewal
+		// has no delivery of its own, so then the office picks (the category sets pay).
+		const [delivery] = await frappe.db.get_list("Technician Visit Entry", {
+			filters: { sales_order_id: frm.doc.name, type: "Delivery" },
+			fields: ["technician_category"],
+			order_by: "creation desc",
+			limit: 1,
+		});
 		frappe.prompt(
 			[
 				{
@@ -744,6 +752,14 @@ nhk.sales_order_visits = {
 					fieldtype: "Link",
 					options: "Technician Details",
 					label: __("Technician"),
+					reqd: 1,
+				},
+				{
+					fieldname: "technician_category",
+					fieldtype: "Link",
+					options: "Technician Category",
+					label: __("Technician Category"),
+					default: delivery?.technician_category,
 					reqd: 1,
 				},
 				{
@@ -768,6 +784,7 @@ nhk.sales_order_visits = {
 					args: {
 						sales_order_id: frm.doc.name,
 						technician_id: values.technician_id,
+						technician_category: values.technician_category,
 						pickup_date: values.pickup_date,
 						slot: values.slot,
 					},
