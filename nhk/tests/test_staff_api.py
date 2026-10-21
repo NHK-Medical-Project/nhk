@@ -953,12 +953,20 @@ def test_remove_job_attachment_leaves_the_offices_own_file_alone(cleanup):
 
 
 # --------------------------------------------------------------------------
-# comments: the visit's Frappe timeline
+# comments: the order's Frappe timeline, with the visit's
 # --------------------------------------------------------------------------
 
-def _forget_comments(cleanup, visit):
-	for name in frappe.get_all("Comment", filters={"reference_doctype": "Technician Visit Entry",
-												   "reference_name": visit}, pluck="name"):
+def _comments_on(visit):
+	"""Every Comment on the visit and on its (real, shared) Sales Order."""
+	so = frappe.db.get_value("Technician Visit Entry", visit, "sales_order_id")
+	return {c for doctype, name in (("Technician Visit Entry", visit), ("Sales Order", so))
+			for c in frappe.get_all("Comment", filters={"reference_doctype": doctype,
+														"reference_name": name}, pluck="name")}
+
+
+def _forget_comments(cleanup, visit, before):
+	"""Delete the comments the test wrote; the order's earlier ones are real."""
+	for name in _comments_on(visit) - set(before):
 		cleanup.add("Comment", name)
 
 
@@ -966,36 +974,67 @@ def test_job_carries_the_visits_comments_as_text(cleanup):
 	from nhk.api import staff
 
 	visit = _visit(cleanup)
+	before = _comments_on(visit)
 	doc = frappe.get_doc("Technician Visit Entry", visit)
 	doc.add_comment("Comment", "<p>Call before <b>9am</b></p>")
 	doc.add_comment("Info", "Something the system noted")
-	_forget_comments(cleanup, visit)
+	_forget_comments(cleanup, visit, before)
 
 	_on_duty(cleanup)
 	try:
 		comments = staff.job(visit)["comments"]
 	finally:
 		_as("Administrator")
-	assert [c["content"] for c in comments] == ["Call before 9am"], comments
-	assert comments[0]["is_mine"] is False and comments[0]["by"], comments
+	# The order's own comments come too (a real order, shared by other tests).
+	mine = [c for c in comments if c["content"] == "Call before 9am"]
+	assert len(mine) == 1, comments
+	assert "Something the system noted" not in [c["content"] for c in comments], comments
+	assert mine[0]["is_mine"] is False and mine[0]["by"], comments
 
 
-def test_a_technician_comments_on_the_visits_timeline(cleanup):
+def test_a_technician_comments_on_the_orders_timeline(cleanup):
 	from nhk.api import staff
 
 	visit = _visit(cleanup)
+	so = frappe.db.get_value("Technician Visit Entry", visit, "sales_order_id")
+	before = _comments_on(visit)
 	_on_duty(cleanup)
 	try:
 		comments = staff.add_job_comment(visit, "Gate code <1234>\nRing twice")
 	finally:
 		_as("Administrator")
-		_forget_comments(cleanup, visit)
+		_forget_comments(cleanup, visit, before)
 
-	row = frappe.get_all("Comment", filters={"reference_doctype": "Technician Visit Entry", "reference_name": visit,
-											 "comment_type": "Comment"}, fields=["content", "comment_email"])
-	assert row == [{"content": "Gate code &lt;1234&gt;<br>Ring twice", "comment_email": PILOT_USER}], row
+	on_visit = frappe.get_all("Comment", filters={"reference_doctype": "Technician Visit Entry",
+												  "reference_name": visit, "comment_type": "Comment"})
+	assert on_visit == [], on_visit
+	row = frappe.get_all("Comment", filters={"reference_doctype": "Sales Order", "reference_name": so,
+											 "comment_type": "Comment", "comment_email": PILOT_USER,
+											 "content": "Gate code &lt;1234&gt;<br>Ring twice"}, pluck="name")
+	assert len(row) == 1, row
 	assert comments[-1]["content"] == "Gate code <1234>\nRing twice", comments
 	assert comments[-1]["is_mine"] is True
+
+
+def test_job_reads_the_orders_comments_and_a_shared_line_once(cleanup):
+	from nhk.api import staff
+
+	visit = _visit(cleanup)
+	before = _comments_on(visit)
+	doc = frappe.get_doc("Technician Visit Entry", visit)
+	order = frappe.get_doc("Sales Order", doc.sales_order_id)
+	order.add_comment("Comment", "Patient prefers mornings")
+	doc.add_comment("Comment", "Pickup arranged")
+	order.add_comment("Comment", "Pickup arranged")
+	_forget_comments(cleanup, visit, before)
+
+	_on_duty(cleanup)
+	try:
+		texts = [c["content"] for c in staff.job(visit)["comments"]]
+	finally:
+		_as("Administrator")
+	assert "Patient prefers mornings" in texts, texts
+	assert texts.count("Pickup arranged") == 1, texts
 
 
 def test_a_comment_needs_text_the_callers_visit_and_duty(cleanup):
@@ -1004,6 +1043,7 @@ def test_a_comment_needs_text_the_callers_visit_and_duty(cleanup):
 
 	visit = _visit(cleanup)
 	other = _visit(cleanup, technician=OTHER_TECH, user=OTHER_USER)
+	before = _comments_on(visit)
 	_on_duty(cleanup)
 	try:
 		for args, expected in (((visit, "   "), frappe.ValidationError), ((other, "hello"), frappe.DoesNotExistError)):
@@ -1026,7 +1066,7 @@ def test_a_comment_needs_text_the_callers_visit_and_duty(cleanup):
 		raise AssertionError("commented off duty")
 	finally:
 		_as("Administrator")
-		_forget_comments(cleanup, visit)
+		_forget_comments(cleanup, visit, before)
 
 
 def test_the_list_carries_each_visits_address(cleanup):

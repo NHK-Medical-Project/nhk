@@ -43,22 +43,26 @@ def for_order(sales_order, area=None, customer=None):
 			as_dict=True,
 		) or frappe._dict()
 
-	free_text = cstr(row.permanent_address)
-	link = MAPS_URL.search(free_text)
-	shown = next(
-		(text for text in (
-			_plain(_linked(row.permanent_address_link)),
-			_plain(MAPS_URL.sub("", free_text)),
-			_plain(row.delivery_address),
-			_plain(area),
-		) if text),
-		"",
-	)
-
+	shown = text_of(row, area)
+	link = MAPS_URL.search(cstr(row.permanent_address))
 	map_url = link.group(0).rstrip(".,)") if link else _coordinates_url(customer or row.customer)
 	if not map_url and shown:
 		map_url = "https://www.google.com/maps/search/?" + urlencode({"api": 1, "query": shown.replace("\n", ", ")})
 	return {"address": shown, "map_url": map_url or ""}
+
+
+def text_of(order, area=None):
+	"""The address to show for an order already read: `permanent_address_link`,
+	`permanent_address` and `delivery_address` on `order`. "" if there is none."""
+	return next(
+		(text for text in (
+			_plain(_linked(order.get("permanent_address_link"))),
+			_plain(MAPS_URL.sub("", cstr(order.get("permanent_address")))),
+			_plain(order.get("delivery_address")),
+			_plain(area),
+		) if text),
+		"",
+	)
 
 
 def _coordinates_url(customer):

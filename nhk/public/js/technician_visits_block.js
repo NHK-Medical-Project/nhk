@@ -5,11 +5,12 @@
 //   Rejected, Completed -- with the patient's Payment Status and Mode Of
 //   Payment on each, and Reassign and Reschedule on the open ones. Data from
 //   `nhk.api.office.technician_visits`.
-// * **Sleep study pickups**, every study still out with a patient whatever the
-//   date -- With Patient, To Assign, Assigned -- with Assign Pickup, Reassign
-//   and Reschedule. Data from `nhk.api.office.sleep_study_pickups`. Technicians
-//   assign these pickups from the app at night (bench ADR-0006); this is the
-//   office's morning view of the result.
+// * **Pickups**, every rental still out with a patient whatever the date or
+//   category -- With Patient, To Assign, Assigned -- with the address to collect
+//   from, and Assign Pickup, Reassign and Reschedule. Data from
+//   `nhk.api.office.pickups`. Technicians assign sleep study pickups from the
+//   app at night (bench ADR-0006); this is the office's morning view of the
+//   result, and where it arranges every other pickup.
 //
 // The search box and the Technician filter apply to whichever tab is open.
 //
@@ -26,9 +27,9 @@ nhk.technician_visits_block = {
 		{ key: "Accepted", view: "day", color: "green", hint: __("Accepted and on the way.") },
 		{ key: "Rejected", view: "day", color: "red", hint: __("Handed back by the technician. Reassign them.") },
 		{ key: "Completed", view: "day", color: "gray", hint: __("Completed on the day.") },
-		{ key: "With Patient", view: "sleep", color: "blue", hint: __("Sleep studies delivered, and no pickup arranged yet. Any date.") },
-		{ key: "To Assign", view: "sleep", color: "red", hint: __("Sleep studies ready for pickup that no technician has. Assign one.") },
-		{ key: "Assigned", view: "sleep", color: "green", hint: __("Sleep study pickups a technician has.") },
+		{ key: "With Patient", view: "sleep", color: "blue", hint: __("Delivered, and no pickup arranged yet. Any date, any category.") },
+		{ key: "To Assign", view: "sleep", color: "red", hint: __("Ready for pickup, and no technician has it. Assign one.") },
+		{ key: "Assigned", view: "sleep", color: "green", hint: __("Pickups a technician has.") },
 	],
 
 	render(root) {
@@ -59,7 +60,7 @@ nhk.technician_visits_block = {
 		};
 		const load_sleep = () =>
 			frappe.call({
-				method: "nhk.api.office.sleep_study_pickups",
+				method: "nhk.api.office.pickups",
 				callback: (r) => {
 					state.sleep = r.message;
 					draw();
@@ -105,7 +106,7 @@ nhk.technician_visits_block = {
 			if (order) {
 				const row = state.sleep.rows.find((r) => r.sales_order_id === order);
 				if (!row) return;
-				if (action === "assign") me.assign_pickup(row, done);
+				if (action === "assign") me.assign_pickup(row, state.sleep.pickup_reasons, done);
 				if (action === "reassign") nhk.visit_dialogs.reassign(row.pickup, done);
 				if (action === "reschedule") nhk.visit_dialogs.reschedule(row.pickup, done);
 				return;
@@ -124,16 +125,38 @@ nhk.technician_visits_block = {
 		load();
 	},
 
-	/** Give a sleep study's pickup to a technician (`nhk.api.pickup.assign_pickup_for_order`). */
-	assign_pickup(row, done) {
+	/** Give a rental's pickup to a technician (`nhk.api.pickup.assign_pickup_for_order`).
+	 *
+	 * A sleep study needs no reason: the study ending is the reason, and the
+	 * order gets the sleep study's (ADR-0006). Every other rental is asked why,
+	 * as the phone asks (`nhk.api.ops.assign_pickup`), and an order with no
+	 * delivery visit is asked its category, which sets the technician's pay. */
+	assign_pickup(row, reasons, done) {
+		const delivered = row.delivery_technician_name || row.delivery_technician_id;
+		const about = [row.customer_name, row.technician_category && __(row.technician_category),
+			delivered && __("delivered by {0}", [delivered])].filter(Boolean).join(" · ");
 		const dialog = new frappe.ui.Dialog({
 			title: __("Assign Pickup · {0}", [row.sales_order_id]),
 			fields: [
 				{
 					fieldtype: "HTML",
-					options: `<p class="text-muted">${frappe.utils.escape_html(
-						__("{0} · {1}, delivered by {2}.", [row.customer_name, row.technician_category, row.delivery_technician_name])
-					)}</p>`,
+					options: `<p class="text-muted">${frappe.utils.escape_html(about)}</p>
+						${row.address ? `<p class="text-muted small" style="white-space: pre-line">${frappe.utils.escape_html(row.address)}</p>` : ""}`,
+				},
+				{
+					fieldname: "technician_category", fieldtype: "Link", options: "Technician Category",
+					label: __("Category"), reqd: 1, hidden: row.technician_category ? 1 : 0,
+					default: row.technician_category || "",
+					description: __("No delivery visit on this order to take it from. It sets the technician's pay."),
+				},
+				{
+					fieldname: "pickup_reason", fieldtype: "Select", label: __("Pickup Reason"),
+					options: ["", ...(reasons || [])].join("\n"), reqd: row.is_sleep_study ? 0 : 1,
+					hidden: row.is_sleep_study ? 1 : 0, default: row.pickup_reason || "",
+				},
+				{
+					fieldname: "pickup_remark", fieldtype: "Small Text", label: __("Remark"),
+					hidden: row.is_sleep_study ? 1 : 0,
 				},
 				{ fieldname: "technician_id", fieldtype: "Link", options: "Technician Details", label: __("Technician"), reqd: 1 },
 				{
@@ -154,7 +177,10 @@ nhk.technician_visits_block = {
 						technician_id: values.technician_id,
 						pickup_date: values.pickup_date,
 						slot: values.slot,
-						technician_category: row.technician_category,
+						technician_category: values.technician_category,
+						pickup_reason: row.is_sleep_study ? null : values.pickup_reason,
+						pickup_remark: row.is_sleep_study ? null : (values.pickup_remark || "").trim()
+							|| __("Pickup assigned by {0} from the desk.", [frappe.session.user_fullname]),
 					},
 					freeze: true,
 					callback: (r) => {
@@ -220,7 +246,7 @@ nhk.technician_visits_block = {
 			</div>
 			<div class="nhk-tv-groups">
 				${group("day", __("Visits on {0}", [frappe.datetime.str_to_user(state.date)]))}
-				${group("sleep", __("Sleep study pickups · all open"))}
+				${group("sleep", __("Pickups · all open, every category"))}
 			</div>
 			<div class="nhk-tv-bar">
 				<span class="text-muted small">${hint}</span>
@@ -228,7 +254,7 @@ nhk.technician_visits_block = {
 					<select class="form-control input-xs nhk-tv-technician">
 						<option value="">${__("All technicians")}</option>${options}
 					</select>
-					<input class="form-control input-xs nhk-tv-search" placeholder="${__("Search visit, order, customer, area, item")}"
+					<input class="form-control input-xs nhk-tv-search" placeholder="${__("Search visit, order, customer, area, address, item")}"
 						value="${esc(state.search)}">
 				</div>
 			</div>
@@ -241,14 +267,14 @@ nhk.technician_visits_block = {
 		const query = state.search.trim().toLowerCase();
 		const fields = view === "day"
 			? (r) => [r.name, r.customer_name, r.patient_name, r.area, r.item_code, r.sales_order_id, r.technician_name]
-			: (r) => [r.sales_order_id, r.customer_name, r.area, r.technician_category, r.delivery_technician_name,
+			: (r) => [r.sales_order_id, r.customer_name, r.area, r.address, r.technician_category, r.delivery_technician_name,
 				r.pickup && r.pickup.name, r.pickup && r.pickup.technician_name];
 		const rows = this.rows_of(state, state.tab).filter((r) =>
 			!query || fields(r).some((v) => (v || "").toLowerCase().includes(query)));
 
 		if (!rows.length) {
 			$el.find(".nhk-tv-rows").html(`<div class="nhk-tv-empty">${view === "sleep"
-				? __("No sleep studies here.")
+				? __("No pickups here.")
 				: state.tab === "Total"
 					? __("No visits on {0}.", [frappe.datetime.str_to_user(state.date)])
 					: __("No {0} visits on {1}.", [__(state.tab), frappe.datetime.str_to_user(state.date)])}</div>`);
@@ -256,7 +282,7 @@ nhk.technician_visits_block = {
 		}
 		const head = view === "day"
 			? [__("Visit"), __("Customer"), __("Technician"), __("Stage"), __("Payment Status"), __("Mode Of Payment"), ""]
-			: [__("Order"), __("Study"), __("Delivered"), __("Pickup"), ""];
+			: [__("Order"), __("Category"), __("Address"), __("Delivered"), __("Pickup"), ""];
 		$el.find(".nhk-tv-rows").html(`<table class="table table-sm nhk-tv-table">
 			<thead><tr>${head.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
 			<tbody>${rows.map((r) => (view === "day" ? this.row(r) : this.sleep_row(r))).join("")}</tbody>
@@ -348,7 +374,8 @@ nhk.technician_visits_block = {
 				<a href="/app/sales-order/${encodeURIComponent(r.sales_order_id)}">${esc(r.sales_order_id)}</a>
 				<div>${esc(r.customer_name || "")}${r.area ? `<span class="text-muted small"> · ${esc(r.area)}</span>` : ""}</div>
 			</td>
-			<td>${esc(__(r.technician_category || ""))}</td>
+			<td>${r.technician_category ? esc(__(r.technician_category)) : `<span class="text-muted">—</span>`}</td>
+			<td class="nhk-tv-address">${r.address ? esc(r.address) : `<span class="text-muted">—</span>`}</td>
 			<td>
 				${esc(r.delivery_technician_name || r.delivery_technician_id || "")}
 				<div class="text-muted small">${r.delivered_at ? esc(frappe.datetime.str_to_user(r.delivered_at.slice(0, 10))) : ""}${out ? " · " + esc(out) : ""}</div>
@@ -381,6 +408,7 @@ nhk.technician_visits_block = {
 		.nhk-tv-table a[href^="/app/technician-visit-entry"] { font-weight: 600; }
 		.nhk-tv-stage { min-width: 180px; max-width: 300px; }
 		.nhk-tv-mode { white-space: nowrap; }
+		.nhk-tv-address { min-width: 200px; max-width: 320px; white-space: pre-line; font-size: var(--text-sm); }
 		.nhk-tv-actions { width: 1%; }
 		.nhk-tv-actions .btn { display: block; width: 100%; margin: 0 0 4px 0; white-space: nowrap; }
 		.nhk-tv-empty { padding: 24px; text-align: center; color: var(--text-muted); }

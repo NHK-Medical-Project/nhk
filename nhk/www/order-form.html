@@ -1,0 +1,374 @@
+{% extends "templates/web_base.html" %}
+{% block content %}
+<!--
+	The sales person's public order form (`nhk.api.order_form`): the Patient
+	Registration and Sleep Study Google Forms as one. Products are named, never
+	priced; the referring doctor is typed, never looked up.
+-->
+<style>
+	.ofm { --of-blue: #00AEEF; --of-ink: #16192C; --of-green: #1EC29D; --of-line: #d9e6ec; --of-muted: #5f6b76; --of-bad: #c0392b;
+		background: #f3f9fc; padding: 120px 0 60px; font-family: 'Quicksand', sans-serif; color: var(--of-ink); }
+	.ofm .of-head { text-align: center; margin-bottom: 28px; }
+	.ofm .of-head h1 { font-family: 'Josefin Sans', sans-serif; font-weight: 700; font-size: 36px; margin: 0 0 8px; }
+	.ofm .of-head h1 span { color: var(--of-blue); }
+	.ofm .of-head p { color: var(--of-muted); margin: 4px 0; line-height: 1.5; }
+	.ofm .of-badge { display: inline-block; margin-top: 10px; padding: 6px 16px; border-radius: 25px; background: #e5f7fd; color: #0278a6; font-weight: 600; font-size: 14px; }
+	.ofm .of-card { background: #fff; border-radius: 20px; box-shadow: 0 4px 11px rgba(0,0,0,.08); padding: 28px; margin-bottom: 20px; }
+	.ofm .of-card h2 { font-family: 'Josefin Sans', sans-serif; font-size: 22px; font-weight: 700; margin: 0 0 18px; }
+	.ofm label.of-label, .ofm span.of-label { display: block; font-weight: 600; font-size: 15px; margin: 0 0 6px; line-height: 1.3; }
+	.ofm .req::after { content: " *"; color: var(--of-bad); }
+	.ofm .form-control { border-radius: 15px; border: 1px solid var(--of-line); height: 50px; box-shadow: none; font-family: inherit; color: var(--of-ink); }
+	.ofm .form-control:focus { border-color: var(--of-green); }
+	.ofm textarea.form-control { height: 90px; resize: vertical; }
+	.ofm .of-field { margin-bottom: 18px; }
+	.ofm .of-hint { color: var(--of-muted); font-size: 13px; margin-top: 4px; line-height: 1.4; }
+	.ofm .of-pills { display: flex; flex-wrap: wrap; gap: 10px; }
+	.ofm .of-pill { position: relative; margin: 0; }
+	.ofm .of-pill input { position: absolute; opacity: 0; pointer-events: none; }
+	.ofm .of-pill span { display: inline-block; padding: 10px 18px; border: 1px solid var(--of-line); border-radius: 25px; cursor: pointer; font-weight: 600; font-size: 14px; background: #fff; transition: all .2s; line-height: 1.2; }
+	.ofm .of-pill input:checked + span { background: var(--of-blue); border-color: var(--of-blue); color: #fff; }
+	.ofm .of-pill input:focus-visible + span { box-shadow: 0 0 0 3px rgba(0,174,239,.3); }
+	.ofm .of-checks { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px 16px; }
+	.ofm .of-checks label { display: flex; gap: 10px; align-items: center; font-weight: 500; margin: 0; cursor: pointer; line-height: 1.3; }
+	.ofm .of-checks input { width: 18px; height: 18px; accent-color: var(--of-blue); flex: none; }
+	.ofm .of-grid-wrap { overflow-x: auto; }
+	.ofm .of-grid { width: 100%; min-width: 560px; border-collapse: separate; border-spacing: 0 6px; font-size: 13px; }
+	.ofm .of-grid th { font-weight: 600; text-align: center; padding: 6px 4px; line-height: 1.3; vertical-align: bottom; }
+	.ofm .of-grid tbody th { text-align: left; white-space: nowrap; padding-left: 10px; vertical-align: middle; }
+	.ofm .of-grid tbody tr { background: #f3f9fc; }
+	.ofm .of-grid td { text-align: center; padding: 10px 4px; }
+	.ofm .of-grid input { width: 20px; height: 20px; accent-color: var(--of-blue); cursor: pointer; }
+	.ofm .of-link { background: none; border: 0; color: var(--of-blue); font-weight: 600; font-size: 14px; cursor: pointer; padding: 0; }
+	.ofm fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+	.ofm fieldset[disabled] { display: none; }
+	.ofm .of-msg { display: none; border-radius: 15px; padding: 14px 18px; margin-bottom: 20px; font-weight: 600; line-height: 1.4; }
+	.ofm .of-msg.bad { display: block; background: #fdecea; color: var(--of-bad); }
+	.ofm .of-msg.good { display: block; background: #e6f9f3; color: #0d7a5f; }
+	.ofm .btn-blue { font-size: 16px; padding: 14px 40px; }
+	.ofm .btn-blue:disabled { opacity: .6; }
+	@media (max-width: 575px) {
+		.ofm { padding-top: 100px; }
+		.ofm .of-head h1 { font-size: 28px; }
+		.ofm .of-card { padding: 20px 16px; }
+		.ofm .btn-blue { width: 100%; }
+	}
+</style>
+
+<section class="ofm clearfix">
+	<div class="container">
+		<div class="row justify-content-center">
+			<div class="col-lg-8 col-md-10 col-12">
+				<div class="of-head">
+					<h1>Patient <span>Registration</span></h1>
+					<p>NHK Medical Pvt Ltd, Bangalore &middot; logon to <a href="https://nhkmedical.com">nhkmedical.com</a></p>
+					<p>For support or complaints call <a href="tel:8884880013">8884880013</a> or <a href="tel:8884880024">8884880024</a></p>
+					{% if sales_person %}<div class="of-badge">Sales person: {{ sales_person }}</div>{% endif %}
+				</div>
+
+{% if not sales_person %}
+				<div class="of-msg bad" style="display:block">{{ link_error }}</div>
+{% else %}
+				<div id="of-msg" class="of-msg" role="status" aria-live="polite"></div>
+				<form id="of-form" autocomplete="off" novalidate>
+
+					<div class="of-card">
+						<h2>Patient</h2>
+						<div class="of-field">
+							<label class="of-label req" for="patient_name">Name</label>
+							<input class="form-control" id="patient_name" required maxlength="140">
+						</div>
+						<div class="of-field">
+							<label class="of-label req" for="age">Age</label>
+							<input class="form-control" id="age" required maxlength="20" inputmode="numeric">
+						</div>
+						<fieldset data-show="not-sleep">
+							<div class="of-field">
+								<label class="of-label req" for="diagnosis">Diagnosis / problems faced by the patient</label>
+								<input class="form-control" id="diagnosis" required maxlength="1000">
+							</div>
+						</fieldset>
+						<div class="row">
+							<div class="col-md-6 of-field">
+								<label class="of-label req" for="mobile">Mob number</label>
+								<input class="form-control" id="mobile" required inputmode="tel" maxlength="16">
+							</div>
+							<div class="col-md-6 of-field">
+								<label class="of-label" for="whatsapp">WhatsApp number</label>
+								<input class="form-control" id="whatsapp" inputmode="tel" maxlength="16">
+							</div>
+						</div>
+						<div class="of-field">
+							<label class="of-label req" for="email">Email</label>
+							<input class="form-control" id="email" type="email" required maxlength="140">
+						</div>
+						<div class="of-field">
+							<label class="of-label" for="alternate_mobile">Alternative mobile number</label>
+							<input class="form-control" id="alternate_mobile" inputmode="tel" maxlength="16">
+						</div>
+						<div class="of-field">
+							<label class="of-label req" for="delivery_address" id="address_label">Delivery address</label>
+							<textarea class="form-control" id="delivery_address" required maxlength="1000"></textarea>
+						</div>
+						<div class="of-field">
+							<label class="of-label" for="gps_location">Delivery GPS location</label>
+							<input class="form-control" id="gps_location" maxlength="1000" placeholder="Paste a Google Maps link">
+							<div class="of-hint">Or send it on WhatsApp separately.</div>
+						</div>
+						<div class="of-field">
+							<label class="of-label" for="permanent_address">Permanent address</label>
+							<textarea class="form-control" id="permanent_address" maxlength="1000"></textarea>
+						</div>
+						<div class="of-field mb-0">
+							<label class="of-label req" for="doctor" id="doctor_label">Dr name &amp; hospital name</label>
+							<input class="form-control" id="doctor" required maxlength="140">
+						</div>
+					</div>
+
+					<div class="of-card">
+						<h2>Type</h2>
+						<div class="of-pills" id="of-kinds"></div>
+					</div>
+
+					<fieldset data-show="rent" disabled>
+						<div class="of-card">
+							<h2>Rental</h2>
+							<span class="of-label">Products</span>
+							<p class="of-hint mb-3">For each period, choose the product needed.</p>
+							<div class="of-grid-wrap"><table class="of-grid" id="of-rent"></table></div>
+							<div class="text-right mt-2"><button type="button" class="of-link" id="rent_clear">Clear selection</button></div>
+						</div>
+					</fieldset>
+
+					<fieldset data-show="purchase" disabled>
+						<div class="of-card">
+							<h2>Purchase</h2>
+							<span class="of-label">Products</span>
+							<div class="of-checks" id="of-purchase"></div>
+							<input class="form-control mt-3" id="purchase_other" maxlength="140" placeholder="Other product">
+						</div>
+					</fieldset>
+
+					<fieldset data-show="titration" disabled>
+						<div class="of-card">
+							<h2>Titration / CPAP trial</h2>
+							<span class="of-label req">Number of days</span>
+							<div class="of-pills" id="of-titration"></div>
+						</div>
+					</fieldset>
+
+					<fieldset data-show="diagnostic" disabled>
+						<div class="of-card">
+							<h2>Diagnostic study</h2>
+							<div class="of-field">
+								<span class="of-label req">Test</span>
+								<div class="of-pills" id="of-tests"></div>
+							</div>
+							<div class="row">
+								<div class="col-6 of-field mb-0">
+									<label class="of-label req" for="height">Height</label>
+									<input class="form-control" id="height" required maxlength="20" placeholder="e.g. 170 cm">
+								</div>
+								<div class="col-6 of-field mb-0">
+									<label class="of-label req" for="weight">Weight</label>
+									<input class="form-control" id="weight" required maxlength="20" placeholder="e.g. 72 kg">
+								</div>
+							</div>
+						</div>
+					</fieldset>
+
+					<fieldset data-show="sleep" disabled>
+						<div class="of-card">
+							<h2>Sleep study</h2>
+							<div class="of-field">
+								<span class="of-label">Preferred language</span>
+								<div class="of-checks" id="of-languages"></div>
+								<input class="form-control mt-2" id="language_other" maxlength="140" placeholder="Other language">
+							</div>
+							<div class="of-field">
+								<span class="of-label req">Gender</span>
+								<div class="of-pills" id="of-genders"></div>
+								<input class="form-control mt-2" id="gender_other" maxlength="140" placeholder="Other" disabled>
+							</div>
+							<div class="row">
+								<div class="col-6 of-field">
+									<label class="of-label" for="sleep_time">Sleep time</label>
+									<input class="form-control" id="sleep_time" type="time">
+								</div>
+								<div class="col-6 of-field">
+									<label class="of-label" for="wake_time">Wake up time</label>
+									<input class="form-control" id="wake_time" type="time">
+								</div>
+							</div>
+							<div class="of-field">
+								<label class="of-label req" for="profession">Profession</label>
+								<input class="form-control" id="profession" required maxlength="140">
+							</div>
+							<div class="of-field">
+								<span class="of-label req">Tick the following, whichever is applicable</span>
+								<div class="of-checks" id="of-symptoms"></div>
+							</div>
+							<div class="of-field mb-0">
+								<label class="of-label" for="study_date">Schedule the sleep study</label>
+								<input class="form-control" id="study_date" type="date">
+							</div>
+						</div>
+					</fieldset>
+
+					<fieldset data-show="delivery" disabled>
+						<div class="of-card">
+							<fieldset data-show="not-sleep">
+								<div class="of-field">
+									<label class="of-label" for="delivery_time">Delivery time</label>
+									<input class="form-control" id="delivery_time" maxlength="140">
+								</div>
+							</fieldset>
+							<div class="of-field mb-0">
+								<label class="of-label" for="delivery_remarks" id="remarks_label">Delivery remarks</label>
+								<textarea class="form-control" id="delivery_remarks" maxlength="1000"></textarea>
+							</div>
+						</div>
+					</fieldset>
+
+					<div class="text-center">
+						<button type="submit" class="btn btn-blue" id="of-submit">Submit</button>
+					</div>
+				</form>
+{% endif %}
+			</div>
+		</div>
+	</div>
+</section>
+
+{% if sales_person %}
+<script>
+(function () {
+	const TOKEN = {{ token | tojson }};
+	const CSRF = {{ csrf_token | tojson }};
+	const C = {{ choices | tojson }};
+	const K = C.kind_names;
+	const form = document.getElementById("of-form");
+	const $ = (id) => document.getElementById(id);
+	const esc = (s) => { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; };
+	const OTHER = "Other";
+
+	function pills(boxId, name, values) {
+		$(boxId).innerHTML = values.map((v, i) =>
+			'<label class="of-pill"><input type="radio" name="' + name + '" value="' + esc(v) + '"' +
+			(i === 0 ? " required" : "") + "><span>" + esc(v) + "</span></label>").join("");
+	}
+	function checks(boxId, name, values) {
+		$(boxId).innerHTML = values.map((v) =>
+			'<label><input type="checkbox" name="' + name + '" value="' + esc(v) + '"> ' + esc(v) + "</label>").join("");
+	}
+
+	pills("of-kinds", "kind", C.kinds);
+	pills("of-genders", "gender", C.genders);
+	pills("of-titration", "titration_days", C.titration_days);
+	pills("of-tests", "test", C.tests);
+	checks("of-languages", "languages", C.languages);
+	checks("of-purchase", "purchase", C.purchase_products);
+	checks("of-symptoms", "symptoms", C.symptoms);
+
+	// The Google Form's grid: one row per period, at most one product in each.
+	$("of-rent").innerHTML =
+		"<thead><tr><th></th>" + C.rent_products.map((p) => '<th scope="col">' + esc(p) + "</th>").join("") + "</tr></thead><tbody>" +
+		C.rent_durations.map((d, r) => '<tr><th scope="row">' + esc(d) + "</th>" + C.rent_products.map((p, c) =>
+			'<td><input type="radio" name="rent_' + r + '" value="' + c + '" aria-label="' + esc(d + ": " + p) + '"></td>').join("") +
+			"</tr>").join("") + "</tbody>";
+	$("rent_clear").onclick = () => $("of-rent").querySelectorAll("input:checked").forEach((x) => { x.checked = false; });
+
+	$("of-genders").addEventListener("change", () => {
+		const other = value("gender") === OTHER;
+		$("gender_other").disabled = !other;
+		$("gender_other").required = other;
+		if (other) $("gender_other").focus();
+	});
+	$("study_date").min = new Date().toISOString().slice(0, 10);
+
+	const value = (name) => (form.querySelector('[name="' + name + '"]:checked') || {}).value || "";
+	const isSleep = () => value("kind") === K.diagnostic && value("test") === C.sleep_study;
+
+	// Show only what the chosen Type asks for, as the Google Form's sections did.
+	// A disabled fieldset is hidden and skipped by the browser's own checks.
+	function sync() {
+		const kind = value("kind"), sleep = isSleep();
+		const shown = {
+			rent: kind === K.rent, purchase: kind === K.purchase, titration: kind === K.titration,
+			diagnostic: kind === K.diagnostic, sleep: sleep, "not-sleep": !sleep,
+			delivery: !!kind && kind !== K.nursing,
+		};
+		form.querySelectorAll("fieldset[data-show]").forEach((f) => { f.disabled = !shown[f.dataset.show]; });
+		// The sleep study form's own wording.
+		$("address_label").textContent = sleep ? "Address with landmark" : "Delivery address";
+		$("doctor_label").textContent = sleep ? "Treating Dr name" : "Dr name & hospital name";
+		$("remarks_label").textContent = sleep ? "Remark" : "Delivery remarks";
+	}
+	form.addEventListener("change", (e) => { if (e.target.name === "kind" || e.target.name === "test") sync(); });
+	sync();
+
+	function show(text, kind) {
+		const m = $("of-msg");
+		m.className = "of-msg " + kind;
+		m.textContent = text;
+		m.scrollIntoView({ behavior: "smooth", block: "center" });
+	}
+
+	function answers() {
+		const hidden = (el) => !!el.closest("fieldset[disabled]");
+		const field = (id) => (hidden($(id)) ? "" : $(id).value);
+		const pick = (name) => { const el = form.querySelector('[name="' + name + '"]:checked'); return el && !hidden(el) ? el.value : ""; };
+		const ticked = (name) => [...form.querySelectorAll('[name="' + name + '"]:checked')].filter((x) => !hidden(x)).map((x) => x.value);
+		const rent = C.rent_durations.map((d, r) => [d, pick("rent_" + r)]).filter(([, c]) => c !== "")
+			.map(([d, c]) => ({ product: C.rent_products[c], duration: d }));
+		return {
+			kind: value("kind"), patient_name: field("patient_name"), age: field("age"),
+			gender: pick("gender"), gender_other: field("gender_other"),
+			height: field("height"), weight: field("weight"), diagnosis: field("diagnosis"),
+			profession: field("profession"), languages: ticked("languages"), language_other: field("language_other"),
+			mobile: field("mobile"), whatsapp: field("whatsapp"), alternate_mobile: field("alternate_mobile"),
+			email: field("email"), delivery_address: field("delivery_address"),
+			gps_location: field("gps_location"), permanent_address: field("permanent_address"),
+			doctor: field("doctor"), rent: rent, purchase: ticked("purchase"),
+			purchase_other: field("purchase_other") ? [field("purchase_other")] : [],
+			titration_days: pick("titration_days"), test: pick("test"), sleep_time: field("sleep_time"),
+			wake_time: field("wake_time"), symptoms: ticked("symptoms"), study_date: field("study_date"),
+			delivery_time: field("delivery_time"), delivery_remarks: field("delivery_remarks"),
+		};
+	}
+
+	form.addEventListener("submit", async (e) => {
+		e.preventDefault();
+		if (!form.reportValidity()) return;
+		if (!value("kind")) return show("Choose the Type.", "bad");
+		const a = answers();
+		if (a.kind === K.rent && !a.rent.length) return show("Choose at least one product in the rental grid.", "bad");
+		if (a.kind === K.purchase && !a.purchase.length && !a.purchase_other.length) return show("Tick at least one product to buy.", "bad");
+		if (isSleep() && !a.symptoms.length) return show("Tick at least one of the listed conditions, or None of the Above.", "bad");
+
+		$("of-submit").disabled = true;
+		try {
+			const headers = { "Accept": "application/json", "Content-Type": "application/json" };
+			if (CSRF) headers["X-Frappe-CSRF-Token"] = CSRF;
+			const res = await fetch("/api/method/nhk.api.order_form.submit", {
+				method: "POST", headers: headers, body: JSON.stringify({ token: TOKEN, form: a }),
+			});
+			const body = await res.json().catch(() => ({}));
+			if (!res.ok) {
+				let text = "Something went wrong (" + res.status + "). Please try again.";
+				try { text = JSON.parse(JSON.parse(body._server_messages)[0]).message; } catch (err) {}
+				throw new Error(text);
+			}
+			form.reset();
+			$("gender_other").disabled = true;
+			sync();
+			show("Thank you. Request " + body.message.name + " has been sent to NHK Medical.", "good");
+		} catch (err) {
+			show(err.message, "bad");
+		} finally {
+			$("of-submit").disabled = false;
+		}
+	});
+})();
+</script>
+{% endif %}
+{% endblock %}

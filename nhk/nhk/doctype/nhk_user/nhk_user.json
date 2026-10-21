@@ -27,7 +27,9 @@
   "section_break_xeud",
   "nhk_roles",
   "section_devices",
-  "devices"
+  "devices",
+  "section_documents",
+  "documents"
  ],
  "fields": [
   {
@@ -170,11 +172,26 @@
    "label": "Devices",
    "options": "NHK User Device",
    "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_documents",
+   "fieldtype": "Section Break",
+   "label": "Documents"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Licence, RC, insurance and other papers the technician uploaded from the app. Written directly by nhk.api.technician_documents, never by saving this form.",
+   "fieldname": "documents",
+   "fieldtype": "Table",
+   "label": "Documents",
+   "options": "NHK User Document",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-29 12:12:00.337888",
+ "modified": "2026-10-15 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "NHK User",

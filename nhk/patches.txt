@@ -8,3 +8,8 @@ nhk.patches.v1_0.seed_technician_charges
 nhk.patches.v1_0.move_fcm_devices_to_nhk_user
 nhk.patches.v1_0.close_duty_left_open_before_manual_checkout
 nhk.patches.v1_0.add_technician_visits_block
+nhk.patches.v1_0.drop_technician_expense_claim_doctype
+nhk.patches.v1_0.seed_expense_claim_accounts
+nhk.patches.v1_0.expense_claims_follow_hrms
+nhk.patches.v1_0.add_sales_person_order_form_token
+nhk.patches.v1_0.add_order_form_fields

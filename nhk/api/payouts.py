@@ -9,6 +9,10 @@ builds the same table from the visits themselves:
 * **Extra** -- the extra payments on those visits: out of station, waiting and
   the like, entered by the technician in the app and correctable by the office.
 * **Sales** and **Fixed** -- entered by hand on the month.
+* **Expenses** -- the technician's submitted, approved expense claims dated in the month
+  (`nhk.api.expense_claims`). Shown, never added to the total: the office paid
+  each one back on the spot (decided 2026-10-15). Always read live, never
+  saved on the month, so a claim paid after processing still shows.
 
 Processing the month freezes it: the figures are saved on a `Technician Payout
 Month`, and each counted visit is set `Closed` / `Cleared` with `payout_month`
@@ -150,11 +154,59 @@ def _live_rows(month, saved=None):
 	return sorted(rows.values(), key=lambda r: (r.technician_name or r.technician_id or "").lower())
 
 
+def _month_expenses(month, technician_id=None):
+	"""Submitted, approved expense claims dated inside `month`, oldest first.
+
+	A technician's claim is a plain HRMS Expense Claim. It counts once the office
+	has approved and submitted it, paid yet or not (`status` Paid or Unpaid,
+	shown); the amount is what was sanctioned. Drafts, rejections and cancelled
+	claims do not count.
+	"""
+	start, end = _bounds(month)
+	return frappe.db.sql(
+		f"""
+		select ec.name, ec.custom_technician_id as technician_id, ec.employee_name as technician_name,
+			d.expense_date, d.expense_type, d.sanctioned_amount as amount, ec.remark as note,
+			ec.custom_visit as visit, v.patient_name, ec.custom_receipt as receipt,
+			ec.status, ec.mode_of_payment as paid_mode
+		from `tabExpense Claim` ec
+		join `tabExpense Claim Detail` d on d.parent = ec.name and d.parenttype = 'Expense Claim'
+		left join `tabTechnician Visit Entry` v on v.name = ec.custom_visit
+		where ec.custom_technician_id is not null and ec.custom_technician_id != ''
+			and ec.docstatus = 1 and ec.approval_status = 'Approved'
+			and d.expense_date >= %(start)s and d.expense_date < %(end)s
+			{"and ec.custom_technician_id = %(technician_id)s" if technician_id else ""}
+		order by d.expense_date, ec.name
+		""",
+		{"start": getdate(start), "end": getdate(end), "technician_id": technician_id},
+		as_dict=True,
+	)
+
+
+def _with_expenses(month, rows):
+	"""Add each technician's expenses to `rows`, a row for anyone with only expenses."""
+	by_technician = {r.technician_id: r for r in rows}
+	for row in rows:
+		row.expense_count, row.expenses = 0, 0.0
+	for claim in _month_expenses(month):
+		row = by_technician.get(claim.technician_id)
+		if row is None:
+			row = by_technician[claim.technician_id] = frappe._dict(
+				technician_id=claim.technician_id, technician_name=claim.technician_name,
+				visit_count=0, visit_charges=0.0, extra_count=0, extra_payments=0.0,
+				sales_incentive=0.0, fixed_incentive=0.0, total=0.0, expense_count=0, expenses=0.0,
+			)
+		row.expense_count += 1
+		row.expenses += flt(claim.amount)
+	return sorted(by_technician.values(), key=lambda r: (r.technician_name or r.technician_id or "").lower())
+
+
 def _summary(month, rows, saved):
+	rows = _with_expenses(month, rows)
 	totals = {
 		key: sum(flt(r[key]) for r in rows)
 		for key in ("visit_count", "visit_charges", "extra_count", "extra_payments",
-					"sales_incentive", "fixed_incentive", "total")
+					"sales_incentive", "fixed_incentive", "total", "expense_count", "expenses")
 	}
 	processed = bool(saved and saved.status == "Processed")
 	return {
@@ -205,6 +257,13 @@ def technician_month(month, technician_id):
 			order_by="completed_at, name",
 		)
 	return _month_visits(month, technician_id)
+
+
+@frappe.whitelist()
+def technician_expenses(month, technician_id):
+	"""The submitted expense claims behind one row's Expenses figure, with the visit's patient."""
+	_assert_payout_admin()
+	return _month_expenses(_validated_month(month), technician_id)
 
 
 @frappe.whitelist()

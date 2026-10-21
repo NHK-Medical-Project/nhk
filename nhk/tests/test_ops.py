@@ -1000,25 +1000,26 @@ def _all_of(**kwargs):
 def test_three_shortcuts_each_counting_what_it_opens(cleanup):
 	for month in ("2026-09", frappe.utils.today()[:7]):
 		page = _list(month=month)
-		assert [sh["key"] for sh in page["shortcuts"]] == ["total", "to_assign", "pickups_due"], page["shortcuts"]
+		assert [(sh["key"], sh["period"]) for sh in page["shortcuts"]] == [
+			("to_assign", "Today"), ("pickups_due", "Month"), ("total", "Today")], page["shortcuts"]
 		assert page["month"] == month
 		for sh in page["shortcuts"]:
 			names, _last = _all_of(month=month, shortcut=sh["key"])
 			assert len(names) == len(set(names)) == sh["count"], (month, sh, len(names))
 
 
-def test_total_and_to_assign_are_the_months_orders(cleanup):
-	month = "2026-09"
-	total, _ = _all_of(month=month, shortcut="total")
-	expected = frappe.get_all("Sales Order", filters={
-		"docstatus": 1, "transaction_date": ("between", ("2026-09-01", "2026-09-30"))}, pluck="name")
-	assert sorted(total) == sorted(expected), (len(total), len(expected))
+def test_total_and_to_assign_are_todays_orders_whatever_the_month(cleanup):
+	today = frappe.utils.today()
+	expected = frappe.get_all("Sales Order", filters={"docstatus": 1, "transaction_date": today}, pluck="name")
+	for month in ("2026-09", today[:7]):
+		total, _ = _all_of(month=month, shortcut="total")
+		assert sorted(total) == sorted(expected), (month, len(total), len(expected))
 
-	to_assign, _ = _all_of(month=month, shortcut="to_assign")
-	rows = frappe.get_all("Sales Order", filters={"name": ("in", to_assign or [""])},
-						  fields=["order_type", "status", "transaction_date"])
-	assert all(r.status == "Order" and r.order_type in ("Sales", "Service") for r in rows)
-	assert all(str(r.transaction_date)[:7] == month for r in rows)
+		to_assign, _ = _all_of(month=month, shortcut="to_assign")
+		rows = frappe.get_all("Sales Order", filters={"name": ("in", to_assign or [""])},
+							  fields=["order_type", "status", "transaction_date"])
+		assert all(r.status == "Order" and r.order_type in ("Sales", "Service") for r in rows)
+		assert all(str(r.transaction_date) == today for r in rows)
 
 
 def test_pickups_due_soonest_first_overdue_only_this_month(cleanup):
@@ -1029,8 +1030,10 @@ def test_pickups_due_soonest_first_overdue_only_this_month(cleanup):
 											   fields=["name", "order_type", "status", "end_date"])}
 	ends = [rows[n].end_date for n in names]
 	assert ends == sorted(ends), "not soonest first"
-	assert all(rows[n].order_type == "Rental" and rows[n].status in ("Active", "Ready for Pickup") for n in names)
-	assert any(e < start for e in ends), "this month should include overdue rentals"
+	assert all(rows[n].order_type == "Rental" and rows[n].status == "Ready for Pickup" for n in names)
+	overdue = frappe.db.count("Sales Order", {"docstatus": 1, "order_type": "Rental", "status": "Ready for Pickup",
+											  "end_date": ("<", start)})
+	assert sum(e < start for e in ends) == overdue, "this month should include overdue pickups"
 
 	past, _ = _all_of(month="2026-08", shortcut="pickups_due")
 	past_ends = frappe.get_all("Sales Order", filters={"name": ("in", past or [""])}, pluck="end_date")

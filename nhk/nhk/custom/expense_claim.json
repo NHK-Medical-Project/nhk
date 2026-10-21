@@ -1,0 +1,57 @@
+{
+ "custom_fields": [
+  {
+   "doctype": "Custom Field",
+   "dt": "Expense Claim",
+   "module": null,
+   "name": "Expense Claim-custom_technician_id",
+   "fieldname": "custom_technician_id",
+   "fieldtype": "Link",
+   "label": "Technician",
+   "insert_after": "approval_status",
+   "options": "Technician Details",
+   "read_only": 0,
+   "in_standard_filter": 1,
+   "depends_on": null,
+   "no_copy": 1,
+   "description": "Set on a claim filed from the NHK Technician app. The office approves, submits and pays it on the desk as any HRMS Expense Claim."
+  },
+  {
+   "doctype": "Custom Field",
+   "dt": "Expense Claim",
+   "module": null,
+   "name": "Expense Claim-custom_visit",
+   "fieldname": "custom_visit",
+   "fieldtype": "Link",
+   "label": "Visit",
+   "insert_after": "custom_technician_id",
+   "options": "Technician Visit Entry",
+   "read_only": 0,
+   "in_standard_filter": 0,
+   "depends_on": "custom_technician_id",
+   "no_copy": 1,
+   "description": null
+  },
+  {
+   "doctype": "Custom Field",
+   "dt": "Expense Claim",
+   "module": null,
+   "name": "Expense Claim-custom_receipt",
+   "fieldname": "custom_receipt",
+   "fieldtype": "Attach",
+   "label": "Payment Screenshot",
+   "insert_after": "custom_visit",
+   "options": null,
+   "read_only": 0,
+   "in_standard_filter": 0,
+   "depends_on": "custom_technician_id",
+   "no_copy": 1,
+   "description": null
+  }
+ ],
+ "custom_perms": [],
+ "doctype": "Expense Claim",
+ "links": [],
+ "property_setters": [],
+ "sync_on_migrate": 1
+}
