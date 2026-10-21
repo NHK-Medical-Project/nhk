@@ -2,7 +2,8 @@
 // laid it out -- per staff member, Visits, Extra, Sales, Fixed Incentives, Total.
 //
 // Visits and Extra come from the month's completed visits; Sales and Fixed are
-// typed in here. Processing the month freezes it and settles its visits. All
+// typed in here. Expenses, after Total and outside it, are the technician's
+// submitted expense claims, paid or not: shown for information. Processing the month freezes it and settles its visits. All
 // figures and every rule come from `nhk.api.payouts`; this page draws them.
 // Spec: .scratch/technician-monthly-payout.
 
@@ -115,7 +116,7 @@ nhk.TechnicianPayouts = class TechnicianPayouts {
 			<div style="overflow-x: auto;">
 				<table class="table table-bordered" style="font-size: var(--text-md); min-width: 720px;">
 					<thead>
-						<tr><th colspan="6" style="text-align: center; font-size: var(--text-lg);">
+						<tr><th colspan="7" style="text-align: center; font-size: var(--text-lg);">
 							${frappe.utils.escape_html(this.month_label(d.month))}</th></tr>
 						<tr>
 							<th>${__("Staff Name")}</th>
@@ -124,6 +125,8 @@ nhk.TechnicianPayouts = class TechnicianPayouts {
 							<th class="text-right">${__("Sales")}</th>
 							<th class="text-right">${__("Fixed Incentives")}</th>
 							<th class="text-right">${__("Total")}</th>
+							<th class="text-right text-muted" title="${__("Expense claims the office already paid back. Not part of Total.")}">
+								${__("Expenses")}<div class="small" style="font-weight: normal;">${__("already paid, not in Total")}</div></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -157,7 +160,7 @@ nhk.TechnicianPayouts = class TechnicianPayouts {
 	}
 
 	no_rows() {
-		return `<tr><td colspan="6" class="text-muted text-center">
+		return `<tr><td colspan="7" class="text-muted text-center">
 			${__("No completed visits or incentives this month. Use Add Staff to pay an incentive.")}</td></tr>`;
 	}
 
@@ -182,6 +185,7 @@ nhk.TechnicianPayouts = class TechnicianPayouts {
 				<td class="text-right">${input("sales_incentive")}</td>
 				<td class="text-right">${input("fixed_incentive")}</td>
 				<td class="text-right" style="font-weight: 600;" data-total>${money(this.row_total(r))}</td>
+				<td class="text-right text-muted">${r.expenses ? money(r.expenses) + count(r.expense_count) : ""}</td>
 			</tr>`;
 	}
 
@@ -201,6 +205,7 @@ nhk.TechnicianPayouts = class TechnicianPayouts {
 				<td class="text-right">${money(sum("sales_incentive"))}</td>
 				<td class="text-right">${money(sum("fixed_incentive"))}</td>
 				<td class="text-right">${money(rows.reduce((a, r) => a + this.row_total(r), 0))}</td>
+				<td class="text-right text-muted">${money(sum("expenses"))}</td>
 			</tr>`;
 	}
 
@@ -217,8 +222,12 @@ nhk.TechnicianPayouts = class TechnicianPayouts {
 
 	// ---- actions -------------------------------------------------------------
 
+	// A row there only for its expenses is not pay; saving it would put a zero
+	// row on the month.
 	rows_to_save() {
-		return this.data.rows.map((r) => ({
+		const expenses_only = (r) =>
+			!r.visit_count && !r.extra_count && !flt(r.sales_incentive) && !flt(r.fixed_incentive) && r.expense_count;
+		return this.data.rows.filter((r) => !expenses_only(r)).map((r) => ({
 			technician_id: r.technician_id,
 			sales_incentive: flt(r.sales_incentive),
 			fixed_incentive: flt(r.fixed_incentive),
@@ -289,7 +298,7 @@ nhk.TechnicianPayouts = class TechnicianPayouts {
 					this.data.rows.push({
 						technician_id, technician_name: (message && message.name1) || technician_id,
 						visit_count: 0, visit_charges: 0, extra_count: 0, extra_payments: 0,
-						sales_incentive: 0, fixed_incentive: 0,
+						sales_incentive: 0, fixed_incentive: 0, expense_count: 0, expenses: 0,
 					});
 					this.dirty = true;
 					dialog.hide();
@@ -302,20 +311,22 @@ nhk.TechnicianPayouts = class TechnicianPayouts {
 
 	drill_down(technician_id) {
 		const r = this.data.rows.find((x) => x.technician_id === technician_id);
-		frappe.call({
-			method: "nhk.api.payouts.technician_month",
-			args: { month: this.data.month, technician_id },
-			callback: ({ message }) => {
+		const args = { month: this.data.month, technician_id };
+		Promise.all([
+			frappe.call({ method: "nhk.api.payouts.technician_month", args }),
+			frappe.call({ method: "nhk.api.payouts.technician_expenses", args }),
+		]).then(([{ message }, { message: claims }]) => {
 				const esc = frappe.utils.escape_html;
 				const visits = message || [];
 				const body = visits.length
 					? `<div style="overflow-x: auto;"><table class="table table-bordered table-sm" style="font-size: var(--text-sm);">
-						<thead><tr><th>${__("Completed")}</th><th>${__("Visit")}</th><th>${__("Type")}</th>
-							<th>${__("Order")}</th><th class="text-right">${__("Km")}</th>
+						<thead><tr><th>${__("Completed")}</th><th>${__("Visit")}</th><th>${__("Patient")}</th>
+							<th>${__("Type")}</th><th>${__("Order")}</th><th class="text-right">${__("Km")}</th>
 							<th class="text-right">${__("Charge")}</th><th class="text-right">${__("Extra")}</th></tr></thead>
 						<tbody>${visits.map((v) => `<tr>
 							<td>${esc(frappe.datetime.str_to_user(v.completed_on) || "")}</td>
 							<td><a href="/app/technician-visit-entry/${encodeURIComponent(v.name)}" target="_blank">${esc(v.name)}</a></td>
+							<td>${esc(v.patient_name || "")}</td>
 							<td>${esc(__(v.type || ""))}</td>
 							<td>${v.sales_order_id ? `<a href="/app/sales-order/${encodeURIComponent(v.sales_order_id)}" target="_blank">${esc(v.sales_order_id)}</a>` : ""}</td>
 							<td class="text-right">${esc(String(v.kilometers || ""))}</td>
@@ -324,12 +335,26 @@ nhk.TechnicianPayouts = class TechnicianPayouts {
 								<div class="text-muted small">${esc(__(v.extra_payment_reason || ""))}${v.extra_payment_note ? ": " + esc(v.extra_payment_note) : ""}</div>` : ""}</td>
 						</tr>`).join("")}</tbody></table></div>`
 					: `<p class="text-muted">${__("No visits this month; paid incentives only.")}</p>`;
+				const expenses = (claims || []).length
+					? `<h5 style="margin-top: var(--margin-lg);">${__("Expenses (not in Total)")}</h5>
+						<div style="overflow-x: auto;"><table class="table table-bordered table-sm" style="font-size: var(--text-sm);">
+						<thead><tr><th>${__("Date")}</th><th>${__("Claim")}</th><th>${__("Patient")}</th><th>${__("Type")}</th>
+							<th>${__("Note")}</th><th>${__("Status")}</th><th class="text-right">${__("Amount")}</th></tr></thead>
+						<tbody>${claims.map((c) => `<tr>
+							<td>${esc(frappe.datetime.str_to_user(c.expense_date) || "")}</td>
+							<td><a href="/app/expense-claim/${encodeURIComponent(c.name)}" target="_blank">${esc(c.name)}</a></td>
+							<td>${esc(c.patient_name || "")}${c.visit ? `<div class="text-muted small"><a href="/app/technician-visit-entry/${encodeURIComponent(c.visit)}" target="_blank">${esc(c.visit)}</a></div>` : ""}</td>
+							<td>${esc(__(c.expense_type || ""))}</td>
+							<td>${esc(c.note || "")}</td>
+							<td>${esc(__(c.status || ""))}${c.paid_mode ? `<div class="text-muted small">${esc(__(c.paid_mode))}</div>` : ""}</td>
+							<td class="text-right">${format_currency(c.amount || 0)}</td>
+						</tr>`).join("")}</tbody></table></div>`
+					: "";
 				frappe.msgprint({
 					title: __("{0}: {1}", [(r && r.technician_name) || technician_id, this.month_label(this.data.month)]),
-					message: body,
+					message: body + expenses,
 					wide: true,
 				});
-			},
 		});
 	}
 };

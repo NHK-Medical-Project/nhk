@@ -491,64 +491,7 @@
   });
 </script> -->
 
-<script>
-  document.addEventListener("DOMContentLoaded", function() {
-    var modal = new bootstrap.Modal(document.getElementById('CustomModalForm'), {
-      keyboard: false
-    });
- 
-    var modalForm = new bootstrap.Modal(document.getElementById('ModalForm'), {
-      keyboard: false
-    });
- 
-    // Set the last activity timestamp to the current time
-    var lastActivityTime = Date.now();
- 
-    // Function to check for user inactivity
-    function isUserInactive() {
-      var currentTime = Date.now();
-      var inactivityDuration = currentTime - lastActivityTime;
-      return inactivityDuration > 25000; // Adjust the inactivity duration as needed
-    }
- 
-    // Show the modal after 25 seconds only if the regular popup form is not active
-    setTimeout(function() {
-      if (!modalForm._isShown && isUserInactive()) {
-        modal.show();
-      }
-    }, 25000);
- 
-    // Close the modals when the close buttons are clicked
-    document.querySelectorAll('.btn-close').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        modal.hide();
-        modalForm.hide();
-        // Update the last activity timestamp when the modals are closed
-        lastActivityTime = Date.now();
-      });
-    });
- 
-    // Event listeners to update the last activity timestamp
-    document.addEventListener('mousemove', function() {
-      lastActivityTime = Date.now();
-    });
- 
-    document.addEventListener('keydown', function() {
-      lastActivityTime = Date.now();
-    });
- 
-    // Show the modal every 30 seconds if keyboard and mouse are not working and the regular popup form is not active
-    setInterval(function() {
-      if (!modalForm._isShown && isUserInactive()) {
-        // Check if the modal is not already visible
-        var modalElement = document.getElementById('CustomModalForm');
-        if (!modalElement.classList.contains('show')) {
-          modal.show();
-        }
-      }
-    }, 25000);
-  });
-</script>
+
 
 
 

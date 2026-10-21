@@ -37,6 +37,9 @@ def _order(cleanup, status="Active"):
 	for item in frappe.get_all("Sales Order Item", filters={"parent": so}, pluck="name"):
 		for field in ITEM_FIELDS:
 			cleanup.restore("Sales Order Item", item, field)
+		# Rows to match the order: a pickup moves only the items still at the
+		# patient's home, and the order picked may have them all back already.
+		frappe.db.set_value("Sales Order Item", item, "child_status", status, update_modified=False)
 
 	frappe.db.set_value("Sales Order", so, "status", status, update_modified=False)
 	return so
@@ -411,13 +414,30 @@ def test_the_block_leaves_out_other_orders(cleanup):
 	assert delivery not in shown
 
 
+def test_the_pickups_board_shows_every_category_with_its_address(cleanup):
+	"""`office.pickups`, the block's board: every rental out, not only sleep studies."""
+	from nhk.api import office
+
+	so = _order(cleanup)
+	cleanup.restore("Sales Order", so, "permanent_address_link")
+	cleanup.restore("Sales Order", so, "permanent_address")
+	frappe.db.set_value("Sales Order", so, {"permanent_address_link": None,
+											"permanent_address": "12 Gandhi Road\nVijayawada"}, update_modified=False)
+	delivery = _delivery(cleanup, so, category="Order")
+	frappe.set_user(OFFICE_USER)
+	row = next((r for r in office.pickups()["rows"] if r["sales_order_id"] == so), None)
+	assert row and row["delivery_visit"] == delivery
+	assert row["group"] == "With Patient" and not row["is_sleep_study"]
+	assert row["address"] == "12 Gandhi Road\nVijayawada"
+
+
 def test_the_block_and_the_desk_assign_are_the_offices(cleanup):
 	"""OTHER_USER holds only `NHK Technician`, which has no `share`."""
 	from nhk.api import office, pickup
 
 	so = _order(cleanup)
 	_delivery(cleanup, so)
-	for call in (office.sleep_study_pickups,
+	for call in (office.sleep_study_pickups, office.pickups,
 				 lambda: pickup.assign_pickup_for_order(so, OTHER_TECH)):
 		# Every call: `_forget_what_it_made` switches back to Administrator.
 		frappe.set_user(OTHER_USER)

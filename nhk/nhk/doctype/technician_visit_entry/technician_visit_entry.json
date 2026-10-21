@@ -21,6 +21,7 @@
   "order",
   "sales_order_id",
   "item_code",
+  "items",
   "technician_category",
   "column_break_ifcb",
   "kilometers",
@@ -239,9 +240,18 @@
    "label": "Technician Notes"
   },
   {
+   "description": "The items this visit carries, as one label. Written from Items when that table is filled.",
    "fieldname": "item_code",
    "fieldtype": "Data",
    "label": "Item Code",
+   "read_only": 1
+  },
+  {
+   "description": "The order's items a Pickup visit collects. Empty on a whole-order visit.",
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "Technician Visit Item",
    "read_only": 1
   },
   {
@@ -425,7 +435,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-10-09 12:00:00.000000",
+ "modified": "2026-10-21 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "nhk",
  "name": "Technician Visit Entry",

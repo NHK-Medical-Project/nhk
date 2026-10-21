@@ -128,8 +128,9 @@ def sales_orders(order_type=None, status=None, search=None, since=None, cursor=N
 	at `DEFAULT_WINDOW_DAYS` ago, echoed back as `since`.
 
 	`counts` say how many orders each Order Type and each status would show with
-	the *other* filters left as they are. `shortcuts` are the month's three
-	shortcuts with their counts under the same search.
+	the *other* filters left as they are. `shortcuts` are the three of
+	`MONTH_SHORTCUTS` (two count today, one the month) with their counts under
+	the same search.
 
 	Pages are keyed on the sort date and the name, not offsets, so an order
 	submitted while someone scrolls does not shift the rest by one.
@@ -190,23 +191,25 @@ def sales_orders(order_type=None, status=None, search=None, since=None, cursor=N
 	}
 
 
-#: The Office tab's shortcuts for a month (2026-10-10), in order: key, label.
-#: Three, each something to look at or act on that month:
+#: The Office tab's shortcuts (2026-10-10, reworked 2026-10-16), in order:
+#: key, label, and the period it counts over -- "Today" whatever month is
+#: shown, or "Month" for the month shown:
 #:
-#: * **total** -- the orders taken that month.
-#: * **to_assign** -- that month's Sales and Service orders still in `Order`:
-#:   no technician given yet (`assign_technician`).
-#: * **pickups_due** -- rentals still out (`Active` or `Ready for Pickup`)
-#:   whose `end_date` falls in the month; for the current month, overdue ones
-#:   too. Soonest end first (`assign_pickup`).
+#: * **to_assign** (Today) -- today's Sales and Service orders still in
+#:   `Order`: no technician given yet (`assign_technician`).
+#: * **pickups_due** (Month) -- rentals in `Ready for Pickup` whose `end_date`
+#:   falls in the month; for the current month, overdue ones too. Soonest end
+#:   first (`assign_pickup`). `Active` rentals ending in the month are no
+#:   longer counted (user, 2026-10-16).
+#: * **total** (Today) -- the orders taken today.
 MONTH_SHORTCUTS = (
-	("total", "Total"),
-	("to_assign", "To assign"),
-	("pickups_due", "Pickups due"),
+	("to_assign", "To assign", "Today"),
+	("pickups_due", "Pickups due", "Month"),
+	("total", "Total", "Today"),
 )
 
-#: The rental statuses a pickup is still to be done from.
-_PICKUP_PENDING_STATUSES = ("Active", "Ready for Pickup")
+#: The rental status a pickup is due from.
+_PICKUP_PENDING_STATUSES = ("Ready for Pickup",)
 
 
 def _month_bounds(month):
@@ -223,11 +226,13 @@ def _month_bounds(month):
 def _shortcut_scope(key, bounds, search):
 	"""The `where`, its values, and the sort for one of `MONTH_SHORTCUTS`."""
 	start, end = bounds
+	today = getdate(_today())
 	if key == "total":
-		where, values = _where(search=search, since=start, until=end)
+		where, values = _where(search=search, since=today, until=add_days(today, 1))
 		return where, values, "transaction_date", False
 	if key == "to_assign":
-		where, values = _where(status=UNASSIGNED_ORDER_STATUS, search=search, since=start, until=end)
+		where, values = _where(status=UNASSIGNED_ORDER_STATUS, search=search, since=today,
+							   until=add_days(today, 1))
 		where += " and so.order_type in %(assignable_types)s"
 		values["assignable_types"] = tuple(ASSIGNMENT_VISIT_TYPES)
 		return where, values, "transaction_date", False
@@ -247,10 +252,10 @@ def _shortcut_scope(key, bounds, search):
 def _shortcuts(search, bounds):
 	"""Each of the month's shortcuts and how many orders it shows now."""
 	out = []
-	for key, label in MONTH_SHORTCUTS:
+	for key, label, period in MONTH_SHORTCUTS:
 		where, values, _sort, _asc = _shortcut_scope(key, bounds, search)
 		count = frappe.db.sql(f"select count(*) from `tabSales Order` so where {where}", values)[0][0]
-		out.append({"key": key, "label": label, "count": count})
+		out.append({"key": key, "label": label, "period": period, "count": count})
 	return out
 
 

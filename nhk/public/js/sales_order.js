@@ -710,10 +710,12 @@ nhk.sales_order_visits = {
 				},
 			],
 			(values) => {
+				// Only the items still at the patient's home: the core
+				// `make_ready_for_pickup` set every row, collected or not.
 				frappe.call({
-					method: "erpnext.selling.doctype.sales_order.sales_order.make_ready_for_pickup",
+					method: "nhk.api.pickup.ready_order_for_pickup",
 					args: {
-						docname: frm.doc.name,
+						sales_order_id: frm.doc.name,
 						pickup_date: values.pickup_date,
 						pickup_reason: values.pickup_reason,
 						pickup_remark: values.pickup_remark,

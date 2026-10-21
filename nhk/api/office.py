@@ -136,10 +136,10 @@ def _collected(visit_names):
 
 
 # ---------------------------------------------------------------------------
-# sleep study pickups: the Technician Visits block's sleep study tabs
+# pickups: the Technician Visits block's pickup tabs
 # ---------------------------------------------------------------------------
 
-#: The block's tabs, in the order a sleep study moves through them.
+#: The block's tabs, in the order a rental moves through them.
 #:
 #: * **With Patient** -- delivered, the order `Active`, no pickup arranged yet.
 #: * **To Assign** -- the order is `Ready for Pickup` but nobody has the pickup:
@@ -150,30 +150,52 @@ PICKUP_GROUPS = ("With Patient", "To Assign", "Assigned")
 
 
 @frappe.whitelist()
-def sleep_study_pickups():
-	"""Every sleep study still out with a patient, by where its pickup stands.
+def pickups():
+	"""Every rental still out with a patient, whatever its category, by where
+	its pickup stands, with the address to collect from.
 
-	Not limited to a day, unlike `technician_visits`: a study is out for a
-	night or two, and the office needs to see all of them until they are back.
+	Not limited to a day, unlike `technician_visits`: a device is out for days
+	or months, and the office needs to see all of them until they are back.
+	Every submitted Rental order in `Active` or `Ready for Pickup`, as the
+	phone's Pickups board (`nhk.api.ops.pickups`); the category is the latest
+	delivery's, blank on orders delivered before visits were recorded.
 	Gated as `technician_visits` is.
 	"""
+	return _pickups()
+
+
+@frappe.whitelist()
+def sleep_study_pickups():
+	"""`pickups`, sleep studies only: the phone's Office tab still reads this
+	(`nhk.api.ops.sleep_study_pickups`)."""
+	return _pickups(sleep_studies_only=True)
+
+
+def _pickups(sleep_studies_only=False):
 	frappe.has_permission("Technician Visit Entry", "share", throw=True)
 
-	from nhk.api.pickup import DELIVERED_ORDER_STATUS, READY_FOR_PICKUP, SLEEP_STUDY_PREFIX
+	from nhk.api import addresses
+	from nhk.api.pickup import (
+		DELIVERED_ORDER_STATUS,
+		READY_FOR_PICKUP,
+		SLEEP_STUDY_PREFIX,
+		pickup_reasons,
+	)
 
-	# The latest sleep study delivery on each order still out.
+	# The latest delivery on each order still out.
 	orders = frappe.db.sql(
-		"""select so.name as sales_order_id, so.status as order_status, so.customer_name,
-			so.pickup_date, d.name as delivery_visit, d.technician_category,
+		f"""select so.name as sales_order_id, so.status as order_status, so.customer_name,
+			so.pickup_date, so.pickup_reason, so.permanent_address_link, so.permanent_address,
+			so.delivery_address, d.name as delivery_visit, d.technician_category,
 			d.technician_id as delivery_technician_id, d.technician_name as delivery_technician_name,
 			d.area, coalesce(d.completed_at, d.technician_update_datetime, d.modified) as delivered_at
 		from `tabSales Order` so
-		join `tabTechnician Visit Entry` d on d.name = (
+		{"join" if sleep_studies_only else "left join"} `tabTechnician Visit Entry` d on d.name = (
 			select d2.name from `tabTechnician Visit Entry` d2
-			where d2.sales_order_id = so.name and d2.type = 'Delivery'
-				and d2.technician_category like %(prefix)s and d2.status != 'Assigned'
+			where d2.sales_order_id = so.name and d2.type = 'Delivery' and d2.status != 'Assigned'
+				{"and d2.technician_category like %(prefix)s" if sleep_studies_only else ""}
 			order by d2.creation desc limit 1)
-		where so.docstatus = 1 and so.status in %(statuses)s""",
+		where so.docstatus = 1 and so.order_type = 'Rental' and so.status in %(statuses)s""",
 		{"prefix": SLEEP_STUDY_PREFIX + "%", "statuses": (DELIVERED_ORDER_STATUS, READY_FOR_PICKUP)},
 		as_dict=True,
 	)
@@ -191,13 +213,17 @@ def sleep_study_pickups():
 		order["group"] = group
 		order["customer_name"] = (order.customer_name or "").strip()
 		order["delivery_technician_name"] = (order.delivery_technician_name or "").strip()
+		order["is_sleep_study"] = (order.technician_category or "").startswith(SLEEP_STUDY_PREFIX)
+		order["address"] = addresses.text_of(order, order.area)
+		for field in ("permanent_address_link", "permanent_address", "delivery_address"):
+			del order[field]
 		order["pickup"] = pickup
 		rows.append(order)
 
 	position = {group: i for i, group in enumerate(PICKUP_GROUPS)}
-	rows.sort(key=lambda r: (position[r["group"]], r.delivered_at or "", r.sales_order_id))
+	rows.sort(key=lambda r: (position[r["group"]], str(r.delivered_at or ""), r.sales_order_id))
 	counts = {group: sum(1 for r in rows if r["group"] == group) for group in PICKUP_GROUPS}
-	return {"counts": counts, "rows": rows}
+	return {"counts": counts, "rows": rows, "pickup_reasons": pickup_reasons()}
 
 
 def _open_pickups(orders):

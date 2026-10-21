@@ -32,7 +32,7 @@ Two gates run ahead of every read and every write:
 
 import frappe
 from frappe import _
-from frappe.utils import add_to_date, cint, flt, get_datetime, getdate, now_datetime, today
+from frappe.utils import add_to_date, cint, date_diff, flt, get_datetime, getdate, now_datetime, today
 
 from nhk.api.guards import (
 	RESPONSE_ACCEPTED,
@@ -201,8 +201,12 @@ def my_visits(limit=100, month=None, type=None):
 	# Rejected jobs belong to the office now -- same rule as `my_jobs`.
 	visits = [v for v in visits if response_of(v) != RESPONSE_REJECTED]
 
-	# Where each job is, as the job screen shows it (`nhk.api.addresses`): the
-	# list showed only the area. Once per order: an order's visits share it.
+	return _with_addresses(visits)
+
+
+def _with_addresses(visits):
+	"""Where each job is, as the job screen shows it (`nhk.api.addresses`): the
+	list showed only the area. Once per order: an order's visits share it."""
 	where = {}
 	for v in visits:
 		key = (v.sales_order_id, v.area, v.patient_id)
@@ -210,6 +214,52 @@ def my_visits(limit=100, month=None, type=None):
 			where[key] = addresses.for_order(*key)["address"]
 		v["address"] = where[key]
 	return visits
+
+
+#: The longest range `my_calendar` answers: a month view with its edge weeks.
+CALENDAR_MAX_DAYS = 62
+
+#: The day a visit sits on in the calendar: when it is scheduled, else when it
+#: was done, else when it was given out.
+_CALENDAR_DAY = "date(coalesce(scheduled_datetime, completed_at, created_datetime, creation))"
+
+
+@frappe.whitelist()
+def my_calendar(start, end):
+	"""The caller's visits, every status, on the days from `start` to `end`
+	(`YYYY-MM-DD`, both included) -- the app's calendar (2026-10-16).
+
+	Each visit carries `calendar_date`, the day it sits on (`_CALENDAR_DAY`).
+	Same rules as `my_visits`: the caller's own, refused off duty, and rejected
+	jobs left out (they are the office's now).
+	"""
+	technician = current_technician()
+	assert_on_duty(technician)
+	start, end = getdate(start), getdate(end)
+	if end < start:
+		frappe.throw(_("The calendar's end is before its start."))
+	if date_diff(end, start) >= CALENDAR_MAX_DAYS:
+		frappe.throw(_("Ask for at most {0} days at a time.").format(CALENDAR_MAX_DAYS))
+
+	names = frappe.db.sql_list(
+		f"""select name from `tabTechnician Visit Entry`
+		where technician_id = %(technician)s and technician_user_id = %(user)s
+			and {_CALENDAR_DAY} between %(start)s and %(end)s""",
+		{"technician": technician, "user": frappe.session.user, "start": start, "end": end},
+	)
+	if not names:
+		return []
+	visits = frappe.get_all(
+		"Technician Visit Entry",
+		filters={"name": ("in", names)},
+		fields=VISIT_LIST_FIELDS,
+		order_by="scheduled_datetime asc, created_datetime asc",
+		limit_page_length=0,
+	)
+	visits = [v for v in visits if response_of(v) != RESPONSE_REJECTED]
+	for v in visits:
+		v["calendar_date"] = getdate(v.scheduled_datetime or v.completed_at or v.created_datetime or v.creation)
+	return _with_addresses(visits)
 
 
 @frappe.whitelist()
@@ -285,9 +335,9 @@ def job(visit_id):
 		# thing the doorstep screen renders, and a second call would show it
 		# arriving late on a slow connection.
 		"attachments": _attachments_of(visit.name),
-		# The visit's Frappe comments: the same timeline the desk shows, so the
-		# office and the technician read and write one thread.
-		"comments": _comments_of(visit.name),
+		# The order's Frappe comments with the visit's own: the timelines the
+		# desk shows, so the office and the technician read one thread.
+		"comments": _comments_of(visit),
 		# Whether `nhk.api.payment_collection` will take a payment on this visit
 		# now. Not only while open: the patient often pays at delivery or pickup.
 		"can_collect_payment": payment_collection.can_collect(visit),
@@ -934,33 +984,46 @@ COMMENT_TYPE = "Comment"
 COMMENT_MAX_LENGTH = 2000
 
 
-def _comments_of(visit_name):
-	"""The visit's comments, oldest first, as plain text.
+def _comments_of(visit):
+	"""The comments on the visit and on its Sales Order, oldest first, as plain text.
 
-	Frappe's `Comment` rows of type Comment: whatever the office writes on the
-	visit form's timeline, the lines the system writes there (a reassignment,
-	a pickup arranged), and what technicians add from the app. Desk comments
-	are HTML from the editor; the phone shows text.
+	Frappe's `Comment` rows of type Comment. The order's: what the office and
+	every technician on the order write, so they outlive one visit. The
+	visit's: what the system writes there (a reassignment, a payment taken)
+	and what was written on the visit before comments moved to the order.
+	A line written on both (a pickup arranged) shows once. Desk comments are
+	HTML from the editor; the phone shows text.
 	"""
 	me = frappe.session.user
-	rows = frappe.get_all(
-		"Comment",
-		filters={
-			"reference_doctype": "Technician Visit Entry",
-			"reference_name": visit_name,
-			"comment_type": COMMENT_TYPE,
-		},
-		fields=["name", "content", "comment_email", "comment_by", "owner", "creation"],
-		order_by="creation asc",
-		ignore_permissions=True,
-	)
-	return [{
-		"name": r.name,
-		"content": _comment_text(r.content),
-		"by": r.comment_by or frappe.utils.get_fullname(r.comment_email or r.owner),
-		"at": r.creation,
-		"is_mine": (r.comment_email or r.owner) == me,
-	} for r in rows]
+	references = [("Technician Visit Entry", visit.name)]
+	if visit.sales_order_id:
+		references.append(("Sales Order", visit.sales_order_id))
+	rows = []
+	for doctype, name in references:
+		rows += frappe.get_all(
+			"Comment",
+			filters={
+				"reference_doctype": doctype,
+				"reference_name": name,
+				"comment_type": COMMENT_TYPE,
+			},
+			fields=["name", "content", "comment_email", "comment_by", "owner", "creation"],
+			ignore_permissions=True,
+		)
+	comments, seen = [], set()
+	for r in sorted(rows, key=lambda r: r.creation):
+		text = _comment_text(r.content)
+		if text in seen:
+			continue
+		seen.add(text)
+		comments.append({
+			"name": r.name,
+			"content": text,
+			"by": r.comment_by or frappe.utils.get_fullname(r.comment_email or r.owner),
+			"at": r.creation,
+			"is_mine": (r.comment_email or r.owner) == me,
+		})
+	return comments
 
 
 def _comment_text(content):
@@ -975,11 +1038,13 @@ def _comment_text(content):
 
 @frappe.whitelist()
 def add_job_comment(visit_id, content):
-	"""Add a comment to one of the caller's visits, on its Frappe timeline.
+	"""Add a comment to one of the caller's visits, on its Sales Order's timeline.
 
-	The office sees it on the visit form like any desk comment. On duty and
-	the caller's own visit, as every job read is (ADR-0003 of the app); any
-	status, because something worth saying often comes after the job is done.
+	On the order, not the visit: the office works from the order, and the next
+	technician on it reads what this one wrote. A visit with no order keeps it
+	on its own timeline. On duty and the caller's own visit, as every job read
+	is (ADR-0003 of the app); any status, because something worth saying often
+	comes after the job is done.
 	"""
 	technician = current_technician()
 	assert_on_duty(technician)
@@ -993,9 +1058,10 @@ def add_job_comment(visit_id, content):
 
 	# Escaped, line breaks kept: the desk renders comment content as HTML.
 	html = frappe.utils.escape_html(text).replace("\n", "<br>")
-	visit.add_comment(COMMENT_TYPE, html, comment_email=frappe.session.user,
-					  comment_by=frappe.utils.get_fullname(frappe.session.user))
-	return _comments_of(visit.name)
+	target = frappe.get_doc("Sales Order", visit.sales_order_id) if visit.sales_order_id else visit
+	target.add_comment(COMMENT_TYPE, html, comment_email=frappe.session.user,
+					   comment_by=frappe.utils.get_fullname(frappe.session.user))
+	return _comments_of(visit)
 
 
 def _attachments_of(visit_name):
