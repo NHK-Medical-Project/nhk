@@ -41,7 +41,7 @@
 	.ofm .of-link { background: none; border: 0; color: var(--of-blue); font-weight: 600; font-size: 14px; cursor: pointer; padding: 0; }
 	.ofm fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 	.ofm fieldset[disabled] { display: none; }
-	.ofm .of-msg { display: none; border-radius: 15px; padding: 14px 18px; margin-bottom: 20px; font-weight: 600; line-height: 1.4; }
+	.ofm .of-msg { display: none; border-radius: 15px; padding: 14px 18px; margin-top: 20px; margin-bottom: 20px; font-weight: 600; line-height: 1.4; }
 	.ofm .of-msg.bad { display: block; background: #fdecea; color: var(--of-bad); }
 	.ofm .of-msg.good { display: block; background: #e6f9f3; color: #0d7a5f; }
 	.ofm .btn-blue { font-size: 16px; padding: 14px 40px; }
@@ -59,7 +59,8 @@
 		<div class="row justify-content-center">
 			<div class="col-lg-8 col-md-10 col-12">
 				<div class="of-head">
-					<h1>Patient <span>Registration</span></h1>
+					{% if form == "sleep-study" %}<h1>Patient Registration <span>For Sleep Study</span></h1>
+					{% else %}<h1>Patient <span>Registration</span></h1>{% endif %}
 					<p>NHK Medical Pvt Ltd, Bangalore &middot; logon to <a href="https://nhkmedical.com">nhkmedical.com</a></p>
 					<p>For support or complaints call <a href="tel:8884880013">8884880013</a> or <a href="tel:8884880024">8884880024</a></p>
 					{% if sales_person %}<div class="of-badge">Sales person: {{ sales_person }}</div>{% endif %}
@@ -68,7 +69,6 @@
 {% if not sales_person %}
 				<div class="of-msg bad" style="display:block">{{ link_error }}</div>
 {% else %}
-				<div id="of-msg" class="of-msg" role="status" aria-live="polite"></div>
 				<form id="of-form" autocomplete="off" novalidate>
 
 					<div class="of-card">
@@ -101,30 +101,34 @@
 							<label class="of-label req" for="email">Email</label>
 							<input class="form-control" id="email" type="email" required maxlength="140">
 						</div>
-						<div class="of-field">
-							<label class="of-label" for="alternate_mobile">Alternative mobile number</label>
-							<input class="form-control" id="alternate_mobile" inputmode="tel" maxlength="16">
-						</div>
+						<fieldset data-show="full-form">
+							<div class="of-field">
+								<label class="of-label" for="alternate_mobile">Alternative mobile number</label>
+								<input class="form-control" id="alternate_mobile" inputmode="tel" maxlength="16">
+							</div>
+						</fieldset>
 						<div class="of-field">
 							<label class="of-label req" for="delivery_address" id="address_label">Delivery address</label>
 							<textarea class="form-control" id="delivery_address" required maxlength="1000"></textarea>
 						</div>
-						<div class="of-field">
-							<label class="of-label" for="gps_location">Delivery GPS location</label>
-							<input class="form-control" id="gps_location" maxlength="1000" placeholder="Paste a Google Maps link">
-							<div class="of-hint">Or send it on WhatsApp separately.</div>
-						</div>
-						<div class="of-field">
-							<label class="of-label" for="permanent_address">Permanent address</label>
-							<textarea class="form-control" id="permanent_address" maxlength="1000"></textarea>
-						</div>
+						<fieldset data-show="full-form">
+							<div class="of-field">
+								<label class="of-label" for="gps_location">Delivery GPS location</label>
+								<input class="form-control" id="gps_location" maxlength="1000" placeholder="Paste a Google Maps link">
+								<div class="of-hint">Or send it on WhatsApp separately.</div>
+							</div>
+							<div class="of-field">
+								<label class="of-label" for="permanent_address">Permanent address</label>
+								<textarea class="form-control" id="permanent_address" maxlength="1000"></textarea>
+							</div>
+						</fieldset>
 						<div class="of-field mb-0">
 							<label class="of-label req" for="doctor" id="doctor_label">Dr name &amp; hospital name</label>
 							<input class="form-control" id="doctor" required maxlength="140">
 						</div>
 					</div>
 
-					<div class="of-card">
+					<div class="of-card" id="of-type-card">
 						<h2>Type</h2>
 						<div class="of-pills" id="of-kinds"></div>
 					</div>
@@ -159,7 +163,7 @@
 					<fieldset data-show="diagnostic" disabled>
 						<div class="of-card">
 							<h2>Diagnostic study</h2>
-							<div class="of-field">
+							<div class="of-field" id="of-test-field">
 								<span class="of-label req">Test</span>
 								<div class="of-pills" id="of-tests"></div>
 							</div>
@@ -232,6 +236,7 @@
 					<div class="text-center">
 						<button type="submit" class="btn btn-blue" id="of-submit">Submit</button>
 					</div>
+					<div id="of-msg" class="of-msg" role="status" aria-live="polite"></div>
 				</form>
 {% endif %}
 			</div>
@@ -243,6 +248,7 @@
 <script>
 (function () {
 	const TOKEN = {{ token | tojson }};
+	const FORM = {{ form | tojson }};
 	const CSRF = {{ csrf_token | tojson }};
 	const C = {{ choices | tojson }};
 	const K = C.kind_names;
@@ -288,13 +294,23 @@
 	const value = (name) => (form.querySelector('[name="' + name + '"]:checked') || {}).value || "";
 	const isSleep = () => value("kind") === K.diagnostic && value("test") === C.sleep_study;
 
+	// `?form=sleep-study`: the sleep study Google Form alone. Type and Test are
+	// set and hidden (not disabled, so they are still sent).
+	function preset() {
+		if (FORM !== "sleep-study") return;
+		form.querySelector('[name="kind"][value="' + K.diagnostic + '"]').checked = true;
+		form.querySelector('[name="test"][value="' + C.sleep_study + '"]').checked = true;
+		$("of-type-card").hidden = $("of-test-field").hidden = true;
+	}
+	preset();
+
 	// Show only what the chosen Type asks for, as the Google Form's sections did.
 	// A disabled fieldset is hidden and skipped by the browser's own checks.
 	function sync() {
 		const kind = value("kind"), sleep = isSleep();
 		const shown = {
 			rent: kind === K.rent, purchase: kind === K.purchase, titration: kind === K.titration,
-			diagnostic: kind === K.diagnostic, sleep: sleep, "not-sleep": !sleep,
+			diagnostic: kind === K.diagnostic, sleep: sleep, "not-sleep": !sleep, "full-form": !FORM,
 			delivery: !!kind && kind !== K.nursing,
 		};
 		form.querySelectorAll("fieldset[data-show]").forEach((f) => { f.disabled = !shown[f.dataset.show]; });
@@ -359,9 +375,10 @@
 				throw new Error(text);
 			}
 			form.reset();
+			preset();
 			$("gender_other").disabled = true;
 			sync();
-			show("Thank you. Request " + body.message.name + " has been sent to NHK Medical.", "good");
+			show("Thank you. Request has been sent to NHK Medical.", "good");
 		} catch (err) {
 			show(err.message, "bad");
 		} finally {

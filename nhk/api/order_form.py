@@ -72,6 +72,10 @@ RENT_DURATIONS = ("1 day trial", "7 days", "15 days", "30 days")
 PURCHASE_PRODUCTS = ("Auto CPAP", "Oxygen Concentrator", "Oxygen Cylinder", "Bipap", "NIV/CPAP Mask & Tubing")
 TITRATION_DAYS = ("1 Day", "2 Days", "3 Days")
 SLEEP_STUDY = "Sleep Study Test"
+#: `?form=sleep-study` opens the form on Diagnostic Study → Sleep Study Test
+#: with only the sleep study Google Form's questions, for links sent per request.
+SLEEP_STUDY_FORM = "sleep-study"
+FORMS = (SLEEP_STUDY_FORM,)
 TESTS = ("ABPM Test (24 hrs)", "Holter Test", SLEEP_STUDY)
 GENDERS = ("Male", "Female", "Other")
 LANGUAGES = ("Hindi", "English", "Kannada", "Tamil", "Bengali")
@@ -139,18 +143,21 @@ def form_sales_person(token) -> str:
 	return row.name
 
 
-def _link(token):
-	return get_url(f"/order-form?token={token}")
+def _link(token, form=None):
+	return get_url(f"/order-form?token={token}" + (f"&form={form}" if form else ""))
 
 
 @frappe.whitelist()
-def form_link(sales_person):
-	"""`sales_person`'s public form link, making their token first if they have none."""
+def form_link(sales_person, form=None):
+	"""`sales_person`'s public form link, making their token first if they have none.
+
+	`form` (one of FORMS) opens the link on that request alone; the token is the same.
+	"""
 	frappe.only_for(LINK_ROLES)
-	token = frappe.db.get_value("Sales Person", sales_person, TOKEN_FIELD)
-	if not token:
-		return new_form_link(sales_person)
-	return _link(token)
+	form = _pick(form, FORMS, _("Form"), required=False) or None
+	if not frappe.db.get_value("Sales Person", sales_person, TOKEN_FIELD):
+		new_form_link(sales_person)
+	return _link(frappe.db.get_value("Sales Person", sales_person, TOKEN_FIELD), form)
 
 
 @frappe.whitelist(methods=["POST"])
