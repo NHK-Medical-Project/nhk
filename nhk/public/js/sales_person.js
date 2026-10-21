@@ -3,7 +3,8 @@
 // Each sales person has their own link, `/order-form?token=<token>`; a draft
 // Sales Order raised from it carries their name (`nhk.api.order_form`). The
 // office copies the link from here and sends it to them. New Order Form Link
-// replaces the token, so a leaked link stops working.
+// replaces the token, so a leaked link stops working. The Sleep Study link is
+// the same link opened on the sleep study questions alone (`&form=sleep-study`).
 
 frappe.ui.form.on("Sales Person", {
 	refresh(frm) {
@@ -11,6 +12,12 @@ frappe.ui.form.on("Sales Person", {
 
 		frm.add_custom_button(__("Copy Order Form Link"), () => {
 			frappe.call("nhk.api.order_form.form_link", { sales_person: frm.doc.name }).then((r) => {
+				frappe.utils.copy_to_clipboard(r.message);
+			});
+		}, __("Order Form"));
+
+		frm.add_custom_button(__("Copy Sleep Study Form Link"), () => {
+			frappe.call("nhk.api.order_form.form_link", { sales_person: frm.doc.name, form: "sleep-study" }).then((r) => {
 				frappe.utils.copy_to_clipboard(r.message);
 			});
 		}, __("Order Form"));

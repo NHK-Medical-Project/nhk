@@ -37,6 +37,9 @@ def _order(cleanup, status="Active"):
 	for item in frappe.get_all("Sales Order Item", filters={"parent": so}, pluck="name"):
 		for field in ITEM_FIELDS:
 			cleanup.restore("Sales Order Item", item, field)
+		# Rows to match the order: a pickup moves only the items still at the
+		# patient's home, and the order picked may have them all back already.
+		frappe.db.set_value("Sales Order Item", item, "child_status", status, update_modified=False)
 
 	frappe.db.set_value("Sales Order", so, "status", status, update_modified=False)
 	return so

@@ -593,6 +593,7 @@ def _advance_sales_order(visit, new_status):
 		return
 
 	stamp = frappe.utils.nowdate()
+	rows = pickup_rows(visit) if new_status == COMPLETION_STATUS["Pickup"] else []
 	try:
 		if new_status == "Delivered":
 			# Read it off the order being advanced rather than off the visit: the
@@ -602,6 +603,8 @@ def _advance_sales_order(visit, new_status):
 				"Sales Order", visit.sales_order_id, "customer"
 			) or visit.patient_id
 			make_delivered(visit.sales_order_id, customer, stamp)
+		elif rows:
+			_mark_rows_picked_up(visit.sales_order_id, rows, stamp)
 		else:
 			make_pickedup(visit.sales_order_id, stamp)
 	except Exception as exc:
@@ -609,6 +612,56 @@ def _advance_sales_order(visit, new_status):
 			_("The job could not be closed on order {0}: {1}. Call the office before you leave.")
 			.format(visit.sales_order_id, str(exc))
 		)
+
+
+#: Row statuses that mean the item is still at the patient's home.
+STILL_OUT_STATUSES = ("Active", "Ready for Pickup")
+
+
+def pickup_rows(visit):
+	"""The Sales Order Item rows a Pickup visit collects; empty means the whole order.
+
+	From `items` (`nhk.api.pickup.assign_item_pickup`). A visit from the old
+	per-row button has only `item_code`, so that is matched to its row when it
+	names exactly one.
+	"""
+	if visit.get("items"):
+		return [row.sales_order_item for row in visit.items]
+	if not visit.get("item_code") or not visit.get("sales_order_id"):
+		return []
+	rows = frappe.get_all("Sales Order Item",
+						  filters={"parent": visit.sales_order_id, "item_code": visit.item_code}, pluck="name")
+	return rows if len(rows) == 1 else []
+
+
+def _mark_rows_picked_up(sales_order, rows, stamp):
+	"""`make_pickedup` for some rows only, as an item pickup needs.
+
+	`make_pickedup` moves every row and the order, so closing a one-item pickup
+	marked devices still at the patient's home Picked Up, and put a row already
+	Submitted to Office back (SAL-ORD-2026-12054). Here a row already back at
+	the office is left alone, and the order turns Picked Up only once nothing is
+	still out; until then it stays where it is (decided 2026-10-21).
+	"""
+	for name in rows:
+		item = frappe.get_doc("Sales Order Item", name)
+		if item.child_status == "Submitted to Office":
+			continue
+		item.child_status = "Picked Up"
+		item.pickup_date = stamp
+		item.save(ignore_permissions=True)
+
+	if frappe.get_all("Sales Order Item",
+					  filters={"parent": sales_order, "child_status": ("in", STILL_OUT_STATUSES)}, limit=1):
+		return
+	order = frappe.get_doc("Sales Order", sales_order)
+	# `Partially Closed` means the office has already taken some rows in;
+	# their per-row Submitted to Office finishes the order from there.
+	if order.status not in STILL_OUT_STATUSES:
+		return
+	order.picked_up = stamp
+	order.status = "Picked Up"
+	order.save(ignore_permissions=True)
 
 
 def _mark_technician_work_done(sales_order):

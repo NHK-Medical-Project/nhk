@@ -81,9 +81,10 @@ def _answers(**overrides):
 
 
 def _sleep_study(**overrides):
-	return _answers(kind="Diagnostic Study", test="Sleep Study Test", rent=[], diagnosis="",
-		gender="Male", height="170 cm", weight="80 kg", profession="Teacher", symptoms=["Snoring", "Day Naps"],
-		languages=["Kannada"], language_other="Tulu", sleep_time="23:00", wake_time="06:30", **overrides)
+	return _answers(**{"kind": "Diagnostic Study", "test": "Sleep Study Test", "rent": [], "diagnosis": "",
+		"gender": "Male", "height": "170 cm", "weight": "80 kg", "profession": "Teacher",
+		"symptoms": ["Snoring", "Day Naps"], "languages": ["Kannada"], "language_other": "Tulu",
+		"sleep_time": "23:00", "wake_time": "06:30", **overrides})
 
 
 def _submit(cleanup, user, **overrides):
@@ -159,6 +160,20 @@ def test_the_office_copies_the_link_and_can_replace_it(cleanup):
 			except frappe.PermissionError:
 				continue
 			raise AssertionError("%s reached %s" % (user, fn.__name__))
+
+
+def test_the_sleep_study_link_opens_the_same_form_on_the_sleep_study(cleanup):
+	from nhk.api import order_form
+
+	sp, token = _token(_sales_users(1)[0])
+	link = order_form.form_link(sp, form=order_form.SLEEP_STUDY_FORM)
+	assert link.endswith("/order-form?token=%s&form=sleep-study" % token), link
+	try:
+		order_form.form_link(sp, form="nursing")
+	except frappe.ValidationError:
+		pass
+	else:
+		raise AssertionError("an unknown form name made a link")
 
 
 # --------------------------------------------------------------------------
