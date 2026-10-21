@@ -185,6 +185,11 @@ def _apply(claim, values, technician):
 			row.expense_type, row.default_account = expense_type, None  # HRMS fills the type's account
 	if values.get("amount") is not None:
 		row.amount = flt(values.get("amount"))
+		# The desk form copies the amount into the sanctioned amount as it is typed
+		# (HRMS `expense_claim.js`); filed from here, nothing did. Approved and
+		# submitted as it stood, the claim was sanctioned at 0: neither Unpaid nor
+		# Paid, and 0 on the payout page. The office can still lower it.
+		row.sanctioned_amount = row.amount
 	if values.get("expense_date"):
 		row.expense_date = getdate(values.get("expense_date"))
 	if values.get("note") is not None:

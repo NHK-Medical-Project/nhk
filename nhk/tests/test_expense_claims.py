@@ -114,8 +114,8 @@ def _on_the_desk(cleanup, claim_name, approval_status, paid=False):
 	if not doc.payable_account:
 		doc.payable_account = frappe.db.get_value("Company", doc.company, "default_expense_claim_payable_account")
 	doc.approval_status = approval_status
-	for row in doc.expenses:
-		row.sanctioned_amount = row.amount
+	# Nothing else: the office approves the row as filed. Copying the amount into
+	# the sanctioned amount here hid that the app never set it (claims approved at 0).
 	if paid:
 		doc.is_paid, doc.mode_of_payment = 1, _mode()
 	try:
@@ -237,6 +237,10 @@ def test_the_office_approves_submits_and_pays_on_the_desk(cleanup):
 	now = {c.name: c for c in _as(PILOT_USER, api.my_claims)["claims"]}
 	assert (now[paid["name"]].status, now[paid["name"]].can_edit) == ("Paid", False), now[paid["name"]]
 	assert now[approved["name"]].status == "Approved", "approved but not yet paid"
+	desk = frappe.db.get_value(CLAIM, approved["name"], ["status", "total_claimed_amount", "total_sanctioned_amount"],
+							   as_dict=True)
+	assert desk.total_sanctioned_amount == desk.total_claimed_amount > 0, "approved as filed, sanctioned at 0"
+	assert desk.status == "Unpaid", "HRMS left it neither Unpaid nor Paid"
 	assert frappe.db.exists("GL Entry", {"voucher_type": CLAIM, "voucher_no": paid["name"]}), "paid posted nothing"
 
 	# Decided: the technician can no longer change or withdraw it.
