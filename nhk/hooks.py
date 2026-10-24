@@ -152,6 +152,14 @@ doc_events = {
 		# A draft from the public order form books its products against a
 		# placeholder Item; the office must swap in the real Items first.
 		"before_submit": "nhk.api.order_form.refuse_placeholder_on_submit",
+		# Ready for Delivery / DISPATCHED only from the status before them, so a
+		# stale form cannot roll back an order that has already moved on.
+		"before_update_after_submit": "nhk.api.order_steps.refuse_out_of_order_step",
+	},
+	# A rental device may not be moved onto one order while another still has it
+	# out ("Back To Pickup" did exactly that).
+	"Item": {
+		"validate": "nhk.api.order_steps.refuse_taking_a_device_from_an_open_order",
 	},
 	# Every Sales Person gets the token behind their public order form link.
 	"Sales Person": {

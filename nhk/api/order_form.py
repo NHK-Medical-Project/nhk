@@ -14,7 +14,8 @@ is stored on the order, in the *Order Form* tab (`custom_of_*` fields, patch
 devices that the office assigns later, so the form offers the Google Forms'
 product names, never an Item or a price. Each requested product becomes a row
 of the placeholder Item `ORDER FORM REQUEST` at rate 0, described with the
-product. The office replaces those rows with real Items; `before_submit`
+product; on a Rental order, which refuses the same Item twice, one row
+describes them all. *Requested* (`custom_of_products`) lists every one either way. The office replaces those rows with real Items; `before_submit`
 refuses an order that still has one.
 
 **The referring doctor is typed, never looked up**: the Referrer list is
@@ -200,8 +201,8 @@ def submit(token, form):
 		"custom_from_order_form": 1,
 		**{f"custom_of_{key}": value for key, value in _stored(answers, requested).items()},
 	})
-	for line in requested:
-		order.append("items", {"item_code": PLACEHOLDER_ITEM, "qty": 1, "rate": 0, "description": line,
+	for description in _placeholder_rows(order.order_type, requested):
+		order.append("items", {"item_code": PLACEHOLDER_ITEM, "qty": 1, "rate": 0, "description": description,
 			"delivery_date": order.delivery_date})
 
 	# The token is checked above; whoever fills the form holds no rights on
@@ -309,6 +310,19 @@ def _requested(a):
 	if a.kind == DIAGNOSTIC:
 		return [_("Diagnostic study: {0}").format(a.test)]
 	return [_("Nursing / Caretaker")]
+
+
+def _placeholder_rows(order_type, requested):
+	"""The descriptions of the placeholder rows: one per request, or all in one on a Rental order.
+
+	The ERPNext fork refuses the same Item twice on a Rental order
+	(`SalesOrder.prevent_duplicate_items`), and every request is the one placeholder
+	Item. Either way `custom_of_products` (Requested) keeps one line per request,
+	whatever the office later does to the item table.
+	"""
+	if order_type == "Rental":
+		return ["<br>".join(requested)]
+	return requested
 
 
 def _stored(a, requested):
