@@ -37,6 +37,17 @@ def _order(cleanup):
 		  and (select count(*) from `tabSales Order Item` i where i.parent = so.name) >= 3
 		  and not exists (select 1 from `tabTechnician Visit Entry` v
 						  where v.sales_order_id = so.name and v.type = 'Pickup' and v.status = 'Assigned')
+		  -- Some snapshot orders cannot be saved at all.
+		  and coalesce(so.outstanding_security_deposit_amount, 0) >= 0
+		  -- Its devices out on no other rental, or Back To Active is refused
+		  -- (`nhk.api.order_undo`).
+		  and not exists (select 1 from `tabSales Order Item` mine
+						  join `tabSales Order Item` other on other.item_code = mine.item_code
+						  join `tabSales Order` o on o.name = other.parent
+						  where mine.parent = so.name and o.name != so.name and o.docstatus = 1
+							and coalesce(o.master_order_id, o.name) != coalesce(so.master_order_id, so.name)
+							and other.child_status in ('Ready for Delivery', 'DISPATCHED', 'Active',
+													   'Ready for Pickup', 'Picked Up'))
 		order by so.modified desc limit 1""")[0][0]
 
 	for field in ORDER_FIELDS:

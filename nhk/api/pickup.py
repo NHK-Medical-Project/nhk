@@ -580,13 +580,19 @@ def release_item_pickup(sales_order_id, row):
 	The desk's Back To Active. A pickup left with nothing to collect is closed
 	rather than left open at no pay. A row whose pickup the technician already
 	closed is refused: that visit is the office's to correct, not the row.
+
+	Refused, as every undo button is, while the device is out on another order
+	(`nhk.api.order_undo`).
 	"""
+	from nhk.api.order_undo import refuse_if_out_elsewhere
+
 	frappe.has_permission("Technician Visit Entry", "share", throw=True)
 
 	if not sales_order_id or not frappe.db.exists("Sales Order", sales_order_id):
 		frappe.throw(_("Sales Order {0} does not exist.").format(sales_order_id))
 	order = frappe.get_doc("Sales Order", sales_order_id)
 	(item,) = _chosen_rows(order, [row], status=READY_FOR_PICKUP)
+	refuse_if_out_elsewhere(item.item_code, sales_order_id)
 
 	visit = _rows_on_open_pickups(sales_order_id).get(item.name)
 	if visit and not pickup_rows(visit):
