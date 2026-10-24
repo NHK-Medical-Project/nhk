@@ -14,7 +14,8 @@ the claim stands:
 	HRMS status Paid               -> Paid
 	Rejected                       -> Rejected
 
-Only Paid claims reach the payout page (`nhk.api.payouts`), outside the total.
+Pending (Draft), Approved and Paid claims reach the payout page (`nhk.api.payouts`),
+outside the total.
 
 Expense types are HRMS Expense Claim Types with a default account for the
 company: HRMS refuses to save a claim without one. Not gated on duty: a claim

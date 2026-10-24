@@ -287,7 +287,7 @@ def test_the_office_gets_a_bell_for_a_new_claim(cleanup):
 # the payout page
 # --------------------------------------------------------------------------
 
-def test_submitted_expenses_show_on_the_month_but_not_in_the_total(cleanup):
+def test_expenses_show_on_the_month_but_not_in_the_total(cleanup):
 	from nhk.api import payouts
 	from test_visits import _office_user
 
@@ -296,20 +296,20 @@ def test_submitted_expenses_show_on_the_month_but_not_in_the_total(cleanup):
 	paid = [_paid(cleanup, amount=300), _paid(cleanup, amount=200, expense_date="2019-05-31")]
 	_paid(cleanup, amount=999, expense_date="2019-06-01")              # another month
 	_paid(cleanup, technician=OTHER_TECH, amount=150)                  # expenses only, no visits
-	_paid(cleanup, amount=5000, status="Draft")                        # pending: not counted
+	paid.append(_paid(cleanup, amount=40, status="Draft"))             # pending: counted, as claimed
 	paid.append(_paid(cleanup, amount=60, status="Unpaid"))            # submitted, not yet paid: counted
 	_paid(cleanup, amount=7000, status="Rejected")                     # rejected: not counted
 
 	summary = _as(_office_user(), payouts.month_summary, month)
 	mine, theirs = _row(summary, PILOT_TECH), _row(summary, OTHER_TECH)
-	assert (mine.expense_count, mine.expenses) == (3, 560), mine
+	assert (mine.expense_count, mine.expenses) == (4, 600), mine
 	assert mine.total == 100, "expenses were added to the total: %s" % mine
 	assert (theirs.expenses, theirs.total, theirs.visit_count) == (150, 0, 0), theirs
-	assert summary["totals"]["expenses"] == 710 and summary["totals"]["total"] == 100, summary["totals"]
+	assert summary["totals"]["expenses"] == 750 and summary["totals"]["total"] == 100, summary["totals"]
 
 	drill = _as(_office_user(), payouts.technician_expenses, month, PILOT_TECH)
 	assert sorted(c.name for c in drill) == sorted(paid), drill
-	assert {c.status for c in drill} == {"Paid", "Unpaid"}, drill
+	assert {c.status for c in drill} == {"Paid", "Unpaid", "Draft"}, drill
 
 	# The popup names the patient of the visit a claim was for.
 	visit = _visit(cleanup)

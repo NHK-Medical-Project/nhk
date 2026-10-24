@@ -3,7 +3,7 @@
 //
 // Visits and Extra come from the month's completed visits; Sales and Fixed are
 // typed in here. Expenses, after Total and outside it, are the technician's
-// submitted expense claims, paid or not: shown for information. Processing the month freezes it and settles its visits. All
+// expense claims, Draft or submitted, paid or not: shown for information. Processing the month freezes it and settles its visits. All
 // figures and every rule come from `nhk.api.payouts`; this page draws them.
 // Spec: .scratch/technician-monthly-payout.
 
@@ -125,8 +125,8 @@ nhk.TechnicianPayouts = class TechnicianPayouts {
 							<th class="text-right">${__("Sales")}</th>
 							<th class="text-right">${__("Fixed Incentives")}</th>
 							<th class="text-right">${__("Total")}</th>
-							<th class="text-right text-muted" title="${__("Expense claims the office already paid back. Not part of Total.")}">
-								${__("Expenses")}<div class="small" style="font-weight: normal;">${__("already paid, not in Total")}</div></th>
+							<th class="text-right text-muted" title="${__("Expense claims, Draft or submitted. Not part of Total.")}">
+								${__("Expenses")}<div class="small" style="font-weight: normal;">${__("incl. Draft, not in Total")}</div></th>
 						</tr>
 					</thead>
 					<tbody>
