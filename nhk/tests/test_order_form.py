@@ -199,12 +199,20 @@ def test_a_rent_request_is_a_draft_sales_order_holding_every_answer(cleanup):
 	assert (so.customer_mobile_no, so.delivery_address, so.permanent_address) == (mobile, "1 Test Street", "2 Home Road")
 	assert (so.custom_of_age, so.custom_of_email, so.custom_of_delivery_time, so.custom_of_delivery_remarks) == (
 		"64", "patient@example.com", "After 5 pm", "Call first")
-	assert [(i.item_code, i.description, i.rate) for i in so.items] == [
-		(order_form.PLACEHOLDER_ITEM, "Rent: Auto CPAP with new mask tubing, 1 day trial", 0),
-		(order_form.PLACEHOLDER_ITEM, "Rent: Oxygen Concentrator, 15 days", 0),
-		(order_form.PLACEHOLDER_ITEM, "Rent: Oxygen Concentrator, 30 days", 0),
-	], [(i.item_code, i.description, i.rate) for i in so.items]
-	assert so.custom_of_products.splitlines() == [i.description for i in so.items]
+	# A Rental order refuses the same Item twice (ERPNext fork, `prevent_duplicate_items`),
+	# so every rental line shares one placeholder row; Requested keeps them one per line.
+	lines = ["Rent: Auto CPAP with new mask tubing, 1 day trial", "Rent: Oxygen Concentrator, 15 days",
+		"Rent: Oxygen Concentrator, 30 days"]
+	assert [(i.item_code, i.description, i.qty, i.rate) for i in so.items] == [
+		(order_form.PLACEHOLDER_ITEM, "<br>".join(lines), 1, 0),
+	], [(i.item_code, i.description, i.qty, i.rate) for i in so.items]
+	assert so.custom_of_products.splitlines() == lines, so.custom_of_products
+
+	# Requested outlives the item table: the office swaps the placeholder for the real devices.
+	so.items[0].item_code = _priced_item().item_code
+	so.flags.ignore_mandatory = True
+	so.save(ignore_permissions=True)
+	assert frappe.db.get_value("Sales Order", name, "custom_of_products").splitlines() == lines
 
 
 def test_a_sleep_study_request_stores_the_sleep_study_answers(cleanup):
@@ -244,6 +252,7 @@ def test_purchase_titration_and_nursing_each_book_their_request(cleanup):
 		so = frappe.get_doc("Sales Order", name)
 		assert so.order_type == order_type and [i.description for i in so.items] == lines, (kind, so.order_type,
 			[i.description for i in so.items])
+		assert so.custom_of_products.splitlines() == lines, (kind, so.custom_of_products)
 
 
 def test_the_same_mobile_reuses_the_patient(cleanup):
