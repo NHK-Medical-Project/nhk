@@ -46,7 +46,7 @@ from nhk.api.guards import (
 	owned_visit,
 	response_of,
 )
-from nhk.api import addresses, distance, notify, payment_collection, pickup, visits
+from nhk.api import addresses, distance, notify, payment_collection, pickup, replacement, visits
 
 #: Jobs older than this drop out of the day list into the backlog. The open queue
 #: is full of jobs nobody intends to do -- 366 of 437 are over a month old -- and
@@ -344,6 +344,9 @@ def job(visit_id):
 		# A sleep study delivery's pickup, which this technician may assign
 		# (`nhk.api.pickup`). None for every other visit.
 		"pickup": pickup.pickup_state(visit, technician),
+		# The devices this job may replace, with the desk prompt's lists
+		# (`nhk.api.replacement`). None when there is nothing to replace.
+		"replacement": replacement.options(visit),
 		"on_duty": True,
 	}
 
@@ -950,6 +953,39 @@ def complete_job(visit_id, kilometers, notes=None, latitude=None, longitude=None
 			"extra_payment": visit.extra_payment, "extra_payment_reason": visit.extra_payment_reason,
 			# Set after a sleep study delivery: the app asks who picks it up next.
 			"pickup": pickup.pickup_state(visit, technician)}
+
+
+# ---------------------------------------------------------------------------
+# replacing a device
+# ---------------------------------------------------------------------------
+
+
+@frappe.whitelist()
+def replaceable_devices(visit_id, row, txt=None):
+	"""Devices that may replace `row` on one of the caller's jobs: Available,
+	of any item group (`nhk.api.replacement`)."""
+	technician = current_technician()
+	assert_on_duty(technician)
+	visit = owned_visit(visit_id, technician=technician)
+	return replacement.devices(visit, row, txt=txt)
+
+
+@frappe.whitelist()
+def replace_device(visit_id, row, new_item, old_item_status, reason, replacement_date=None):
+	"""Replace the device on `row` of the caller's Delivery or Pickup job, as the
+	desk's Item Replacement does (`nhk.api.replacement`).
+
+	On duty, and accepted while the job is open. Not only while it is open: a
+	Pickup replaces the device it has collected, after completion, and a
+	pickup the office closed was never accepted on the phone.
+	"""
+	technician = current_technician()
+	assert_on_duty(technician)
+	visit = owned_visit(visit_id, technician=technician)
+	if visit.status == "Assigned":
+		assert_accepted(visit)
+	return replacement.replace(visit, row, new_item, old_item_status, reason,
+							   replacement_date=replacement_date)
 
 
 # ---------------------------------------------------------------------------

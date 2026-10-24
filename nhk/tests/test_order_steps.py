@@ -232,7 +232,10 @@ def _move(item_code, before, after):
 
 def test_back_to_pickup_cannot_take_a_device_from_another_patient(cleanup):
 	"""SAL-ORD-2026-11693: "Back To Pickup" on an order returned three days
-	earlier put its device back on it while it was out with the next patient."""
+	earlier put its device back on it while it was out with the next patient.
+
+	The fork's own method, not the desk's wrapper: whatever path saves the
+	device, its `validate` must still refuse."""
 	from erpnext.selling.doctype.sales_order.sales_order import update_status_to_pickup
 
 	device, holder, master = _device_out()
@@ -285,6 +288,94 @@ def test_a_device_whose_order_is_closed_moves_freely(cleanup):
 	_move(device, None, so)
 	_move(device, holder, "")
 
+
+# ---------------------------------------------------------------------------
+# the undo buttons, refused while the device is out elsewhere (`nhk.api.order_undo`)
+# ---------------------------------------------------------------------------
+
+UNDO = {
+	"erpnext.selling.doctype.sales_order.sales_order.update_status_to_pickup": "nhk.api.order_undo.back_to_pickup",
+	"erpnext.selling.doctype.sales_order.sales_order.update_status_back_to_ready_for_pickup":
+		"nhk.api.order_undo.back_to_ready_for_pickup",
+	"erpnext.selling.doctype.sales_order.sales_order.update_status_to_active": "nhk.api.order_undo.back_to_active",
+}
+
+
+def _undo_order(cleanup, status, device=None):
+	"""A one-row rental order set to `status`, its row put back afterwards.
+
+	With `device`, the row is made to carry that device. Without, the order is
+	one whose device is out nowhere else, so the undo has nothing to refuse.
+	"""
+	from nhk.api.order_steps import device_out_elsewhere
+
+	for so, row, item in frappe.db.sql(
+		"""
+		select so.name, soi.name, soi.item_code from `tabSales Order` so
+		join `tabSales Order Item` soi on soi.parent = so.name
+		where so.docstatus = 1 and so.order_type = 'Rental' and so.status = 'Submitted to Office'
+		  and (select count(*) from `tabSales Order Item` x where x.parent = so.name) = 1
+		order by so.creation limit 50
+		""",
+	):
+		if device and device_out_elsewhere(device, so) or not device and not device_out_elsewhere(item, so):
+			break
+	else:
+		raise AssertionError("the snapshot has no order to undo on")
+
+	for field in ("status", "pickup_date", "submitted_date"):
+		cleanup.restore("Sales Order", so, field)
+	for field in ("child_status", "item_code", "pickup_date", "submitted_date"):
+		cleanup.restore("Sales Order Item", row, field)
+	frappe.db.set_value("Sales Order", so, "status", status, update_modified=False)
+	frappe.db.set_value("Sales Order Item", row, {"child_status": status, "item_code": device or item},
+						update_modified=False)
+	frappe.db.commit()
+	return so, row, device or item
+
+
+def test_the_desk_reaches_the_undo_through_nhk(cleanup):
+	"""The Client Script calls the fork's method names; each must land on the
+	nhk wrapper."""
+	overrides = frappe.get_hooks("override_whitelisted_methods")
+	for core, wrapper in UNDO.items():
+		assert overrides.get(core) == [wrapper], (core, overrides.get(core))
+
+
+def test_every_undo_is_refused_while_the_device_is_out_on_another_order(cleanup):
+	from nhk.api import order_undo
+
+	device, holder, _master = _device_out()
+	for undo, status in ((order_undo.back_to_pickup, "Submitted to Office"),
+						 (order_undo.back_to_ready_for_pickup, "Picked Up"),
+						 (order_undo.back_to_active, "Ready for Pickup")):
+		so, row, _item = _undo_order(cleanup, status, device=device)
+		before = (_state(so), frappe.db.get_value("Item", device, DEVICE_FIELDS))
+		try:
+			undo(device, so, row)
+		except DeviceOnAnotherOrder:
+			pass
+		else:
+			raise AssertionError("%s went through on %s while %s is out on %s" % (undo.__name__, so, device, holder))
+		finally:
+			frappe.db.rollback()
+		after = (_state(so), frappe.db.get_value("Item", device, DEVICE_FIELDS))
+		assert after == before, "%s: %s -> %s" % (undo.__name__, before, after)
+
+
+def test_an_undo_goes_through_when_the_device_is_out_nowhere_else(cleanup):
+	"""No reason asked, nothing else in the way: the button works as it did."""
+	from nhk.api.order_undo import back_to_ready_for_pickup
+
+	so, row, item = _undo_order(cleanup, "Picked Up")
+	try:
+		assert back_to_ready_for_pickup(item, so, row)
+		frappe.db.commit()
+	finally:
+		frappe.db.rollback()
+
+	assert frappe.db.get_value("Sales Order Item", row, "child_status") == "Ready for Pickup"
+	assert frappe.db.get_value("Sales Order", so, "status") == "Ready for Pickup"
 
 if __name__ == "__main__":
 	import harness

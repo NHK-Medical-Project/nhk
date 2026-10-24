@@ -95,6 +95,27 @@ class DeviceOnAnotherOrder(frappe.ValidationError):
 	"""The device is still out on a different rental."""
 
 
+def device_out_elsewhere(item_code, sales_order):
+	"""The other submitted order that has `item_code` out, if any.
+
+	An order in the same rental (`master_order_id`: the order it renewed, or its
+	renewal) is not "elsewhere".
+	"""
+	master = frappe.db.get_value("Sales Order", sales_order, "master_order_id") or sales_order
+	out = frappe.db.sql(
+		"""
+		select so.name, so.customer_name, soi.child_status
+		from `tabSales Order Item` soi join `tabSales Order` so on so.name = soi.parent
+		where soi.item_code = %s and so.docstatus = 1 and so.name != %s
+		  and coalesce(so.master_order_id, so.name) != %s and soi.child_status in %s
+		order by so.creation desc limit 1
+		""",
+		(item_code, sales_order, master, DEVICE_OUT),
+		as_dict=True,
+	)
+	return out[0] if out else None
+
+
 def refuse_taking_a_device_from_an_open_order(doc, method=None):
 	"""`validate` on Item: `custom_sales_order_id` may not move off an order that
 	still has the device out.

@@ -208,9 +208,17 @@ scheduler_events = {
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "nhk.event.get_events"
-# }
+# The rental device table's undo buttons, each now with a reason on the order's
+# timeline (`nhk.api.order_undo`, .scratch/order-status-guards). The fork's
+# versions check no permission and record nothing.
+override_whitelisted_methods = {
+	"erpnext.selling.doctype.sales_order.sales_order.update_status_to_pickup":
+		"nhk.api.order_undo.back_to_pickup",
+	"erpnext.selling.doctype.sales_order.sales_order.update_status_back_to_ready_for_pickup":
+		"nhk.api.order_undo.back_to_ready_for_pickup",
+	"erpnext.selling.doctype.sales_order.sales_order.update_status_to_active":
+		"nhk.api.order_undo.back_to_active",
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
