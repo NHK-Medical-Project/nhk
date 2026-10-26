@@ -17,7 +17,15 @@ import frappe
 
 sys.path.insert(0, __file__.rsplit("/", 1)[0])
 
+from nhk.api import order_form as _order_form
 from nhk.api.order_form import TOKEN_FIELD
+
+#: The harness commits, so a real copy would reach the office's inboxes:
+#: submissions record the copy they would queue, and mail is captured.
+QUEUED = []
+SENT = []
+_order_form._queue_copy = QUEUED.append
+frappe.sendmail = lambda **kwargs: SENT.append(kwargs)
 
 
 def _sales_users(n=2):
@@ -320,6 +328,70 @@ def test_a_disabled_sales_person_has_no_form(cleanup):
 	except order_form.BadFormLink:
 		return
 	raise AssertionError("a disabled sales person's form stayed open")
+
+
+# --------------------------------------------------------------------------
+# the office's copy
+# --------------------------------------------------------------------------
+
+class _Settings:
+	"""Admin Settings as `email_copy` reads it, with chosen recipients."""
+
+	def __init__(self, users, real):
+		self.email_account = real.email_account
+		self.sales_order_email_notification_cc = [frappe._dict(user=u) for u in users]
+
+
+def _copy_with(users, name):
+	from nhk.api import order_form
+
+	get_single = frappe.get_single
+	settings = _Settings(users, get_single("Admin Settings"))
+	frappe.get_single = lambda doctype: settings if doctype == "Admin Settings" else get_single(doctype)
+	SENT.clear()
+	try:
+		order_form.email_copy(name)
+	finally:
+		frappe.get_single = get_single
+		frappe.set_user("Administrator")
+	return list(SENT)
+
+
+def test_a_submission_queues_the_office_copy(cleanup):
+	QUEUED.clear()
+	name = _submit(cleanup, _sales_users(1)[0])
+	assert QUEUED == [name], QUEUED
+
+
+def test_the_copy_goes_to_the_admin_settings_recipients_with_every_answer(cleanup):
+	from nhk.api import order_form
+
+	enabled, other = _sales_users(2)
+	disabled = frappe.db.get_value("User", {"enabled": 0, "user_type": "System User"}, "name")
+	name = _submit(cleanup, enabled, patient_name="<b>Copy</b> Test", delivery_remarks="Ring twice\nGate 2")
+
+	sent = _copy_with([enabled, other, disabled], name)
+	assert len(sent) == 1, sent
+	mail = sent[0]
+	expected = frappe.get_all("User", filters={"name": ("in", [enabled, other])}, pluck="email")
+	assert sorted(mail["recipients"]) == sorted(expected), (mail["recipients"], "a disabled user is skipped")
+	account = frappe.get_doc("Email Account", frappe.get_single("Admin Settings").email_account)
+	assert mail["sender"] == "%s <%s>" % (account.name, account.email_id), mail["sender"]
+	assert (mail["reference_doctype"], mail["reference_name"]) == ("Sales Order", name)
+	assert name in mail["subject"] and "Rent" in mail["subject"], mail["subject"]
+	body = mail["message"]
+	for text in ("&lt;b&gt;Copy&lt;/b&gt; Test", "Dr Test, Test Hospital", "Rent: Oxygen Concentrator, 7 days",
+			"Ring twice<br>Gate 2", order_form.current_sales_person(enabled)):
+		assert text in body, text
+	assert "<b>Copy</b>" not in body, "the public form's input must be escaped"
+	(pdf,) = mail["attachments"]
+	assert pdf["fname"] == name + ".pdf" and pdf["fcontent"][:4] == b"%PDF", pdf["fname"]
+
+
+def test_no_recipients_or_no_order_sends_nothing(cleanup):
+	name = _submit(cleanup, _sales_users(1)[0])
+	assert _copy_with([], name) == []
+	assert _copy_with([_sales_users(1)[0]], "SAL-ORD-NO-SUCH-ORDER") == []
 
 
 # --------------------------------------------------------------------------
