@@ -213,7 +213,97 @@ def submit(token, form):
 	order.flags.ignore_mandatory = True
 	order.insert()
 	order.add_comment("Comment", _("Raised from the order form of {0}.").format(sales_person))
+	_queue_copy(order.name)
 	return {"name": order.name}
+
+
+# ---------------------------------------------------------------------------
+# the office's copy (user, 2026-10-26)
+# ---------------------------------------------------------------------------
+
+#: Order Type → the print format the office's other order mails attach (ERPNext fork).
+PRINT_FORMATS = {"Sales": "Nhk Sales Order"}
+DEFAULT_PRINT_FORMAT = "Nhk Rental Order"
+#: Formatted for reading; every other answer goes in as typed, escaped.
+DATE_TYPES = ("Date", "Time", "Datetime")
+
+
+def _queue_copy(name):
+	"""Queue the office's copy once the order is committed. The one seam to the mail; tests replace it."""
+	frappe.enqueue("nhk.api.order_form.email_copy", queue="short", enqueue_after_commit=True, name=name)
+
+
+def email_copy(name):
+	"""Background job: mail a copy of an order form's draft to the Admin Settings recipients.
+
+	Recipients are *Sales Order Email Notification CC* (enabled Users only), sent
+	from its *Email Account* through the Email Queue, not the fork's raw SMTP. The
+	body holds every answer; the order's print is attached as a PDF.
+	"""
+	if not frappe.db.exists(ORDER, name):
+		return
+	settings = frappe.get_single("Admin Settings")
+	users = [row.user for row in settings.sales_order_email_notification_cc]
+	recipients = frappe.get_all("User", filters={"name": ("in", users or [""]), "enabled": 1}, pluck="email")
+	if not recipients:
+		return
+
+	# The form is public, so the job runs as the guest who filled it; printing needs a reader.
+	frappe.set_user("Administrator")
+	order = frappe.get_doc(ORDER, name)
+	frappe.sendmail(
+		recipients=recipients,
+		sender=_sender(settings),
+		subject=_("Order form {0}: {1} for {2}").format(order.name, order.custom_of_kind, order.custom_of_patient_name),
+		message=_copy_body(order),
+		attachments=_copy_pdf(order),
+		reference_doctype=ORDER,
+		reference_name=order.name,
+	)
+
+
+def _sender(settings):
+	"""The Admin Settings Email Account as the From: its name and email id, so the queue sends through it."""
+	if not settings.email_account:
+		return None  # Frappe's default outgoing account
+	return frappe.get_cached_doc("Email Account", settings.email_account).default_sender
+
+
+def _copy_body(order):
+	"""Every answer of the *Order Form* tab, in the tab's order, escaped: the form is public."""
+	from frappe.utils import escape_html
+	from frappe.utils.formatters import format_value
+
+	rows = [(_("Order"), order.name), (_("Sales Person"), order.sales_person)]
+	for df in order.meta.fields:
+		value = order.get(df.fieldname)
+		if df.fieldname.startswith("custom_of_") and df.fieldtype not in frappe.model.no_value_fields and value:
+			rows.append((_(df.label), format_value(value, df, order) if df.fieldtype in DATE_TYPES else value))
+	cells = "".join(
+		"<tr><th align='left' valign='top'>{0}</th><td>{1}</td></tr>".format(
+			escape_html(label), escape_html(cstr(value)).replace("\n", "<br>"))
+		for label, value in rows
+	)
+	link = get_url(f"/app/sales-order/{order.name}")
+	return (f"<p>{_('A new order came in through the order form.')}</p>"
+		f"<table border='1' cellpadding='5' cellspacing='0'>{cells}</table>"
+		f"<p><a href='{link}'>{_('Open the order')}</a></p>")
+
+
+def _copy_pdf(order):
+	"""The order's print as a PDF: NHK's format, else Standard, else none (the body holds every answer).
+
+	The Rental format needs the rental period, which the office sets after the draft.
+	"""
+	for print_format in (PRINT_FORMATS.get(order.order_type, DEFAULT_PRINT_FORMAT), "Standard"):
+		try:
+			pdf = frappe.get_print(ORDER, order.name, print_format, doc=order, as_pdf=True, no_letterhead=1)
+		except Exception:
+			continue
+		return [{"fname": f"{order.name}.pdf", "fcontent": pdf}]
+	frappe.log_error(title="Order form copy: print failed", message=frappe.get_traceback(),
+		reference_doctype=ORDER, reference_name=order.name)
+	return []
 
 
 def _read(form):
