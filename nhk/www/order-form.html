@@ -6,51 +6,284 @@
 	priced; the referring doctor is typed, never looked up.
 -->
 <style>
-	.ofm { --of-blue: #00AEEF; --of-ink: #16192C; --of-green: #1EC29D; --of-line: #d9e6ec; --of-muted: #5f6b76; --of-bad: #c0392b;
-		background: #f3f9fc; padding: 120px 0 60px; font-family: 'Quicksand', sans-serif; color: var(--of-ink); }
-	.ofm .of-head { text-align: center; margin-bottom: 28px; }
-	.ofm .of-head h1 { font-family: 'Josefin Sans', sans-serif; font-weight: 700; font-size: 36px; margin: 0 0 8px; }
-	.ofm .of-head h1 span { color: var(--of-blue); }
-	.ofm .of-head p { color: var(--of-muted); margin: 4px 0; line-height: 1.5; }
-	.ofm .of-badge { display: inline-block; margin-top: 10px; padding: 6px 16px; border-radius: 25px; background: #e5f7fd; color: #0278a6; font-weight: 600; font-size: 14px; }
-	.ofm .of-card { background: #fff; border-radius: 20px; box-shadow: 0 4px 11px rgba(0,0,0,.08); padding: 28px; margin-bottom: 20px; }
-	.ofm .of-card h2 { font-family: 'Josefin Sans', sans-serif; font-size: 22px; font-weight: 700; margin: 0 0 18px; }
-	.ofm label.of-label, .ofm span.of-label { display: block; font-weight: 600; font-size: 15px; margin: 0 0 6px; line-height: 1.3; }
-	.ofm .req::after { content: " *"; color: var(--of-bad); }
-	.ofm .form-control { border-radius: 15px; border: 1px solid var(--of-line); height: 50px; box-shadow: none; font-family: inherit; color: var(--of-ink); }
-	.ofm .form-control:focus { border-color: var(--of-green); }
-	.ofm textarea.form-control { height: 90px; resize: vertical; }
-	.ofm .of-field { margin-bottom: 18px; }
-	.ofm .of-hint { color: var(--of-muted); font-size: 13px; margin-top: 4px; line-height: 1.4; }
-	.ofm .of-pills { display: flex; flex-wrap: wrap; gap: 10px; }
-	.ofm .of-pill { position: relative; margin: 0; }
-	.ofm .of-pill input { position: absolute; opacity: 0; pointer-events: none; }
-	.ofm .of-pill span { display: inline-block; padding: 10px 18px; border: 1px solid var(--of-line); border-radius: 25px; cursor: pointer; font-weight: 600; font-size: 14px; background: #fff; transition: all .2s; line-height: 1.2; }
-	.ofm .of-pill input:checked + span { background: var(--of-blue); border-color: var(--of-blue); color: #fff; }
-	.ofm .of-pill input:focus-visible + span { box-shadow: 0 0 0 3px rgba(0,174,239,.3); }
-	.ofm .of-checks { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px 16px; }
-	.ofm .of-checks label { display: flex; gap: 10px; align-items: center; font-weight: 500; margin: 0; cursor: pointer; line-height: 1.3; }
-	.ofm .of-checks input { width: 18px; height: 18px; accent-color: var(--of-blue); flex: none; }
-	.ofm .of-grid-wrap { overflow-x: auto; }
-	.ofm .of-grid { width: 100%; min-width: 560px; border-collapse: separate; border-spacing: 0 6px; font-size: 13px; }
-	.ofm .of-grid th { font-weight: 600; text-align: center; padding: 6px 4px; line-height: 1.3; vertical-align: bottom; }
-	.ofm .of-grid tbody th { text-align: left; white-space: nowrap; padding-left: 10px; vertical-align: middle; }
-	.ofm .of-grid tbody tr { background: #f3f9fc; }
-	.ofm .of-grid td { text-align: center; padding: 10px 4px; }
-	.ofm .of-grid input { width: 20px; height: 20px; accent-color: var(--of-blue); cursor: pointer; }
-	.ofm .of-link { background: none; border: 0; color: var(--of-blue); font-weight: 600; font-size: 14px; cursor: pointer; padding: 0; }
-	.ofm fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
-	.ofm fieldset[disabled] { display: none; }
-	.ofm .of-msg { display: none; border-radius: 15px; padding: 14px 18px; margin-top: 20px; margin-bottom: 20px; font-weight: 600; line-height: 1.4; }
-	.ofm .of-msg.bad { display: block; background: #fdecea; color: var(--of-bad); }
-	.ofm .of-msg.good { display: block; background: #e6f9f3; color: #0d7a5f; }
-	.ofm .btn-blue { font-size: 16px; padding: 14px 40px; }
-	.ofm .btn-blue:disabled { opacity: .6; }
+	.ofm {
+		--of-blue: #00AEEF;
+		--of-ink: #16192C;
+		--of-green: #1EC29D;
+		--of-line: #d9e6ec;
+		--of-muted: #5f6b76;
+		--of-bad: #c0392b;
+		background: #f3f9fc;
+		padding: 120px 0 60px;
+		font-family: 'Quicksand', sans-serif;
+		color: var(--of-ink);
+	}
+
+	.ofm .of-head {
+		text-align: center;
+		margin-bottom: 28px;
+	}
+
+	.ofm .of-head h1 {
+		font-family: 'Josefin Sans', sans-serif;
+		font-weight: 700;
+		font-size: 36px;
+		margin: 0 0 8px;
+	}
+
+	.ofm .of-head h1 span {
+		color: var(--of-blue);
+	}
+
+	.ofm .of-head p {
+		color: var(--of-muted);
+		margin: 4px 0;
+		line-height: 1.5;
+	}
+
+	.ofm .of-badge {
+		display: inline-block;
+		margin-top: 10px;
+		padding: 6px 16px;
+		border-radius: 25px;
+		background: #e5f7fd;
+		color: #0278a6;
+		font-weight: 600;
+		font-size: 14px;
+	}
+
+	.ofm .of-card {
+		background: #fff;
+		border-radius: 20px;
+		box-shadow: 0 4px 11px rgba(0, 0, 0, .08);
+		padding: 28px;
+		margin-bottom: 20px;
+	}
+
+	.ofm .of-card h2 {
+		font-family: 'Josefin Sans', sans-serif;
+		font-size: 22px;
+		font-weight: 700;
+		margin: 0 0 18px;
+	}
+
+	.ofm label.of-label,
+	.ofm span.of-label {
+		display: block;
+		font-weight: 600;
+		font-size: 15px;
+		margin: 0 0 6px;
+		line-height: 1.3;
+	}
+
+	.ofm .req::after {
+		content: " *";
+		color: var(--of-bad);
+	}
+
+	.ofm .form-control {
+		border-radius: 15px;
+		border: 1px solid var(--of-line);
+		height: 50px;
+		box-shadow: none;
+		font-family: inherit;
+		color: var(--of-ink);
+	}
+
+	.ofm .form-control:focus {
+		border-color: var(--of-green);
+	}
+
+	.ofm textarea.form-control {
+		height: 90px;
+		resize: vertical;
+	}
+
+	.ofm .of-field {
+		margin-bottom: 18px;
+	}
+
+	.ofm .of-hint {
+		color: var(--of-muted);
+		font-size: 13px;
+		margin-top: 4px;
+		line-height: 1.4;
+	}
+
+	.ofm .of-pills {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+	}
+
+	.ofm .of-pill {
+		position: relative;
+		margin: 0;
+	}
+
+	.ofm .of-pill input {
+		position: absolute;
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	.ofm .of-pill span {
+		display: inline-block;
+		padding: 10px 18px;
+		border: 1px solid var(--of-line);
+		border-radius: 25px;
+		cursor: pointer;
+		font-weight: 600;
+		font-size: 14px;
+		background: #fff;
+		transition: all .2s;
+		line-height: 1.2;
+	}
+
+	.ofm .of-pill input:checked+span {
+		background: var(--of-blue);
+		border-color: var(--of-blue);
+		color: #fff;
+	}
+
+	.ofm .of-pill input:focus-visible+span {
+		box-shadow: 0 0 0 3px rgba(0, 174, 239, .3);
+	}
+
+	.ofm .of-checks {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+		gap: 10px 16px;
+	}
+
+	.ofm .of-checks label {
+		display: flex;
+		gap: 10px;
+		align-items: center;
+		font-weight: 500;
+		margin: 0;
+		cursor: pointer;
+		line-height: 1.3;
+	}
+
+	.ofm .of-checks input {
+		width: 18px;
+		height: 18px;
+		accent-color: var(--of-blue);
+		flex: none;
+	}
+
+	.ofm .of-grid-wrap {
+		overflow-x: auto;
+	}
+
+	.ofm .of-grid {
+		width: 100%;
+		min-width: 560px;
+		border-collapse: separate;
+		border-spacing: 0 6px;
+		font-size: 13px;
+	}
+
+	.ofm .of-grid th {
+		font-weight: 600;
+		text-align: center;
+		padding: 6px 4px;
+		line-height: 1.3;
+		vertical-align: bottom;
+	}
+
+	.ofm .of-grid tbody th {
+		text-align: left;
+		white-space: nowrap;
+		padding-left: 10px;
+		vertical-align: middle;
+	}
+
+	.ofm .of-grid tbody tr {
+		background: #f3f9fc;
+	}
+
+	.ofm .of-grid td {
+		text-align: center;
+		padding: 10px 4px;
+	}
+
+	.ofm .of-grid input {
+		width: 20px;
+		height: 20px;
+		accent-color: var(--of-blue);
+		cursor: pointer;
+	}
+
+	.ofm .of-link {
+		background: none;
+		border: 0;
+		color: var(--of-blue);
+		font-weight: 600;
+		font-size: 14px;
+		cursor: pointer;
+		padding: 0;
+	}
+
+	.ofm fieldset {
+		border: 0;
+		padding: 0;
+		margin: 0;
+		min-width: 0;
+	}
+
+	.ofm fieldset[disabled] {
+		display: none;
+	}
+
+	.ofm .of-msg {
+		display: none;
+		border-radius: 15px;
+		padding: 14px 18px;
+		margin-top: 20px;
+		margin-bottom: 20px;
+		font-weight: 600;
+		line-height: 1.4;
+	}
+
+	.ofm .of-msg.bad {
+		display: block;
+		background: #fdecea;
+		color: var(--of-bad);
+	}
+
+	.ofm .of-msg.good {
+		display: block;
+		background: #e6f9f3;
+		color: #0d7a5f;
+	}
+
+	.ofm .btn-blue {
+		font-size: 16px;
+		padding: 14px 40px;
+	}
+
+	.ofm .btn-blue:disabled {
+		opacity: .6;
+	}
+
 	@media (max-width: 575px) {
-		.ofm { padding-top: 100px; }
-		.ofm .of-head h1 { font-size: 28px; }
-		.ofm .of-card { padding: 20px 16px; }
-		.ofm .btn-blue { width: 100%; }
+		.ofm {
+			padding-top: 100px;
+		}
+
+		.ofm .of-head h1 {
+			font-size: 28px;
+		}
+
+		.ofm .of-card {
+			padding: 20px 16px;
+		}
+
+		.ofm .btn-blue {
+			width: 100%;
+		}
 	}
 </style>
 
@@ -61,14 +294,16 @@
 				<div class="of-head">
 					{% if form == "sleep-study" %}<h1>Patient Registration <span>For Sleep Study</span></h1>
 					{% else %}<h1>Patient <span>Registration</span></h1>{% endif %}
-					<p>NHK Medical Pvt Ltd, Bangalore &middot; logon to <a href="https://nhkmedical.com">nhkmedical.com</a></p>
-					<p>For support or complaints call <a href="tel:8884880013">8884880013</a> or <a href="tel:8884880024">8884880024</a></p>
-					{% if sales_person %}<div class="of-badge">Sales person: {{ sales_person }}</div>{% endif %}
+					<p>NHK Medical Pvt Ltd, Bangalore &middot; logon to <a
+							href="https://nhkmedical.com">nhkmedical.com</a></p>
+					<p>For support or complaints call <a href="tel:8884880013">8884880013</a> or <a
+							href="tel:8884880024">8884880024</a></p>
+					{% if sales_person %}<div class="of-badge">PCC: {{ sales_person }}</div>{% endif %}
 				</div>
 
-{% if not sales_person %}
+				{% if not sales_person %}
 				<div class="of-msg bad" style="display:block">{{ link_error }}</div>
-{% else %}
+				{% else %}
 				<form id="of-form" autocomplete="off" novalidate>
 
 					<div class="of-card">
@@ -83,7 +318,8 @@
 						</div>
 						<fieldset data-show="not-sleep">
 							<div class="of-field">
-								<label class="of-label req" for="diagnosis">Diagnosis / problems faced by the patient</label>
+								<label class="of-label req" for="diagnosis">Diagnosis / problems faced by the
+									patient</label>
 								<input class="form-control" id="diagnosis" required maxlength="1000">
 							</div>
 						</fieldset>
@@ -108,13 +344,15 @@
 							</div>
 						</fieldset>
 						<div class="of-field">
-							<label class="of-label req" for="delivery_address" id="address_label">Delivery address</label>
+							<label class="of-label req" for="delivery_address" id="address_label">Delivery
+								address</label>
 							<textarea class="form-control" id="delivery_address" required maxlength="1000"></textarea>
 						</div>
 						<fieldset data-show="full-form">
 							<div class="of-field">
 								<label class="of-label" for="gps_location">Delivery GPS location</label>
-								<input class="form-control" id="gps_location" maxlength="1000" placeholder="Paste a Google Maps link">
+								<input class="form-control" id="gps_location" maxlength="1000"
+									placeholder="Paste a Google Maps link">
 								<div class="of-hint">Or send it on WhatsApp separately.</div>
 							</div>
 							<div class="of-field">
@@ -123,7 +361,8 @@
 							</div>
 						</fieldset>
 						<div class="of-field mb-0">
-							<label class="of-label req" for="doctor" id="doctor_label">Dr name &amp; hospital name</label>
+							<label class="of-label req" for="doctor" id="doctor_label">Dr name &amp; hospital
+								name</label>
 							<input class="form-control" id="doctor" required maxlength="140">
 						</div>
 					</div>
@@ -138,8 +377,11 @@
 							<h2>Rental</h2>
 							<span class="of-label">Products</span>
 							<p class="of-hint mb-3">For each period, choose the product needed.</p>
-							<div class="of-grid-wrap"><table class="of-grid" id="of-rent"></table></div>
-							<div class="text-right mt-2"><button type="button" class="of-link" id="rent_clear">Clear selection</button></div>
+							<div class="of-grid-wrap">
+								<table class="of-grid" id="of-rent"></table>
+							</div>
+							<div class="text-right mt-2"><button type="button" class="of-link" id="rent_clear">Clear
+									selection</button></div>
 						</div>
 					</fieldset>
 
@@ -148,7 +390,8 @@
 							<h2>Purchase</h2>
 							<span class="of-label">Products</span>
 							<div class="of-checks" id="of-purchase"></div>
-							<input class="form-control mt-3" id="purchase_other" maxlength="140" placeholder="Other product">
+							<input class="form-control mt-3" id="purchase_other" maxlength="140"
+								placeholder="Other product">
 						</div>
 					</fieldset>
 
@@ -170,11 +413,13 @@
 							<div class="row">
 								<div class="col-6 of-field mb-0">
 									<label class="of-label req" for="height">Height</label>
-									<input class="form-control" id="height" required maxlength="20" placeholder="e.g. 170 cm">
+									<input class="form-control" id="height" required maxlength="20"
+										placeholder="e.g. 170 cm">
 								</div>
 								<div class="col-6 of-field mb-0">
 									<label class="of-label req" for="weight">Weight</label>
-									<input class="form-control" id="weight" required maxlength="20" placeholder="e.g. 72 kg">
+									<input class="form-control" id="weight" required maxlength="20"
+										placeholder="e.g. 72 kg">
 								</div>
 							</div>
 						</div>
@@ -186,12 +431,14 @@
 							<div class="of-field">
 								<span class="of-label">Preferred language</span>
 								<div class="of-checks" id="of-languages"></div>
-								<input class="form-control mt-2" id="language_other" maxlength="140" placeholder="Other language">
+								<input class="form-control mt-2" id="language_other" maxlength="140"
+									placeholder="Other language">
 							</div>
 							<div class="of-field">
 								<span class="of-label req">Gender</span>
 								<div class="of-pills" id="of-genders"></div>
-								<input class="form-control mt-2" id="gender_other" maxlength="140" placeholder="Other" disabled>
+								<input class="form-control mt-2" id="gender_other" maxlength="140" placeholder="Other"
+									disabled>
 							</div>
 							<div class="row">
 								<div class="col-6 of-field">
@@ -227,7 +474,8 @@
 								</div>
 							</fieldset>
 							<div class="of-field mb-0">
-								<label class="of-label" for="delivery_remarks" id="remarks_label">Delivery remarks</label>
+								<label class="of-label" for="delivery_remarks" id="remarks_label">Delivery
+									remarks</label>
 								<textarea class="form-control" id="delivery_remarks" maxlength="1000"></textarea>
 							</div>
 						</div>
@@ -238,7 +486,7 @@
 					</div>
 					<div id="of-msg" class="of-msg" role="status" aria-live="polite"></div>
 				</form>
-{% endif %}
+				{% endif %}
 			</div>
 		</div>
 	</div>
@@ -246,8 +494,9 @@
 
 {% if sales_person %}
 <script>
-(function () {
-	const TOKEN = {{ token | tojson }};
+	(function () {
+		const TOKEN = {{ token | tojson
+	}};
 	const FORM = {{ form | tojson }};
 	const CSRF = {{ csrf_token | tojson }};
 	const C = {{ choices | tojson }};
@@ -371,7 +620,7 @@
 			const body = await res.json().catch(() => ({}));
 			if (!res.ok) {
 				let text = "Something went wrong (" + res.status + "). Please try again.";
-				try { text = JSON.parse(JSON.parse(body._server_messages)[0]).message; } catch (err) {}
+				try { text = JSON.parse(JSON.parse(body._server_messages)[0]).message; } catch (err) { }
 				throw new Error(text);
 			}
 			form.reset();
@@ -385,7 +634,7 @@
 			$("of-submit").disabled = false;
 		}
 	});
-})();
+}) ();
 </script>
 {% endif %}
 {% endblock %}
