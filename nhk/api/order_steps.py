@@ -160,3 +160,41 @@ def refuse_taking_a_device_from_an_open_order(doc, method=None):
 		_("Device is out on {0}").format(old),
 		DeviceOnAnotherOrder,
 	)
+
+
+# ---------------------------------------------------------------------------
+# a renewal carries only devices that are out with its customer
+# ---------------------------------------------------------------------------
+
+class DeviceNotOut(frappe.ValidationError):
+	"""A renewal names a device that is not out with its customer."""
+
+
+def refuse_renewing_a_device_not_out(doc, method=None):
+	"""`before_submit` on Sales Order, for a renewal (`previous_order_id` set).
+
+	A renewal moves `custom_sales_order_id` to the new order and touches nothing
+	else on the device, so a device the old order had already lost is carried
+	forward as free. SAL-ORD-2026-12155 (.0133493, 2026-10-12) and
+	SAL-ORD-2026-13200 (OCKVB028, 2026-10-31) were both submitted with a device
+	that read Available while it was with the patient, and the item list
+	offered it to the next one.
+	"""
+	if not doc.get("previous_order_id") or doc.get("order_type") != "Rental":
+		return
+
+	for row in doc.items:
+		device = frappe.db.get_value(
+			"Item", row.item_code, ("device_type", "status", "customer_n", "customer_name"), as_dict=True)
+		if not device or device.device_type != "Rental":
+			continue
+		if device.status == "Rented Out" and device.customer_n == doc.customer:
+			continue
+		_refuse(
+			_("{0} reads {1}{2}, so it cannot be renewed for {3}. Correct the device first: it should be Rented Out to this customer.").format(
+				row.item_code, device.status,
+				_(" to {0}").format(device.customer_name or device.customer_n) if device.customer_n else "",
+				doc.customer_name or doc.customer),
+			_("{0} is not Rented Out to this customer").format(row.item_code),
+			DeviceNotOut,
+		)

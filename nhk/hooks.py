@@ -151,7 +151,12 @@ doc_events = {
 		"on_update_after_submit": "nhk.api.visits.stamp_visits_closed_by_the_order",
 		# A draft from the public order form books its products against a
 		# placeholder Item; the office must swap in the real Items first.
-		"before_submit": "nhk.api.order_form.refuse_placeholder_on_submit",
+		"before_submit": [
+			"nhk.api.order_form.refuse_placeholder_on_submit",
+			# A renewal only moves the order link on its devices; each must
+			# already be Rented Out to this customer.
+			"nhk.api.order_steps.refuse_renewing_a_device_not_out",
+		],
 		# Ready for Delivery / DISPATCHED only from the status before them, so a
 		# stale form cannot roll back an order that has already moved on.
 		"before_update_after_submit": "nhk.api.order_steps.refuse_out_of_order_step",
@@ -218,6 +223,12 @@ override_whitelisted_methods = {
 		"nhk.api.order_undo.back_to_ready_for_pickup",
 	"erpnext.selling.doctype.sales_order.sales_order.update_status_to_active":
 		"nhk.api.order_undo.back_to_active",
+	# Submitted to Office frees only this order's own devices
+	# (`nhk.api.submit_to_office`, .scratch/submitted-to-office-blocked).
+	"erpnext.selling.doctype.sales_order.sales_order.make_submitted_to_office":
+		"nhk.api.submit_to_office.submit_order_to_office",
+	"erpnext.selling.doctype.sales_order.sales_order.update_status_to_submitted_to_office":
+		"nhk.api.submit_to_office.submit_row_to_office",
 }
 #
 # each overriding function accepts a `data` argument;
