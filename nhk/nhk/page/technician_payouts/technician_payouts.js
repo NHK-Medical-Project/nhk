@@ -40,7 +40,8 @@ nhk.TechnicianPayouts = class TechnicianPayouts {
 
 		page.set_secondary_action(__("Save"), () => this.save());
 		page.set_primary_action(__("Process Month"), () => this.process());
-		page.add_inner_button(__("Add Staff"), () => this.add_staff());
+		this.$add_staff = page.add_inner_button(__("Add Staff"), () => this.add_staff());
+		page.add_inner_button(__("Export to Excel"), () => this.export_month());
 
 		// Leaving with typed-in incentives unsaved loses them.
 		$(window).on("beforeunload.nhk_payouts", () => (this.dirty ? true : undefined));
@@ -109,7 +110,7 @@ nhk.TechnicianPayouts = class TechnicianPayouts {
 		const locked = d.processed;
 		this.page.btn_primary.toggle(!locked).prop("disabled", !d.can_process);
 		this.page.btn_secondary.toggle(!locked);
-		this.page.inner_toolbar.find("button").toggle(!locked);
+		this.$add_staff.toggle(!locked);
 
 		this.$body.html(`
 			${this.banner()}
@@ -309,52 +310,165 @@ nhk.TechnicianPayouts = class TechnicianPayouts {
 		dialog.show();
 	}
 
+	// ---- export -------------------------------------------------------------
+
+	download(method, args) {
+		open_url_post(`/api/method/${method}`, args);
+	}
+
+	// The file is built on the server from the saved month, so typed-in
+	// incentives are saved first.
+	export_month() {
+		const go = () => this.download("nhk.api.payouts.export_month", { month: this.data.month });
+		if (this.dirty && !this.data.processed) {
+			frappe.confirm(__("Save your changes to {0} before exporting?", [this.month_label(this.data.month)]),
+				() => this.save().then(go));
+			return;
+		}
+		go();
+	}
+
+	// Reload the month's figures after a visit changed, keeping Sales and Fixed
+	// typed but not yet saved.
+	refresh_figures() {
+		const typed = this.dirty ? this.rows_to_save() : [];
+		return frappe.call({ method: "nhk.api.payouts.month_summary", args: { month: this.data.month } }).then(({ message }) => {
+			if (!message) return;
+			for (const t of typed) {
+				let r = message.rows.find((x) => x.technician_id === t.technician_id);
+				if (!r) {
+					const old = this.data.rows.find((x) => x.technician_id === t.technician_id);
+					if (!old) continue;
+					r = { ...old };
+					message.rows.push(r);
+				}
+				r.sales_incentive = t.sales_incentive;
+				r.fixed_incentive = t.fixed_incentive;
+			}
+			this.data = message;
+			this.draw();
+		});
+	}
+
+	// ---- one technician's month -----------------------------------------------
+
 	drill_down(technician_id) {
 		const r = this.data.rows.find((x) => x.technician_id === technician_id);
+		const dialog = new frappe.ui.Dialog({
+			title: __("{0}: {1}", [(r && r.technician_name) || technician_id, this.month_label(this.data.month)]),
+			size: "extra-large",
+			fields: [{ fieldname: "body", fieldtype: "HTML" }],
+			primary_action_label: __("Export to Excel"),
+			primary_action: () => this.download("nhk.api.payouts.export_technician_month",
+				{ month: this.data.month, technician_id }),
+		});
+		const $body = dialog.fields_dict.body.$wrapper;
+		$body.on("click", "[data-incentive]", (e) => {
+			e.preventDefault();
+			const visit = (this.drill_visits || []).find((v) => v.name === $(e.currentTarget).attr("data-incentive"));
+			visit && this.edit_incentive(visit, () => {
+				this.draw_drill_down(technician_id, $body);
+				this.refresh_figures();
+			});
+		});
+		dialog.show();
+		this.draw_drill_down(technician_id, $body);
+	}
+
+	draw_drill_down(technician_id, $body) {
 		const args = { month: this.data.month, technician_id };
+		const locked = this.data.processed;
 		Promise.all([
 			frappe.call({ method: "nhk.api.payouts.technician_month", args }),
 			frappe.call({ method: "nhk.api.payouts.technician_expenses", args }),
 		]).then(([{ message }, { message: claims }]) => {
-				const esc = frappe.utils.escape_html;
-				const visits = message || [];
-				const body = visits.length
-					? `<div style="overflow-x: auto;"><table class="table table-bordered table-sm" style="font-size: var(--text-sm);">
-						<thead><tr><th>${__("Completed")}</th><th>${__("Visit")}</th><th>${__("Patient")}</th>
-							<th>${__("Type")}</th><th>${__("Order")}</th><th class="text-right">${__("Km")}</th>
-							<th class="text-right">${__("Charge")}</th><th class="text-right">${__("Extra")}</th></tr></thead>
-						<tbody>${visits.map((v) => `<tr>
-							<td>${esc(frappe.datetime.str_to_user(v.completed_on) || "")}</td>
-							<td><a href="/app/technician-visit-entry/${encodeURIComponent(v.name)}" target="_blank">${esc(v.name)}</a></td>
-							<td>${esc(v.patient_name || "")}</td>
-							<td>${esc(__(v.type || ""))}</td>
-							<td>${v.sales_order_id ? `<a href="/app/sales-order/${encodeURIComponent(v.sales_order_id)}" target="_blank">${esc(v.sales_order_id)}</a>` : ""}</td>
-							<td class="text-right">${esc(String(v.kilometers || ""))}</td>
-							<td class="text-right">${format_currency(v.charges || 0)}</td>
-							<td class="text-right">${v.extra_payment ? `${format_currency(v.extra_payment)}
-								<div class="text-muted small">${esc(__(v.extra_payment_reason || ""))}${v.extra_payment_note ? ": " + esc(v.extra_payment_note) : ""}</div>` : ""}</td>
-						</tr>`).join("")}</tbody></table></div>`
-					: `<p class="text-muted">${__("No visits this month; paid incentives only.")}</p>`;
-				const expenses = (claims || []).length
-					? `<h5 style="margin-top: var(--margin-lg);">${__("Expenses (not in Total)")}</h5>
-						<div style="overflow-x: auto;"><table class="table table-bordered table-sm" style="font-size: var(--text-sm);">
-						<thead><tr><th>${__("Date")}</th><th>${__("Claim")}</th><th>${__("Patient")}</th><th>${__("Type")}</th>
-							<th>${__("Note")}</th><th>${__("Status")}</th><th class="text-right">${__("Amount")}</th></tr></thead>
-						<tbody>${claims.map((c) => `<tr>
-							<td>${esc(frappe.datetime.str_to_user(c.expense_date) || "")}</td>
-							<td><a href="/app/expense-claim/${encodeURIComponent(c.name)}" target="_blank">${esc(c.name)}</a></td>
-							<td>${esc(c.patient_name || "")}${c.visit ? `<div class="text-muted small"><a href="/app/technician-visit-entry/${encodeURIComponent(c.visit)}" target="_blank">${esc(c.visit)}</a></div>` : ""}</td>
-							<td>${esc(__(c.expense_type || ""))}</td>
-							<td>${esc(c.note || "")}</td>
-							<td>${esc(__(c.status || ""))}${c.paid_mode ? `<div class="text-muted small">${esc(__(c.paid_mode))}</div>` : ""}</td>
-							<td class="text-right">${format_currency(c.amount || 0)}</td>
-						</tr>`).join("")}</tbody></table></div>`
-					: "";
-				frappe.msgprint({
-					title: __("{0}: {1}", [(r && r.technician_name) || technician_id, this.month_label(this.data.month)]),
-					message: body + expenses,
-					wide: true,
-				});
+			const esc = frappe.utils.escape_html;
+			const visits = (this.drill_visits = message || []);
+			const sum = (f) => visits.reduce((a, v) => a + flt(v[f]), 0);
+			const action = (v) => locked ? "" : `<div><a href="#" data-incentive="${esc(v.name)}" class="small">
+				${flt(v.extra_payment) ? __("Edit") : __("+ Add Incentive")}</a></div>`;
+			const body = visits.length
+				? `<div style="overflow-x: auto;"><table class="table table-bordered table-sm" style="font-size: var(--text-sm);">
+					<thead><tr><th>${__("Completed")}</th><th>${__("Visit")}</th><th>${__("Patient")}</th>
+						<th>${__("Type")}</th><th>${__("Order")}</th><th class="text-right">${__("Km")}</th>
+						<th class="text-right">${__("Charge")}</th><th class="text-right">${__("Extra / Incentive")}</th>
+						<th class="text-right">${__("Total")}</th></tr></thead>
+					<tbody>${visits.map((v) => `<tr>
+						<td>${esc(frappe.datetime.str_to_user(v.completed_on) || "")}</td>
+						<td><a href="/app/technician-visit-entry/${encodeURIComponent(v.name)}" target="_blank">${esc(v.name)}</a></td>
+						<td>${esc(v.patient_name || "")}</td>
+						<td>${esc(__(v.type || ""))}</td>
+						<td>${v.sales_order_id ? `<a href="/app/sales-order/${encodeURIComponent(v.sales_order_id)}" target="_blank">${esc(v.sales_order_id)}</a>` : ""}</td>
+						<td class="text-right">${esc(String(v.kilometers || ""))}</td>
+						<td class="text-right">${format_currency(v.charges || 0)}</td>
+						<td class="text-right">${v.extra_payment ? `${format_currency(v.extra_payment)}
+							<div class="text-muted small">${esc(__(v.extra_payment_reason || ""))}${v.extra_payment_note ? ": " + esc(v.extra_payment_note) : ""}</div>` : ""}
+							${action(v)}</td>
+						<td class="text-right">${format_currency(flt(v.charges) + flt(v.extra_payment))}</td>
+					</tr>`).join("")}</tbody>
+					<tfoot><tr style="font-weight: 700;">
+						<td colspan="6">${__("TOTAL")} <span class="text-muted small">(${visits.length})</span></td>
+						<td class="text-right">${format_currency(sum("charges"))}</td>
+						<td class="text-right">${format_currency(sum("extra_payment"))}</td>
+						<td class="text-right">${format_currency(sum("charges") + sum("extra_payment"))}</td>
+					</tr></tfoot></table></div>`
+				: `<p class="text-muted">${__("No visits this month; paid incentives only.")}</p>`;
+			const expenses = (claims || []).length
+				? `<h5 style="margin-top: var(--margin-lg);">${__("Expenses (not in Total)")}</h5>
+					<div style="overflow-x: auto;"><table class="table table-bordered table-sm" style="font-size: var(--text-sm);">
+					<thead><tr><th>${__("Date")}</th><th>${__("Claim")}</th><th>${__("Patient")}</th><th>${__("Type")}</th>
+						<th>${__("Note")}</th><th>${__("Status")}</th><th class="text-right">${__("Amount")}</th></tr></thead>
+					<tbody>${claims.map((c) => `<tr>
+						<td>${esc(frappe.datetime.str_to_user(c.expense_date) || "")}</td>
+						<td><a href="/app/expense-claim/${encodeURIComponent(c.name)}" target="_blank">${esc(c.name)}</a></td>
+						<td>${esc(c.patient_name || "")}${c.visit ? `<div class="text-muted small"><a href="/app/technician-visit-entry/${encodeURIComponent(c.visit)}" target="_blank">${esc(c.visit)}</a></div>` : ""}</td>
+						<td>${esc(__(c.expense_type || ""))}</td>
+						<td>${esc(c.note || "")}</td>
+						<td>${esc(__(c.status || ""))}${c.paid_mode ? `<div class="text-muted small">${esc(__(c.paid_mode))}</div>` : ""}</td>
+						<td class="text-right">${format_currency(c.amount || 0)}</td>
+					</tr>`).join("")}</tbody></table></div>`
+				: "";
+			$body.html(body + expenses);
 		});
+	}
+
+	// A per-visit incentive is the visit's extra payment: it goes into the Extra
+	// column and the Total, and is frozen when the month is processed.
+	edit_incentive(visit, done) {
+		const dialog = new frappe.ui.Dialog({
+			title: __("Incentive for {0}", [visit.name]),
+			fields: [
+				{
+					fieldname: "amount", fieldtype: "Currency", label: __("Amount"),
+					default: visit.extra_payment || 0,
+					description: __("Set 0 to remove it. Paid with this month's payout, on top of the visit charge.")
+				},
+				{
+					fieldname: "reason", fieldtype: "Select", label: __("Reason"),
+					options: ["", "Out of Station", "Waiting", "Item Replacement", "Other"].join("\n"),
+					default: visit.extra_payment_reason || "",
+					depends_on: "eval:doc.amount", mandatory_depends_on: "eval:doc.amount"
+				},
+				{
+					fieldname: "note", fieldtype: "Small Text", label: __("Note"),
+					default: visit.extra_payment_note || "",
+					depends_on: "eval:doc.amount", mandatory_depends_on: "eval:doc.reason=='Other'"
+				},
+			],
+			primary_action_label: __("Save"),
+			primary_action: (values) =>
+				frappe.call({
+					method: "nhk.api.payouts.set_extra_payment",
+					args: { visit_id: visit.name, amount: values.amount || 0, reason: values.reason, note: values.note },
+					freeze: true,
+					callback: (r) => {
+						if (!r.message) return;
+						dialog.hide();
+						frappe.show_alert({ message: __("Incentive on {0} saved.", [visit.name]), indicator: "green" });
+						done();
+					},
+				}),
+		});
+		dialog.show();
 	}
 };

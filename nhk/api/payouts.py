@@ -390,3 +390,105 @@ def set_extra_payment(visit_id, amount, reason=None, note=None):
 		"extra_payment_reason": visit.extra_payment_reason,
 		"extra_payment_note": visit.extra_payment_note,
 	}
+
+
+# --------------------------------------------------------------------------
+# Excel export: the month table and one technician's visits, as the page shows them
+# --------------------------------------------------------------------------
+
+def _send_xlsx(filename, sheets, header_rows=2):
+	"""Answer the request with an .xlsx of `sheets`, a list of `(sheet name, rows)`.
+
+	The first `header_rows` rows of each sheet (title, column names) and its last
+	row (the totals) are bold.
+	"""
+	from io import BytesIO
+
+	import openpyxl
+	from openpyxl.styles import Font
+	from openpyxl.utils import get_column_letter
+
+	wb = openpyxl.Workbook()
+	wb.remove(wb.active)
+	for sheet_name, rows in sheets:
+		ws = wb.create_sheet(sheet_name[:31])
+		for row in rows:
+			ws.append(row)
+		for i in list(range(1, header_rows + 1)) + [len(rows)]:
+			for cell in ws[i]:
+				cell.font = Font(bold=True)
+		for column in ws.iter_cols(min_row=header_rows):
+			width = max((len(str(c.value)) for c in column if c.value is not None), default=8)
+			ws.column_dimensions[get_column_letter(column[0].column)].width = min(max(width + 2, 10), 45)
+			for cell in column:
+				if isinstance(cell.value, float):
+					cell.number_format = "#,##0.00"
+
+	out = BytesIO()
+	wb.save(out)
+	frappe.response["filename"] = filename
+	frappe.response["filecontent"] = out.getvalue()
+	frappe.response["type"] = "binary"
+
+
+def _month_name(month):
+	return getdate(month + "-01").strftime("%B %Y")
+
+
+def _expense_rows(claims):
+	rows = [[_("Date"), _("Claim"), _("Patient"), _("Visit"), _("Type"), _("Note"), _("Status"),
+			 _("Paid By"), _("Amount")]]
+	for c in claims:
+		rows.append([getdate(c.expense_date) if c.expense_date else None, c.name, c.patient_name,
+					 c.visit, c.expense_type, c.note, c.status, c.paid_mode, flt(c.amount)])
+	rows.append([_("TOTAL"), "", "", "", "", "", "", "", sum(flt(c.amount) for c in claims)])
+	return rows
+
+
+@frappe.whitelist()
+def export_month(month):
+	"""The whole month table as an Excel file: what `month_summary` returns, plus a totals row.
+
+	Draws the saved figures: Sales and Fixed typed on the page but not yet saved
+	are not in it (the page saves before exporting).
+	"""
+	summary = month_summary(month)
+	t = summary["totals"]
+	rows = [[_month_name(summary["month"]) + (" (" + _("Processed") + ")" if summary["processed"] else "")],
+			[_("Staff ID"), _("Staff Name"), _("Visits (count)"), _("Visits"), _("Extra (count)"),
+			 _("Extra"), _("Sales"), _("Fixed Incentives"), _("Total"), _("Expense Claims (count)"),
+			 _("Expenses (not in Total)")]]
+	for r in summary["rows"]:
+		rows.append([r.technician_id, r.technician_name, r.visit_count, flt(r.visit_charges),
+					 r.extra_count, flt(r.extra_payments), flt(r.sales_incentive),
+					 flt(r.fixed_incentive), flt(r.total), r.expense_count, flt(r.expenses)])
+	rows.append([_("TOTAL"), "", t["visit_count"], t["visit_charges"], t["extra_count"],
+				 t["extra_payments"], t["sales_incentive"], t["fixed_incentive"], t["total"],
+				 t["expense_count"], t["expenses"]])
+	_send_xlsx("Technician Payouts %s.xlsx" % summary["month"], [(_month_name(summary["month"]), rows)])
+
+
+@frappe.whitelist()
+def export_technician_month(month, technician_id):
+	"""One technician's month as an Excel file: their visits, then their expense claims."""
+	visits = technician_month(month, technician_id)
+	claims = technician_expenses(month, technician_id)
+	name = frappe.db.get_value("Technician Details", technician_id, "name1") or technician_id
+
+	rows = [["%s (%s): %s" % (name, technician_id, _month_name(month))],
+			[_("Completed"), _("Visit"), _("Patient"), _("Type"), _("Status"), _("Order"), _("Km"),
+			 _("Charge"), _("Extra / Incentive"), _("Reason"), _("Note"), _("Visit Total")]]
+	for v in visits:
+		rows.append([get_datetime(v.completed_on) if v.completed_on else None, v.name, v.patient_name,
+					 v.type, v.status, v.sales_order_id, flt(v.kilometers), flt(v.charges),
+					 flt(v.extra_payment), v.extra_payment_reason, v.extra_payment_note,
+					 flt(v.charges) + flt(v.extra_payment)])
+	rows.append([_("TOTAL"), len(visits), "", "", "", "", "",
+				 sum(flt(v.charges) for v in visits), sum(flt(v.extra_payment) for v in visits),
+				 "", "", sum(flt(v.charges) + flt(v.extra_payment) for v in visits)])
+
+	sheets = [(_("Visits"), rows)]
+	if claims:
+		sheets.append((_("Expenses"), [[_("Expense claims, Draft or submitted: not in the payout total")]]
+					   + _expense_rows(claims)))
+	_send_xlsx("Technician Payout %s %s.xlsx" % (technician_id, month), sheets)
