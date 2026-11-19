@@ -239,6 +239,9 @@ def email_copy(name):
 	Recipients are *Sales Order Email Notification CC* (enabled Users only), sent
 	from its *Email Account* through the Email Queue, not the fork's raw SMTP. The
 	body holds every answer; the order's print is attached as a PDF.
+
+	One mail per recipient: the Email Queue sends a multi-recipient mail as separate
+	SMTP sends sharing one Message-ID, and Gmail drops every send after the first.
 	"""
 	if not frappe.db.exists(ORDER, name):
 		return
@@ -251,15 +254,20 @@ def email_copy(name):
 	# The form is public, so the job runs as the guest who filled it; printing needs a reader.
 	frappe.set_user("Administrator")
 	order = frappe.get_doc(ORDER, name)
-	frappe.sendmail(
-		recipients=recipients,
-		sender=_sender(settings),
-		subject=_("Order form {0}: {1} for {2}").format(order.name, order.custom_of_kind, order.custom_of_patient_name),
-		message=_copy_body(order),
-		attachments=_copy_pdf(order),
-		reference_doctype=ORDER,
-		reference_name=order.name,
-	)
+	sender = _sender(settings)
+	subject = _("Order form {0}: {1} for {2}").format(order.name, order.custom_of_kind, order.custom_of_patient_name)
+	message = _copy_body(order)
+	attachments = _copy_pdf(order)
+	for recipient in recipients:
+		frappe.sendmail(
+			recipients=[recipient],
+			sender=sender,
+			subject=subject,
+			message=message,
+			attachments=attachments,
+			reference_doctype=ORDER,
+			reference_name=order.name,
+		)
 
 
 def _sender(settings):

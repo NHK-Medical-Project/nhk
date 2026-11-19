@@ -371,10 +371,11 @@ def test_the_copy_goes_to_the_admin_settings_recipients_with_every_answer(cleanu
 	name = _submit(cleanup, enabled, patient_name="<b>Copy</b> Test", delivery_remarks="Ring twice\nGate 2")
 
 	sent = _copy_with([enabled, other, disabled], name)
-	assert len(sent) == 1, sent
-	mail = sent[0]
 	expected = frappe.get_all("User", filters={"name": ("in", [enabled, other])}, pluck="email")
-	assert sorted(mail["recipients"]) == sorted(expected), (mail["recipients"], "a disabled user is skipped")
+	# One mail each: Gmail drops repeat sends of one Message-ID, so a shared mail reached only the first.
+	assert sorted(m["recipients"] for m in sent) == sorted([e] for e in expected), (sent, "a disabled user is skipped")
+	assert len({m["subject"] for m in sent}) == 1 and sent[0]["message"] == sent[1]["message"]
+	mail = sent[0]
 	account = frappe.get_doc("Email Account", frappe.get_single("Admin Settings").email_account)
 	assert mail["sender"] == "%s <%s>" % (account.name, account.email_id), mail["sender"]
 	assert (mail["reference_doctype"], mail["reference_name"]) == ("Sales Order", name)
