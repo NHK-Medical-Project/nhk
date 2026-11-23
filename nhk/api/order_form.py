@@ -37,6 +37,7 @@ import secrets
 
 import frappe
 from frappe import _
+from frappe.email.email_body import get_email, get_message_id
 from frappe.rate_limiter import rate_limit
 from frappe.utils import cint, cstr, get_url, getdate, today
 
@@ -237,11 +238,13 @@ def email_copy(name):
 	"""Background job: mail a copy of an order form's draft to the Admin Settings recipients.
 
 	Recipients are *Sales Order Email Notification CC* (enabled Users only), sent
-	from its *Email Account* through the Email Queue, not the fork's raw SMTP. The
-	body holds every answer; the order's print is attached as a PDF.
+	from its *Email Account* (else the default outgoing one). The body holds every
+	answer; the order's print is attached as a PDF.
 
-	One mail per recipient: the Email Queue sends a multi-recipient mail as separate
-	SMTP sends sharing one Message-ID, and Gmail drops every send after the first.
+	**One mail, everyone in To, one SMTP send** (user, 2026-11-20). Not the Email
+	Queue: it sends a multi-recipient mail as one SMTP send per recipient, all with
+	one Message-ID, and Gmail delivers only the first. The order's timeline notes
+	who it went to.
 	"""
 	if not frappe.db.exists(ORDER, name):
 		return
@@ -254,27 +257,37 @@ def email_copy(name):
 	# The form is public, so the job runs as the guest who filled it; printing needs a reader.
 	frappe.set_user("Administrator")
 	order = frappe.get_doc(ORDER, name)
-	sender = _sender(settings)
-	subject = _("Order form {0}: {1} for {2}").format(order.name, order.custom_of_kind, order.custom_of_patient_name)
-	message = _copy_body(order)
-	attachments = _copy_pdf(order)
-	for recipient in recipients:
-		frappe.sendmail(
-			recipients=[recipient],
-			sender=sender,
-			subject=subject,
-			message=message,
-			attachments=attachments,
-			reference_doctype=ORDER,
-			reference_name=order.name,
-		)
+	account = _email_account(settings)
+	mail = get_email(
+		recipients,
+		sender=account.default_sender,
+		subject=_("Order form {0}: {1} for {2}").format(order.name, order.custom_of_kind, order.custom_of_patient_name),
+		msg=_copy_body(order),
+		attachments=_copy_pdf(order),
+		email_account=account,
+		expose_recipients="header",
+	)
+	mail.set_header("Message-Id", get_message_id())
+	_smtp_send(account, recipients, mail.as_string())
+	order.add_comment("Info", _("Order form copy emailed to {0}").format(", ".join(recipients)))
 
 
-def _sender(settings):
-	"""The Admin Settings Email Account as the From: its name and email id, so the queue sends through it."""
-	if not settings.email_account:
-		return None  # Frappe's default outgoing account
-	return frappe.get_cached_doc("Email Account", settings.email_account).default_sender
+def _email_account(settings):
+	"""The Admin Settings Email Account, else Frappe's default outgoing one."""
+	from frappe.email.doctype.email_account.email_account import EmailAccount
+
+	if settings.email_account:
+		return frappe.get_doc("Email Account", settings.email_account)
+	return EmailAccount.find_outgoing(_raise_error=True)
+
+
+def _smtp_send(account, recipients, message):
+	"""One SMTP send to every recipient. The one seam to the mail server; tests replace it."""
+	server = account.get_smtp_server()
+	try:
+		server.session.sendmail(account.email_id, recipients, message.encode())
+	finally:
+		server.quit()
 
 
 def _copy_body(order):

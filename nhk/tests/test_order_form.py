@@ -10,6 +10,8 @@ Employee → User on the snapshot); every order and customer a test makes is
 deleted afterwards, and every token it changes is put back.
 """
 
+import email
+import email.policy
 import sys
 import uuid
 
@@ -25,7 +27,8 @@ from nhk.api.order_form import TOKEN_FIELD
 QUEUED = []
 SENT = []
 _order_form._queue_copy = QUEUED.append
-frappe.sendmail = lambda **kwargs: SENT.append(kwargs)
+_order_form._smtp_send = lambda account, recipients, message: SENT.append(
+	frappe._dict(account=account, recipients=recipients, message=message))
 
 
 def _sales_users(n=2):
@@ -371,22 +374,28 @@ def test_the_copy_goes_to_the_admin_settings_recipients_with_every_answer(cleanu
 	name = _submit(cleanup, enabled, patient_name="<b>Copy</b> Test", delivery_remarks="Ring twice\nGate 2")
 
 	sent = _copy_with([enabled, other, disabled], name)
+	# One mail, one SMTP send, everyone in To: the Email Queue's per-recipient sends reached only the first.
+	assert len(sent) == 1, sent
+	sent = sent[0]
 	expected = frappe.get_all("User", filters={"name": ("in", [enabled, other])}, pluck="email")
-	# One mail each: Gmail drops repeat sends of one Message-ID, so a shared mail reached only the first.
-	assert sorted(m["recipients"] for m in sent) == sorted([e] for e in expected), (sent, "a disabled user is skipped")
-	assert len({m["subject"] for m in sent}) == 1 and sent[0]["message"] == sent[1]["message"]
-	mail = sent[0]
+	assert sorted(sent.recipients) == sorted(expected), (sent.recipients, "a disabled user is skipped")
+	mail = email.message_from_string(sent.message, policy=email.policy.default)
+	assert sorted(a.addr_spec for a in mail["To"].addresses) == sorted(expected), mail["To"]
 	account = frappe.get_doc("Email Account", frappe.get_single("Admin Settings").email_account)
-	assert mail["sender"] == "%s <%s>" % (account.name, account.email_id), mail["sender"]
-	assert (mail["reference_doctype"], mail["reference_name"]) == ("Sales Order", name)
-	assert name in mail["subject"] and "Rent" in mail["subject"], mail["subject"]
-	body = mail["message"]
+	assert sent.account.name == account.name
+	assert mail["From"].addresses[0].addr_spec == account.email_id, mail["From"]
+	assert name in mail["Subject"] and "Rent" in mail["Subject"], mail["Subject"]
+	assert mail["Message-Id"], "Gmail needs a Message-Id"
+	body = mail.get_body(("html",)).get_content()
 	for text in ("&lt;b&gt;Copy&lt;/b&gt; Test", "Dr Test, Test Hospital", "Rent: Oxygen Concentrator, 7 days",
 			"Ring twice<br>Gate 2", order_form.current_sales_person(enabled)):
 		assert text in body, text
 	assert "<b>Copy</b>" not in body, "the public form's input must be escaped"
-	(pdf,) = mail["attachments"]
-	assert pdf["fname"] == name + ".pdf" and pdf["fcontent"][:4] == b"%PDF", pdf["fname"]
+	(pdf,) = list(mail.iter_attachments())
+	assert pdf.get_filename() == name + ".pdf" and pdf.get_content()[:4] == b"%PDF", pdf.get_filename()
+	notes = frappe.get_all("Comment", filters={"reference_doctype": "Sales Order", "reference_name": name,
+		"comment_type": "Info"}, pluck="content")
+	assert any(all(e in n for e in expected) for n in notes), notes
 
 
 def test_no_recipients_or_no_order_sends_nothing(cleanup):
