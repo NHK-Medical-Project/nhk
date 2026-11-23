@@ -118,9 +118,11 @@ doctype_js = {"Sales Order": "public/js/sales_order.js", "Sales Person": "public
 # ---------------
 # Override standard doctype classes
 
-# override_doctype_class = {
-# 	"ToDo": "custom_app.overrides.CustomToDo"
-# }
+# A cancelled renewal hands its devices back from its own rows, not the
+# previous order's (`nhk.api.renewal_cancel`). No other app overrides Sales Order.
+override_doctype_class = {
+	"Sales Order": "nhk.overrides.sales_order.NHKSalesOrder",
+}
 
 # Document Events
 # ---------------
@@ -160,6 +162,9 @@ doc_events = {
 		# Ready for Delivery / DISPATCHED only from the status before them, so a
 		# stale form cannot roll back an order that has already moved on.
 		"before_update_after_submit": "nhk.api.order_steps.refuse_out_of_order_step",
+		# After the fork's own: a device still linked to the cancelled order,
+		# and out nowhere else, goes back to Available.
+		"on_cancel": "nhk.api.renewal_cancel.release_devices_left_on_cancelled_order",
 	},
 	# A rental device may not be moved onto one order while another still has it
 	# out ("Back To Pickup" did exactly that).
