@@ -89,6 +89,9 @@ def validate_extra_payment(doc):
         frappe.throw(_("Say why the extra payment is due: out of station, waiting, or other."))
     if doc.extra_payment_reason == "Other" and not (doc.extra_payment_note or "").strip():
         frappe.throw(_("Add a note saying what the extra payment is for."))
+    if doc.type == "Replacement" and doc.extra_payment_reason == "Item Replacement":
+        # A Replacement visit already pays delivery + pickup for the swap.
+        frappe.throw(_("A Replacement visit is already paid for the replacement. Choose another reason for the extra payment."))
 
 
 def update_technician_charge(doc):
@@ -127,6 +130,11 @@ def update_technician_charge(doc):
             # Type = Delivery
             elif doc.type == "Delivery":
                 doc.charges = row.delivery
+
+            # Type = Replacement: one trip that delivers the new device and
+            # brings the old one back, so it pays both (decided 2026-11-23).
+            elif doc.type == "Replacement":
+                doc.charges = flt(row.delivery) + flt(row.pickup)
 
             # Any other type defaults to Delivery charge
             else:

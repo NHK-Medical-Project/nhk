@@ -448,17 +448,21 @@ def _pickup_category(sales_order, technician_category=None):
 	return technician_category
 
 
-def _create_office_pickup(order, target, technician_category, when, slot, rows=()):
+def _create_office_pickup(order, target, technician_category, when, slot, rows=(), visit_type="Pickup",
+						  fields=None):
 	"""A Pickup visit the office gave out: owned by the caller, shared with `target`.
 
 	`rows` are the Sales Order Item rows it collects; none means the whole order.
+	`visit_type` and `fields` let a Replacement visit (`nhk.api.replacement`) be
+	made the same way: it is set before the insert, so the assignment and
+	notification hooks see the real type.
 	"""
 	office = frappe.session.user
 	visit = frappe.get_doc({
 		"doctype": "Technician Visit Entry",
 		"sales_order_id": order.name,
 		"technician_id": target.name,
-		"type": "Pickup",
+		"type": visit_type,
 		"status": "Assigned",
 		"patient_id": order.customer,
 		"technician_category": technician_category,
@@ -470,6 +474,7 @@ def _create_office_pickup(order, target, technician_category, when, slot, rows=(
 	for row in rows:
 		visit.append("items", {"sales_order_item": row.name, "item_code": row.item_code})
 	_label_items(visit)
+	visit.update(fields or {})
 	visit.insert(ignore_permissions=True)
 
 	frappe.db.set_value("Technician Visit Entry", visit.name,
@@ -523,6 +528,13 @@ def assign_item_pickup(sales_order_id, rows, technician_id, technician_category=
 			visit = carried[row.name]
 			frappe.throw(_("{0} is already on pickup {1} with {2}.").format(
 				row.item_code, visit.name, visit.technician_name or visit.technician_id))
+		from nhk.api.replacement import open_replacement_of
+
+		replacing = open_replacement_of(row.name)
+		if replacing:
+			# Collecting it would leave the replacement nothing to swap.
+			frappe.throw(_("{0} is on replacement {1} with {2}. Cancel the replacement first.").format(
+				row.item_code, replacing.name, replacing.technician_name or replacing.technician_id))
 
 	target = _pickup_technician(technician_id)
 	reason = validated_pickup_reason(pickup_reason) if pickup_reason else PICKUP_REASON

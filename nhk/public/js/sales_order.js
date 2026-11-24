@@ -53,6 +53,10 @@ nhk.sales_order_visits = {
 		reassign: { label: "Reassign", run: (me, frm, row) => me.reassign(frm, row) },
 		reschedule: { label: "Reschedule", run: (me, frm, row) => me.reschedule(frm, row) },
 		extra_payment: { label: "Extra Payment", run: (me, frm, row) => me.extra_payment(frm, row) },
+		cancel_replacement: {
+			label: "Cancel Replacement",
+			run: (me, frm, row) => me.cancel_replacement(frm, row),
+		},
 	},
 
 	render(frm) {
@@ -461,6 +465,27 @@ nhk.sales_order_visits = {
 
 	reschedule(frm, row) {
 		nhk.visit_dialogs.reschedule(row, (message) => this.after(frm, message));
+	},
+
+	// A Replacement visit the office no longer wants: the visit closes unpaid,
+	// the reserved device goes back to Available, the row keeps its device
+	// (`nhk.api.replacement.cancel_replacement`).
+	cancel_replacement(frm, row) {
+		frappe.prompt(
+			[{ fieldname: "note", fieldtype: "Small Text", label: __("Why") }],
+			(values) => {
+				frappe.call({
+					method: "nhk.api.replacement.cancel_replacement",
+					args: { visit_id: row.name, note: values.note },
+					freeze: true,
+					callback: (r) => {
+						if (r.message) this.after(frm, __("Replacement {0} cancelled.", [row.name]));
+					},
+				});
+			},
+			__("Cancel replacement {0}", [row.name]),
+			__("Cancel Replacement")
+		);
 	},
 
 	// What the technician is owed beyond the visit's charge -- out of station,
