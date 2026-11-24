@@ -45,6 +45,9 @@ COMPLETION_STATUS = {
 	"Service": "Service Done",
 	"Technician Assignment For Sales": "Installation Done",
 	"Technician Assignment For Service": "Service Done",
+	# A scheduled device swap (`nhk.api.replacement`): the technician delivers
+	# the new device, so it closes, and is paid, as a delivery.
+	"Replacement": "Delivered",
 }
 
 #: Completion statuses that close work on a Sales or Service order rather than
@@ -218,6 +221,8 @@ def _actions(row, order, office, share):
 			actions.append("reassign")
 		if office:
 			actions.append("reschedule")
+		if office and row.type == "Replacement":
+			actions.append("cancel_replacement")
 	if office and _extra_is_open(row):
 		actions.append("extra_payment")
 	return actions
@@ -274,6 +279,9 @@ def _describe(row):
 	if row.status in DONE_STATUSES or row.status == "Incentive Finalize":
 		stage = "%s %s" % (_(row.status), when(row.completed_at))
 		return stage.strip(), _("Paid with this month's technician payout.")
+	if row.type == "Replacement" and row.status == "Closed":
+		# `nhk.api.replacement.cancel_replacement`: closed unpaid, never done.
+		return _("Cancelled"), _("Replacement called off; the reserved device went back to stock.")
 	if row.status in ("Amount Settled", "Closed"):
 		return _(row.status), _("Settled before monthly payouts. Nothing left to do.")
 	return _(row.status or ""), ""
@@ -471,6 +479,9 @@ def completes_from_the_order(visit_type):
 	dialogs collect the agreement, ID and payment details that go with that --
 	a completion from the list would skip them.
 	"""
+	if visit_type == "Replacement":
+		# No order dialog goes with it: completing it is the swap itself.
+		return True
 	return COMPLETION_STATUS.get(visit_type) in WORK_DONE_STATUSES
 
 
@@ -590,6 +601,13 @@ def _advance_sales_order(visit, new_status):
 
 	if new_status in WORK_DONE_STATUSES:
 		_mark_technician_work_done(visit.sales_order_id)
+		return
+
+	if visit.type == "Replacement":
+		# Imported here: `replacement` imports this module at load time.
+		from nhk.api.replacement import complete_scheduled
+
+		complete_scheduled(visit)
 		return
 
 	stamp = frappe.utils.nowdate()

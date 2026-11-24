@@ -347,6 +347,8 @@ def job(visit_id):
 		# The devices this job may replace, with the desk prompt's lists
 		# (`nhk.api.replacement`). None when there is nothing to replace.
 		"replacement": replacement.options(visit),
+		# A Replacement visit: the device to take, and the one to bring back.
+		"scheduled_replacement": replacement.scheduled_details(visit),
 		"on_duty": True,
 	}
 
@@ -356,7 +358,8 @@ def job(visit_id):
 #: for the technician (decided 2026-10-01); "Technician Assignment For Sales" is
 #: an installation.
 MONTH_CARDS = (
-	("Delivery", ("Delivery",)),
+	# A Replacement visit carries a device to the patient: a delivery trip.
+	("Delivery", ("Delivery", "Replacement")),
 	("Pickup", ("Pickup",)),
 	("Service", ("Service", "Technician Assignment For Service")),
 	("Installation", ("Technician Assignment For Sales",)),
