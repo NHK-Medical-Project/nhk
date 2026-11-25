@@ -254,20 +254,26 @@ def available_devices(sales_order_id, txt=None, limit=DEVICE_LIST_LIMIT):
 
 
 @frappe.whitelist()
-def schedule_replacement(sales_order_id, row, new_item, technician_id, technician_category=None,
+def schedule_replacement(sales_order_id, row, new_item, technician_id=None, technician_category=None,
 						 replacement_date=None, slot=None, old_item_status=DEFAULT_OLD_ITEM_STATUS,
 						 reason=None, remark=None):
-	"""Give a technician the replacement of one Active row's device.
+	"""Replace one Active row's device: on a technician's visit, or at once.
 
-	Creates a `Replacement` visit carrying the row (in `items`), the new device,
-	what the old device becomes and why. The new device is Reserved for the
-	order now; the swap itself happens when the visit is completed
-	(`complete_scheduled`).
+	With a technician: creates a `Replacement` visit carrying the row (in
+	`items`), the new device, what the old device becomes and why. The new
+	device is Reserved for the order now; the swap itself happens when the
+	visit is completed (`complete_scheduled`).
+
+	Without one: the swap happens now, as Item Replacement does on the other
+	stages, where a visit was never required (decided by the user 2026-11-25).
+	`replacement_date` is then when it was replaced, and the category and slot
+	are not used.
 	"""
 	# Imported here: `pickup` imports `visits`, which imports this module lazily.
 	from nhk.api.pickup import _create_office_pickup, _pickup_category, _pickup_technician
 
-	frappe.has_permission("Technician Visit Entry", "share", throw=True)
+	if technician_id:
+		frappe.has_permission("Technician Visit Entry", "share", throw=True)
 
 	order = _rental(sales_order_id)
 	item = _schedulable_row(order, row)
@@ -279,6 +285,9 @@ def schedule_replacement(sales_order_id, row, new_item, technician_id, technicia
 	old_item_status = old_item_status or DEFAULT_OLD_ITEM_STATUS
 	_check_choices(old_item_status, reason)
 	new = _free_device(new_item, item.item_code, sales_order_id)
+
+	if not technician_id:
+		return _replace_now(order, item, new, old_item_status, reason, replacement_date, remark)
 
 	target = _pickup_technician(technician_id)
 	when, slot = _when(replacement_date, slot)
@@ -307,6 +316,33 @@ def schedule_replacement(sales_order_id, row, new_item, technician_id, technicia
 		old_item_status, reason)
 	_comment(line, order.name, visit.name)
 	return {"name": visit.name, "technician_name": target.name1 or target.name, "new_item": new.name}
+
+
+def _replace_now(order, item, new, old_item_status, reason, replacement_date, remark):
+	"""The swap with no visit: the row keeps Active with the new device, which
+	is Rented Out; the old device takes `old_item_status`."""
+	when = _replaced_at(replacement_date)
+	old_item = item.item_code
+	_replace(order.name, item.name, new, old_item_status, reason, when, delivered=True)
+
+	line = _("Device replaced by office ({0}) without a technician visit: {1} -> {2}. Old device {3}. Reason: {4}.").format(
+		frappe.session.user, old_item, new.name, old_item_status, reason)
+	if remark and remark.strip():
+		line += " " + remark.strip()
+	frappe.get_doc("Sales Order", order.name).add_comment(
+		"Comment", frappe.utils.escape_html(line), comment_email=frappe.session.user,
+		comment_by=frappe.utils.get_fullname(frappe.session.user))
+	return {"name": None, "replaced": True, "old_item": old_item, "new_item": new.name}
+
+
+def _replaced_at(day):
+	"""When an immediate swap happened: now for today (or no date), else the
+	start of that past day. Never the future."""
+	if not day or frappe.utils.getdate(day) == frappe.utils.getdate():
+		return now_datetime()
+	if frappe.utils.getdate(day) > frappe.utils.getdate():
+		frappe.throw(_("The replacement date cannot be in the future."))
+	return get_datetime(frappe.utils.getdate(day))
 
 
 @frappe.whitelist()

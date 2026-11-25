@@ -121,6 +121,61 @@ def test_the_device_list_is_every_group(cleanup):
 
 
 # --------------------------------------------------------------------------
+# no technician: the swap happens at once, as Item Replacement on other stages
+# --------------------------------------------------------------------------
+
+
+def _replace_now(cleanup, so, row, new_item, **kwargs):
+	kwargs.update(technician_id=None, technician_category=None, slot=None)
+	return _schedule(cleanup, so, row, new_item, **kwargs)
+
+
+def test_without_a_technician_the_device_is_replaced_at_once(cleanup):
+	so, row, old, spares = _order(cleanup, "Active")
+	status_before = frappe.db.get_value("Sales Order", so, "status")
+
+	result = _replace_now(cleanup, so, row, spares[0], old_item_status="Repair Required")
+
+	assert result.get("replaced") and not result.get("name")
+	assert not frappe.db.exists("Technician Visit Entry", {"sales_order_id": so, "creation": (">=", cleanup.since)})
+	after = _row(row)
+	assert after.item_code == spares[0] and after.old_item_code == old and after.child_status == "Active"
+	new = _item(spares[0])
+	assert new.status == "Rented Out" and new.custom_sales_order_id == so
+	gone = _item(old)
+	assert gone.status == "Repair Required" and not gone.custom_sales_order_id
+	assert frappe.db.exists("Rental Order Replaced Item",
+							{"sales_order_id": so, "old_item": old, "new_item": spares[0]})
+	assert frappe.db.get_value("Sales Order", so, "status") == status_before
+
+
+def test_without_a_technician_the_date_is_when_it_was_replaced(cleanup):
+	so, row, _old, spares = _order(cleanup, "Active")
+	yesterday = frappe.utils.add_days(frappe.utils.getdate(), -1)
+
+	assert _refused(_replace_now, cleanup, so, row, spares[0],
+					replacement_date=frappe.utils.add_days(frappe.utils.getdate(), 1)), "replaced in the future"
+	_replace_now(cleanup, so, row, spares[0], replacement_date=yesterday)
+
+	assert frappe.utils.getdate(_row(row).replaced_datetime) == yesterday
+
+
+def test_without_a_technician_the_same_refusals_hold(cleanup):
+	so, row, old, spares = _order(cleanup, "Active")
+	before = _row(row)
+
+	assert _refused(_replace_now, cleanup, so, row, old), "replaced a device with itself"
+	assert _refused(_replace_now, cleanup, so, row, spares[0], reason="not a reason")
+	frappe.db.set_value("Sales Order Item", row, "child_status", "Ready for Pickup", update_modified=False)
+	assert _refused(_replace_now, cleanup, so, row, spares[0]), "replaced a row not Active"
+	frappe.db.set_value("Sales Order Item", row, "child_status", "Active", update_modified=False)
+
+	_schedule(cleanup, so, row, spares[0])
+	assert _refused(_replace_now, cleanup, so, row, spares[1]), "replaced under an open replacement visit"
+	assert _row(row) == before
+
+
+# --------------------------------------------------------------------------
 # completing
 # --------------------------------------------------------------------------
 
